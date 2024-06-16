@@ -1,0 +1,2 @@
+exportPattern("^[[:alpha:]]+")
+export(cams_solar_radiation_ts)
