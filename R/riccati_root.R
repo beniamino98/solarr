@@ -1,17 +1,16 @@
-#' Riccati Square Root
+#' Riccati Root
 #'
-#' Square root of a symmetric matrix.
+#' Compute the square root of a symmetric matrix.
 #'
-#' @param x symmetric matrix.
+#' @param x matrix, squared and symmetric.
 #'
 #' @examples
-#' x <- matrix(c(1, 0.3, 0.3, 1), nrow = 2, byrow = TRUE)
-#' riccati_root(x)
-
+#' cv <- matrix(c(1, 0.3, 0.3, 1), nrow = 2, byrow = TRUE)
+#' riccati_root(cv)
+#'
 #' @rdname riccati_root
 #' @name riccati_root
 #' @export
-
 riccati_root <- function(x){
   dec <- eigen(x)
   e <- dec$vectors

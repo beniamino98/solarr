@@ -2,17 +2,18 @@
 % Please edit documentation in R/riccati_root.R
 \name{riccati_root}
 \alias{riccati_root}
-\title{Riccati Square Root}
+\title{Riccati Root}
 \usage{
 riccati_root(x)
 }
 \arguments{
-\item{x}{symmetric matrix.}
+\item{x}{matrix, squared and symmetric.}
 }
 \description{
-Square root of a symmetric matrix.
+Compute the square root of a symmetric matrix.
 }
 \examples{
-x <- matrix(c(1, 0.3, 0.3, 1), nrow = 2, byrow = TRUE)
-riccati_root(x)
+cv <- matrix(c(1, 0.3, 0.3, 1), nrow = 2, byrow = TRUE)
+riccati_root(cv)
+
 }

@@ -6,6 +6,14 @@
 \usage{
 solar_option_payoff_structure(model, type = "sim", exact_daily_premium = TRUE)
 }
+\arguments{
+\item{model}{an object of the class `solarModel`.}
+
+\item{type}{can be `sim` or `model`.}
+
+\item{exact_daily_premium}{when `TRUE` the historical premium is computed as daily average among all the years.
+Otherwise the monthly premium is computed and then divided by the number of days of the month.}
+}
 \description{
 Structure payoffs
 }

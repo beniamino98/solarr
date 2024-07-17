@@ -7,16 +7,19 @@
 solar_option_esscher_calibrator(
   model,
   sim,
-  control_options = control.solarOption(),
-  control = control.solarEsscher()
+  control_options = control_solarOption(),
+  control = control_solarEsscher()
 )
+}
+\arguments{
+\item{model}{an object of the class `solarModel`.}
+
+\item{sim}{simulations object.}
+
+\item{control_options}{control function, see `control_solarOption`.}
+
+\item{control}{control function, see `control_solarEsscher`.}
 }
 \description{
 Calibrate Esscher Bounds and parameters
-}
-\examples{
-model
-sim
-control_options = control.solarOption()
-control = control.solarEsscher()
 }

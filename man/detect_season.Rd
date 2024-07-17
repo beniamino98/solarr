@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarFunctions.R
 \name{detect_season}
 \alias{detect_season}
-\title{Detect Season}
+\title{Detect the season}
 \usage{
 detect_season(day_date = NULL)
 }
@@ -10,14 +10,12 @@ detect_season(day_date = NULL)
 \item{day_date}{vector of dates in the format `%YYYY-%MM-%DD`.}
 }
 \value{
-a character vector containing the correspondent season.
-Can be `spring`, `summer`, `autumn`, `winter`.
+a character vector containing the correspondent season. Can be `spring`, `summer`, `autumn`, `winter`.
 }
 \description{
-Detect the season from a vector of dates
+Detect the season from a vector of dates.
 }
 \examples{
 detect_season("2040-01-31")
 detect_season(c("2040-01-31", "2023-04-01", "2015-09-02"))
-
 }

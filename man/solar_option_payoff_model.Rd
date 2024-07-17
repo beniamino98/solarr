@@ -9,25 +9,24 @@ solar_option_payoff_model(
   lambda = 0,
   vol = NA,
   nmonths = 1:12,
-  control = control.solarOption()
+  control = control_solarOption()
 )
 }
 \arguments{
-\item{model}{an object of the class `solarModel`}
+\item{model}{an object of the class `solarModel`.}
 
 \item{lambda}{Esscher parameter}
 
 \item{vol}{unconditional GARCH variance, when `NA` will be used the fitted one,}
+
+\item{nmonths}{index for the months.}
+
+\item{control}{control function, see `control_solarOption`.}
 }
 \description{
 Pricing function for a solar model (for all the year)
 }
 \examples{
-model
-nmonths = 3
-lambda = 0
-vol = NA
-control = control.solarOption()
 lambda = 0
 vol = 1
 nmonth = 3

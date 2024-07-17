@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarFunctions.R
 \name{solar_time_declination}
 \alias{solar_time_declination}
-\title{solar_time_declination}
+\title{Solar time declination}
 \usage{
 solar_time_declination(
   day_date = NULL,
@@ -24,10 +24,6 @@ a numeric vector containing the solar declination in minutes.
 Compute the solar declination for different dates.
 }
 \examples{
-
-# detect the season in 2040-01-31
 solar_time_declination("2040-01-01", day_end = "2040-12-31")
-
-# detect the season in a vector of dates
 solar_time_declination(c("2040-01-31", "2023-04-01", "2015-09-02"))
 }

@@ -8,7 +8,7 @@
 \alias{rtnorm}
 \title{Truncated Normal}
 \usage{
-dtnorm(x, mean = 0, sd = 1, a = -3, b = 3, log.p = FALSE)
+dtnorm(x, mean = 0, sd = 1, a = -3, b = 3, log = FALSE)
 
 ptnorm(x, mean = 0, sd = 1, a = -3, b = 3, log.p = FALSE, lower.tail = TRUE)
 
@@ -26,6 +26,8 @@ rtnorm(n, mean = 0, sd = 1, a = -100, b = 100)
 \item{a}{lower bound.}
 
 \item{b}{upper bound.}
+
+\item{log}{logical; if `TRUE`, probabilities are returned as `log(p)`.}
 
 \item{log.p}{logical; if `TRUE`, probabilities p are given as `log(p)`.}
 

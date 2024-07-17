@@ -10,6 +10,7 @@
 #' @param a lower bound.
 #' @param b upper bound.
 #' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
+#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
 #' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
 #'
 #' @examples
@@ -38,13 +39,13 @@
 #' @aliases qtnorm
 #' @aliases rtnorm
 #' @export
-dtnorm <- function(x, mean = 0, sd = 1, a = -3, b = 3, log.p = FALSE){
+dtnorm <- function(x, mean = 0, sd = 1, a = -3, b = 3, log = FALSE){
   x[x < a | x > b] <- NA
   z <- (x - mean)/sd
   p <- (1/sd)*(dnorm(z)/(pnorm((b - mean)/sd) - pnorm((a - mean)/sd)))
   p[which(is.na(p))] <- 0
 
-  if (log.p){
+  if (log){
     return(base::log(p))
   }
   return(p)

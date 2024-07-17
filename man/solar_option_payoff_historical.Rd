@@ -7,15 +7,16 @@
 solar_option_payoff_historical(
   data,
   nmonth = 1:12,
-  control = control.solarOption()
+  control = control_solarOption()
 )
+}
+\arguments{
+\item{data}{slot `data` from `solarModel` object.}
+
+\item{nmonth}{index for the months.}
+
+\item{control}{control function, see `control_solarOption`.}
 }
 \description{
 Payoff on Historical Data
-}
-\examples{
-data = model$data
-nmonth = 1:12
-control = control.solarOption()
-
 }

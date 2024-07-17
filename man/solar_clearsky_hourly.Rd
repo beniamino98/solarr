@@ -2,24 +2,31 @@
 % Please edit documentation in R/solarFunctions.R
 \name{solar_clearsky_hourly}
 \alias{solar_clearsky_hourly}
-\title{solar_clearsky_hourly}
+\title{Solar clear sky hourly}
 \usage{
 solar_clearsky_hourly(
   cosZ = NULL,
   G0 = NULL,
   altitude = 2.5,
-  clime = c("No Correction", "Summer", "Winter", "Subartic Summer", "Tropical")
+  clime = "No Correction"
 )
+}
+\arguments{
+\item{cosZ}{cosine angle of incidence}
+
+\item{G0}{extraterrestrial radiation}
+
+\item{altitude}{altitude in meters.}
+
+\item{clime}{correction for different climes, can be `No Correction`, `Summer`, `Winter`, `Subartic Summer`, `Tropical`.}
 }
 \value{
 a numeric vector containing the time adjustment in minutes.
 }
 \description{
-Compute the clearsky radiation for hourly data.
+Compute the clear sky radiation for hourly data.
 }
 \examples{
-
-# detect the season in 2040-01-31
-solar_clearsky(cosZ = 1, altitude = 2.5, clime = c("No Correction", "Summer", "Winter", "Subartic Summer", "Tropical"))
+solar_clearsky_hourly(cosZ = 0.4, G0 = 4, altitude = 2.5, clime = "No Correction")
 
 }

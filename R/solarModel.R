@@ -1,35 +1,138 @@
-#' Solar Model
+#' Control parameters for a `solarModel` object
 #'
-#' @param object Location object, `CAMS("Bologna")`
-#' @param control control settings, `control.solarModel()`.
+#' @param clearsky.model list with control parameters, see `clearskyModel_control()`.
+#' @param mean.model a list of parameters.
+#' @param variance.model a list of parameters.
+#' @param threshold Threshold for the estimation of alpha and beta.
+#' @param quiet logical, when `TRUE` the function will not display any message.
+#'
+#' @rdname solarModel_control
+#' @export
+solarModel_control <- function(clearsky.model = clearskyModel_control(),
+                               mean.model = list(seasonalOrder = 1, arOrder = 2, include.intercept = FALSE),
+                               variance.model = list(seasonalOrder = 1, match_moments = FALSE, algo = "em"),
+                               threshold = 0.001, quiet = FALSE){
+
+  # Mean model default parameters
+  mean_model = list(seasonalOrder = 1, arOrder = 2, include.intercept = FALSE)
+  names_mean_model <- names(mean_model)
+  for(name in names_mean_model){
+    arg <- mean.model[[name]]
+    if (!is.null(arg)) {
+      mean_model[[name]] <- mean.model[[name]]
+    }
+  }
+  # Variance model default parameters
+  variance_model = list(seasonalOrder = 1, match_moments = FALSE, algo = "em")
+  names_variance_model <- names(variance_model)
+  for(name in names_variance_model){
+    arg <- variance.model[[name]]
+    if (!is.null(arg)) {
+      variance_model[[name]] <- variance.model[[name]]
+    }
+  }
+
+  structure(
+    list(
+      clearsky.model = clearsky.model,
+      mean.model = mean_model,
+      variance.model = variance_model,
+      threshold = threshold,
+      quiet = quiet
+    ),
+    class = c("control", "list")
+  )
+}
+
+#' Specification for a `solarModel` object
+#'
+#' @param place character, name for the selected location in `CAMS_data` list.
+#' @param year_max integer, maximum year in the dataset
+#' @param from character. Date in the format `YYYY-MM-DD`. Minimum date in the data in `CAMS_data`. If `NULL` will be used the maximum available.
+#' @param to character. Date in the format `YYYY-MM-DD`. Maximum date in the data in `CAMS_data`. If `NULL` will be used the maximum available.
+#' @param CAMS_data list with radiation data for different locations.
+#' @param control list with control parameters, see `control_solarModel()`.
+#'
+#' @rdname solarModel_spec
+#' @name solarModel_spec
 #'
 #' @export
+solarModel_spec <- function(place, year_max = NULL, from = NULL, to = NULL, CAMS_data = solarr::CAMS_data, control = solarModel_control()){
 
+  # Match a location in the dataset
+  place <- match.arg(place, choices = names(CAMS_data), several.ok = FALSE)
+  data <- CAMS_data[[place]]
 
-solarModel <- function(object, control = control.solarModel()){
+  # Filter for minimum date
+  if (!is.null(from)) {
+    data <- dplyr::filter(data, date >= from)
+  }
+  # Filter for maximum date
+  if (!is.null(to)) {
+    data <- dplyr::filter(data, date <= to)
+  }
+  # Filter for maximum year
+  if (is.null(year_max)) {
+    year_max <- lubridate::year(Sys.Date())
+  }
+  data <- dplyr::filter(data, Year <= year_max)
+  seasonal_data <- attr(data, "seasonal")
+  seasonal_data$n <- number_of_day(seasonal_data$date)
 
-  #' @examples
-  #' object <- object
-  #' control <- control_model
+  structure(
+    list(
+      place = attr(data, "place"),
+      coords = attr(data, "coords"),
+      seasonal_data = seasonal_data,
+      data = data,
+      control = control
+    ),
+    class = c("Location", "list")
+  )
+}
 
-  # Clearsky Model
+#' Fit a model for solar radiation
+#'
+#' @param object object with class `solarModel`. See the function `solarModel_spec()`. For example  `solarModel_spec("Bologna")`.
+#' @param ... additional parameters for the function `fit_dnorm_mix_em()`.
+#' @rdname solarModel_fit
+#' @name solarModel_fit
+#'
+#' @export
+solarModel_fit <- function(object, ...){
+
+  # Extract data from object
+  data <- object$data  # dataset
+  control <- object$control
+
   # Risk Driver: Xt is computed here
-  object <- clearsky.seasonalModel(object, control = control$clearsky.model)
-  # Initialize dataset
-  data <- object$data
-  # Solar Transform
+  obj <- clearskyModel_fit(data, seasonal_data = dplyr::select(object$seasonal_data, n, H0),
+                           control = control$clearsky.model)
+  # Update the dataset with imputed values
+  data <- obj$data
+  # Extract the seasonal model for Ct
+  seasonal_model_Ct <- obj$seasonal_model_Ct
+
+  # ---- 1) Solar Transform ----
   # Upper and lower bounds: alpha_ and beta_
   epsilon <- min(data$Xt)*control$threshold
   min_Xt <- min(data$Xt)
   max_Xt <- max(data$Xt)
   alpha_ <- min_Xt - epsilon
   beta_ <- max_Xt - min_Xt + 2*epsilon
-  params = list(alpha = alpha_, beta = beta_, min_Xt = min_Xt, max_Xt = max_Xt, epsilon = epsilon)
+  # Vector of parameters
+  params <- list(alpha = alpha_, beta = beta_, min_Xt = min_Xt, max_Xt = max_Xt, epsilon = epsilon)
 
-  # Transform Functions
+  # Transformation functions
   Xt = function(x) alpha_ + beta_*exp(-exp(x))
   Yt = function(x) log(log(beta_) - log(x - alpha_))
   GHI = function(Ct, x) Ct*(1 - x)
+  nday <- function(n) purrr::map_int(n, ~ifelse(is.character(.x) | lubridate::is.Date(.x), number_of_day(.x), .x))
+  Ct = function(n) {clearskyModel_predict(seasonal_model_Ct, n = nday(n))}
+  Yt_bar = function(n) {seasonalModel_predict(seasonal_model_Yt, n = nday(n))}
+  GHI_bar = function(n) {Ct(n)*(1 - Xt(Yt_bar(n)))}
+
+  # ---- 2) Seasonal Mean ----
   # Compute Yt
   data$Yt <- Yt(data$Xt)
   # Impute outliers
@@ -37,29 +140,30 @@ solarModel <- function(object, control = control.solarModel()){
   data$Xt <- Xt(data$Yt)
   data$GHI <- GHI(data$Ct, data$Xt)
   # Seasonal model for Yt
-  seasonal_model_Yt <- seasonalModel(formula = "Yt ~ 1", order = control$mean.model$seasonalOrder, period = 365, data = data)
+  seasonal_model_Yt <- seasonalModel_fit(formula = "Yt ~ 1", order = control$mean.model$seasonalOrder, period = 365, data = data)
   # Fitted seasonal mean for Yt
-  data$Yt_bar <- predict.seasonalModel(seasonal_model_Yt, n = data$n)
+  data$Yt_bar <- seasonalModel_predict(seasonal_model_Yt, n = data$n)
   # Fitted deseasonalized Yt
   data$Yt_tilde <- data$Yt - data$Yt_bar
   # Fitted seasonal mean (GHI)
   data$GHI_bar <- GHI(data$Ct, Xt(data$Yt_bar))
 
-  # AR model
-  # AR flexible Formula
+  # ---- 3) AR model ----
+  # AR with flexible formula for multiple orders
   AR_formula_Yt <- "Yt_tilde ~ "
   if (control$mean.model$arOrder > 0){
     for(i in 1:control$mean.model$arOrder){
       AR_formula_Yt <- paste0(AR_formula_Yt, " + I(dplyr::lag(Yt_tilde,", i, "))")
     }
   }
+  # Control for intercept
   AR_formula_Yt <- paste0(AR_formula_Yt, ifelse(control$mean.model$include.intercept, "", "-1"))
-
-  # Fitted model
+  # Fitted AR model
   AR_model_Yt <- lm(formula = as.formula(AR_formula_Yt), data = data)
   # Fitted Yt_tilde
-  data$Yt_tilde_hat <- predict(AR_model_Yt, newdata = data)
-  if (control$mean.model$arOrder > 0){
+  data$Yt_tilde_hat <- predict.lm(AR_model_Yt, newdata = data)
+  # Initial values as the real ones
+  if (control$mean.model$arOrder > 0) {
     data$Yt_tilde_hat[1:control$mean.model$arOrder] <- data$Yt_tilde[1:control$mean.model$arOrder]
   }
   # Fitted Yt
@@ -71,15 +175,15 @@ solarModel <- function(object, control = control.solarModel()){
   # Fitted residuals
   data$eps <- data$Yt_tilde - data$Yt_tilde_hat
 
-  # Seasonal variance model
+  # ---- 4) Seasonal variance ----
   # Fitted model
-  seasonal_variance <- seasonalModel(formula = "I(eps^2) ~ 1", order = control$variance.model$seasonalOrder, period = 365, data = data)
+  seasonal_variance <- seasonalModel_fit(formula = "I(eps^2) ~ 1", order = control$variance.model$seasonalOrder, period = 365, data = data)
   # Fitted seasonal standard deviation
-  data$sigma_bar <- sqrt(predict.seasonalModel(seasonal_variance, n = data$n))
+  data$sigma_bar <- sqrt(seasonalModel_predict(seasonal_variance, n = data$n))
   # Fitted standardized residuals
   data$eps_tilde <- data$eps/data$sigma_bar
 
-  # GARCH Model
+  # ---- 5) GARCH variance ----
   # Variance specification
   GARCH_spec <- rugarch::ugarchspec(
     variance.model = list(model = "sGARCH", garchOrder = c(1,1), external.regressors = NULL),
@@ -91,10 +195,12 @@ solarModel <- function(object, control = control.solarModel()){
   data$sigma2 <- GARCH_model@fit$var
   # Fitted standard deviation
   data$sigma <- GARCH_model@fit$sigma
-  # Fitted residuals
+  # Fitted final residuals
   data$ut <- data$eps_tilde/data$sigma
-  # Normal Mixture Model
-  NM_model <- solarModel.monthly_mixture(data, loss = control$loss, match_moments = control$variance.model$match_moments)
+
+  # ---- 6) Gaussian Mixture ----
+  NM_model <- fit_dnorm_mix_monthly(x = data$ut, date = data$date, match_moments = control$variance.model$match_moments,
+                                    algo = control$variance.model$algo, ...)
 
   # Seasonal data by month and day for an year with 366 days
   seasonal_data <- dplyr::filter(data, date >= as.Date("2016-01-01") & date <= as.Date("2016-12-31"))
@@ -102,13 +208,13 @@ solarModel <- function(object, control = control.solarModel()){
   seasonal_data <- dplyr::select(seasonal_data, Month, Day, Ct, GHI_bar, Xt_bar, Yt_bar, sigma_bar)
   seasonal_data <- dplyr::left_join(seasonal_data, object$seasonal_data, by = c("Month", "Day"))
 
-  # Update object data
+  # Creat new object data
   structure(
     list(
-      data = dplyr::select(data, -H0),
+      data = data,
       place = object$place,
       coords = object$coords,
-      seasonal_model_Ct = object$seasonal_model_Ct,
+      seasonal_model_Ct = seasonal_model_Ct,
       seasonal_model_Yt = seasonal_model_Yt,
       AR_model_Yt = AR_model_Yt,
       seasonal_variance = seasonal_variance,
@@ -120,9 +226,12 @@ solarModel <- function(object, control = control.solarModel()){
       Xt = Xt,
       Yt = Yt,
       GHI = GHI,
+      nday = nday,
+      Ct = Ct,
+      Yt_bar = Yt_bar,
+      GHI_bar = GHI_bar,
       params = params,
-      log_lik = ifelse(control$loss == "ml", sum(NM_model$loss), NA),
-      fitted = TRUE,
+      log_lik = sum(NM_model$loss),
       control = control,
       # Extra slot: scenarios
       scenarios = list(P = NA, Q = NA, P_Q = NA, P_Qr = NA, P_Qdw = NA, P_Qup = NA),
@@ -139,133 +248,56 @@ solarModel <- function(object, control = control.solarModel()){
   )
 }
 
-
-
-#' Solar Normal Mixture Model
+#' Simulate trajectories
 #'
-#' @param data dataset with at least a column with `Month` and the target variable names `ut`.
-#' @param loss character, type of loss function. Default is `ml` for maximum likelihood or can be `kl` for KL distance.
-#' @param match_moments logical.
+#' Simulate trajectories of solar radiation with a `solarModel` object.
 #'
-#' @export
-solarModel.monthly_mixture <- function(data, loss = "ml", match_moments = FALSE){
-  i <- 1
-  # Normal Mixture Model
-  NM_model <- list()
-  for(i in 1:12){
-    # Monthly data
-    eps <- dplyr::filter(data, Month == i)$ut
-    # Initial parameters
-    p0 <- 0.5
-    mu_10 <- mean(eps)
-    mu_20 <- -mean(eps)
-    sd_10 <- sd_20 <- sd(eps)
-    init_params <- c(mu1 = -mu_10, mu2 = mu_20, sd1 = sd_10, sd2 = sd_20, p = p0)
-    # Fitted model
-    nm <- fit_dnorm_mix(eps, params = init_params, loss = loss)
-
-    # Compute expected value
-    e_u <-  nm$par[5]*nm$par[1] + (1 - nm$par[5])*nm$par[2]
-    # Compute variance
-    v_u <-  nm$par[5]*(nm$par[1]^2 + nm$par[3]^2) + (1 - nm$par[5])*(nm$par[2]^2 + nm$par[4]^2)
-    # Compute sample moments
-    e_u_hat <- mean(eps, na.rm = TRUE)
-    v_u_hat <- var(eps, na.rm = TRUE)
-    # Match exactly sample moments
-    if (match_moments) {
-      nm$par[2] <- (e_u_hat - nm$par[5]*nm$par[1])/(1 - nm$par[5])
-      # Update expected value
-      e_u <-  nm$par[5]*nm$par[1] + (1 - nm$par[5])*nm$par[2]
-      v_2 <- (v_u_hat + e_u^2 - (nm$par[1]^2 + nm$par[3]^2)*nm$par[5] - nm$par[2]^2 + nm$par[5]*nm$par[2]^2)/(1 - nm$par[5])
-      nm$par[4] <- sqrt(v_2)
-      # Update variance
-      v_u <-  nm$par[5]*(nm$par[1]^2 + nm$par[3]^2) + (1 - nm$par[5])*(nm$par[2]^2 + nm$par[4]^2)
-    }
-    # Update expected value
-    e_u <-  nm$par[5]*nm$par[1] + (1 - nm$par[5])*nm$par[2]
-    # Update variance
-    v_u <-  nm$par[5]*(nm$par[1]^2 + nm$par[3]^2) + (1 - nm$par[5])*(nm$par[2]^2 + nm$par[4]^2)
-    # Update log-likelihood
-    nm$value <- sum(dnorm_mix(nm$par)(eps, log = TRUE))
-    # Fitted parameters
-    df_par <- dplyr::bind_cols(dplyr::bind_rows(nm$par), p2 = 1 - nm$par[5])
-    colnames(df_par) <- c("mu1", "mu2", "sd1", "sd2", "p1", "p2")
-    # Monthly data
-    NM_model[[i]] <- dplyr::tibble(Month = i,
-                                   df_par,
-                                   loss = nm$value,
-                                   nobs = length(eps),
-                                   mean_loss = loss/nobs,
-                                   e_x = e_u,
-                                   v_x = v_u,
-                                   e_x_hat = e_u_hat,
-                                   v_x_hat = v_u_hat)
-  }
-
-  NM_model <- dplyr::bind_rows(NM_model) %>%
-    dplyr::mutate(
-      mu_up = dplyr::case_when(
-        mu1 > mu2 ~ mu1,
-        TRUE ~ mu2),
-      mu_dw = dplyr::case_when(
-        mu1 > mu2 ~ mu2,
-        TRUE ~ mu1),
-      sd_up = dplyr::case_when(
-        mu1 > mu2 ~ sd1,
-        TRUE ~ sd2),
-      sd_dw = dplyr::case_when(
-        mu1 > mu2 ~ sd2,
-        TRUE ~ sd1),
-      p_up = dplyr::case_when(
-        mu1 > mu2 ~ p1,
-        TRUE ~ p2),
-      p_dw = 1 -p_up
-    ) %>%
-    dplyr::select(Month, mu_up:p_dw, loss, nobs, mean_loss,
-                  e_x, v_x, e_x_hat, v_x_hat)
-
-  return(NM_model)
-}
-
-
-
-#' Simulate scenarios of solar model
-#'
-#' @param from scalar date, starting date for simulations.
-#' @param to scalar date, end date for simulations.
-#' @param nsim scalar integer, number of simulations.
-#' @param lambda scalar numeric, Esscher parameter. When `rf = FALSE`, the input parameter `lambda` will be transformed in negative.
-#' @param vol scalar numeric, unconditional mean of GARCH(1,1) standard deviation. If `NA` will be used the estimated one.
+#' @param from date, starting date for simulations.
+#' @param to date, end date for simulations.
+#' @param nsim integer, number of simulations.
+#' @param lambda numeric, Esscher parameter. When `rf = FALSE`, the input parameter `lambda` will be transformed in negative.
+#' @param vol numeric, unconditional mean of GARCH(1,1) standard deviation. If `NA` will be used the estimated one.
 #' @param rf logical. When `TRUE` the AR(2) component will be set to zero.
 #' @param seed scalar integer, starting random seed.
 #' @param quiet logical
 #'
-#' @rdname simulate.solarModel
-#' @name simulate.solarModel
+#' @rdname solarModel_simulate
+#' @name solarModel_simulate
 #' @export
-simulate.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", nsim = 1, lambda = 0, vol = NA, rf = FALSE, seed = 1, quiet = FALSE){
+solarModel_simulate <- function(object, from = "2010-01-01", to = "2010-12-31", nsim = 1, lambda = 0, vol = NA, rf = FALSE, seed = 1, quiet = FALSE){
+
+  # Number of lags to consider
+  i_start <- object$control$mean.model$arOrder+1
+  data <- object$data
+  place <- object$place
+  seasonal_data <- object$seasonal_data
+  # AR(2) model (GHI)
+  AR_model_Yt <- object$AR_model_Yt
+  NM_model <- object$NM_model
+  GARCH <- object$GARCH
+  params <- object$params
+
   # Initial date
   from <- as.Date(from)
   # End date
   to <- as.Date(to)
-  i_start <- object$control$mean.model$arOrder+1
-  # Prepare dataset
-  max_date_from <- max(object$data$date)
+  # Initialize a dataset
+  max_date_from <- max(data$date)
   max_date_to <- max_date_from - i_start
   if (max_date_to >= to) {
-    df_emp <- dplyr::filter(object$data, date >= (from - lubridate::days(i_start)) & date <= to)
-    df_emp <- dplyr::bind_cols(place = object$place, df_emp)
+    df_emp <- dplyr::filter(data, date >= (from - lubridate::days(i_start)) & date <= to)
+    df_emp <- dplyr::bind_cols(place = place, df_emp)
   } else if (max_date_to >= from & max_date_from >= from) {
-    df_emp <- dplyr::filter(object$data, date >= (from - lubridate::days(i_start)))
+    df_emp <- dplyr::filter(data, date >= (from - lubridate::days(i_start)))
     df_new_emp <- dplyr::tibble(date = seq.Date(max(df_emp$date) + 1, to, by = "1 day"))
     df_emp <- dplyr::bind_rows(df_emp, df_new_emp)
-    df_emp <- dplyr::select(df_emp, -dplyr::any_of(colnames(object$seasonal_data)[-c(1:2)]))
+    df_emp <- dplyr::select(df_emp, -dplyr::any_of(colnames(seasonal_data)[-c(1:2)]))
     df_emp <- dplyr::mutate(df_emp,
                             Year = lubridate::year(date),
                             Month = lubridate::month(date),
                             Day = lubridate::day(date))
-    df_emp <- dplyr::left_join(dplyr::bind_cols(place = object$place, df_emp),
-                               dplyr::select(object$seasonal_data, Month, Day, Ct, GHI_bar, Yt_bar, sigma_bar), by = c("Month", "Day"))
+    df_emp <- dplyr::left_join(dplyr::bind_cols(place = place, df_emp),
+                               dplyr::select(seasonal_data, Month, Day, Ct, GHI_bar, Yt_bar, sigma_bar), by = c("Month", "Day"))
     df_emp$n <- solarr::number_of_day(df_emp$date)
   } else {
     msg <- paste0("The maximum date for starting a simulation is: ", max_date_from)
@@ -273,19 +305,17 @@ simulate.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", 
     return(object)
   }
   # Garch parameters
-  omega1 <- object$GARCH$model@fit$coef[2]
-  omega2 <- object$GARCH$model@fit$coef[3]
+  omega1 <- GARCH$model@fit$coef[2]
+  omega2 <- GARCH$model@fit$coef[3]
   # "vol" set the level for the unconditional mean
   if (is.na(vol)) {
-    vol <- object$GARCH$vol
+    vol <- GARCH$vol
     omega0 <- (vol^2)*(1 - omega1 - omega2)
   } else {
-    omega0 <- object$GARCH$model@fit$coef[1]
+    omega0 <- GARCH$model@fit$coef[1]
   }
-  # AR(2) model (GHI)
-  AR_model_Yt <- object$AR_model_Yt
   # Initialize the template dataset
-  df_sim_init <- dplyr::left_join(df_emp, object$NM_model[,c(1:6)], by = "Month")
+  df_sim_init <- dplyr::left_join(df_emp, NM_model[,c(1:6)], by = "Month")
   # Filter df_emp to be in [from - to] dates
   df_emp <- dplyr::filter(df_emp, date >= from & date <= to)
   # Initialize simulation variables
@@ -338,7 +368,7 @@ simulate.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", 
       # Simulated Yt
       df_sim$Yt[i] <- df_sim$Yt_bar[i] + df_sim$Yt_tilde[i]
       # Simulated Xt
-      df_sim$Xt[i] <- object$Xt(df_sim$Yt[i])
+      df_sim$Xt[i] <- params$alpha + params$beta*exp(-exp(df_sim$Yt[i]))
       # Simulated GHI
       df_sim$GHI[i] <- df_sim$Ct[i]*(1 - df_sim$Xt[i])
     }
@@ -348,6 +378,7 @@ simulate.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", 
     simulations[[j]] <- dplyr::bind_cols(seed = seed, df_sim)
     seed <- seed + j
   }
+
   df_emp <- dplyr::select(df_emp, -clearsky, -Yt_bar, -sigma_bar, -sigma2, -Yt_hat, -GHI_hat, -Xt_hat, -Yt_tilde_hat)
   structure(
     list(
@@ -360,11 +391,25 @@ simulate.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", 
 }
 
 
-
-#' @rdname simulate.solarModel
+#' Simulate multiple scenarios
 #'
+#' Simulate multiple scenarios of solar radiation with a `solarModel` object.
+#'
+#' @param from character, start Date for simulations in the format `YYYY-MM-DD`.
+#' @param to character, end Date for simulations in the format `YYYY-MM-DD`.
+#' @param by character, steps for multiple scenarios, e.g. `1 day` (day-ahead simulations), `15 days`, `1 month`, `3 months`, ecc.
+#' For each step are simulated `nsim` scenarios.
+#' @param nsim integer, number of simulations.
+#' @param lambda numeric, Esscher parameter. When `rf = FALSE`, the input parameter `lambda` will be transformed in negative.
+#' @param vol numeric, unconditional mean of GARCH(1,1) standard deviation. If `NA` will be used the estimated one.
+#' @param rf logical. When `TRUE` the AR(2) component will be set to zero.
+#' @param seed scalar integer, starting random seed.
+#' @param quiet logical
+#'
+#' @rdname solarModel_scenario
+#' @name solarModel_scenario
 #' @export
-scenario.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", by = "1 month", nsim = 1, lambda = 0, vol = NA, rf = FALSE, seed = 1, quiet = FALSE){
+solarModel_scenario <- function(object, from = "2010-01-01", to = "2010-12-31", by = "1 month", nsim = 1, lambda = 0, vol = NA, rf = FALSE, seed = 1, quiet = FALSE){
 
   idx_date <- seq.Date(as.Date(from), as.Date(to), by = by)
   scenarios <- list()
@@ -381,7 +426,7 @@ scenario.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", 
                            char = "#")
       setTxtProgressBar(pb, j)
     }
-    sim <- simulate.solarModel(object, from = idx_date[j-1], to = idx_date[j]-1, nsim = nsim,
+    sim <- solarModel_simulate(object, from = idx_date[j-1], to = idx_date[j]-1, nsim = nsim,
                                lambda = lambda, vol = vol, rf = rf, seed = seed, quiet = TRUE)
     df_emp <- dplyr::bind_rows(df_emp, sim$emp)
     scenarios[[j]] <- dplyr::bind_rows(sim$sim)
@@ -403,252 +448,3 @@ scenario.solarModel <- function(object, from = "2010-01-01", to = "2010-12-31", 
     class = c("scenarioSolarModel", "list")
   )
 }
-
-
-
-#' Convert a vector of parameter in a structured list
-#'
-#' @export
-from_list_to_parameters.solarModel <- function(params_list){
-
-  params <- update.solarModel(model)
-  idx_params <- attributes(params)
-  params$Yt <- params_list[idx_params$Yt] # a0, a1, a2
-  params$AR <- params_list[idx_params$AR] # alpha1, alpha2
-  params$sigma_bar <- params_list[idx_params$sigma_bar] # c0, c1, c2
-  params$GARCH <- params_list[idx_params$GARCH] # omega0, omega1, omega2
-  params$GARCH[1] <- 1 - params$GARCH[2] - params$GARCH[3]
-  params$NM_mu_up <- params_list[idx_params$NM_mu_up] # mu_up(1), ..., mu_up(12)
-  params$NM_mu_dw <- params_list[idx_params$NM_mu_dw] # mu_dw(1), ..., mu_dw(12)
-  params$NM_sd_up <- params_list[idx_params$NM_sd_up] # sd_up(1), ..., sd_up(12)
-  params$NM_sd_dw <- params_list[idx_params$NM_sd_dw] # sd_dw(1), ..., sd_dw(12)
-  params$p_up <- params_list[idx_params$NM_p_up]      #  p_up(1), ..., p_up(12)
-
-  return(params)
-}
-
-
-#' Extract and update parameters for Solar Model
-#'
-#' @export
-update.solarModel <- function(object, params = NULL){
-
-  control <- object$control
-
-  update.lm <- function(object, params){
-    if (missing(params) | is.null(params)){
-      return(object)
-    }
-    coef_names <- names(object$coefficients)
-    object$coefficients <- params
-    names(object$coefficients) <- coef_names
-    object$fitted.values <- predict.lm(object, new_data = object$model)
-    object$residuals <- object$model[,1] -  object$fitted.values
-    object
-  }
-
-  update.GARCH <- function(object, params){
-    if (missing(params) | is.null(params)){
-      return(object)
-    }
-    coef_names <- names(object@fit$coef)
-    object@fit$coef <- params
-    names(object@fit$coef) <- coef_names
-    object
-  }
-
-  # Update parameters
-  if (!is.null(params)) {
-    if (!is.list(params)){
-      params <- from_list_to_parameters.solarModel(params)
-    }
-    object$seasonal_model_Yt <- update.lm(object$seasonal_model_Yt, params = params$Yt)
-    object$AR_model_Yt <- update.lm(object$AR_model_Yt, params = params$AR)
-    object$seasonal_variance <- update.lm(object$seasonal_variance, params = params$sigma_bar)
-    object$GARCH$model <- update.GARCH(object$GARCH$model, params$GARCH)
-    object$NM_model$mu_up <- params$NM_mu_up
-    object$NM_model$mu_dw <- params$NM_mu_dw
-    object$NM_model$mu_up <- params$NM_sd_up
-    object$NM_model$sd_dw <- params$NM_sd_dw
-    object$NM_model$p_up <- params$NM_p_up
-    object$NM_model$p_dw  <- 1 - object$NM_model$p_up
-    object$fitted <- FALSE
-    return(object)
-  }
-
-  # Extract parameters
-  # Seasonal Model Yt
-  n_seasonal_model_Yt <- control$mean.model$seasonalOrder*2 + 1
-  idx_seasonal_model_Yt <- 0:(n_seasonal_model_Yt-1)
-  seasonal_model_Yt <- object$seasonal_model_Yt$coefficients
-  names(seasonal_model_Yt) <- paste0("a", idx_seasonal_model_Yt)
-
-  # AR model
-  n_AR_model_Yt <- control$mean.model$arOrder + ifelse(control$mean.model$include.intercept, 1, 0)
-  idx_AR_model_Yt <- ifelse(control$mean.model$include.intercept, list(0:(n_AR_model_Yt-1)), list(1:n_AR_model_Yt))[[1]]
-  AR_model_Yt <- object$AR_model_Yt$coefficients
-  names(AR_model_Yt) <- paste0("alpha", idx_AR_model_Yt)
-
-  # Unconditional Seasonal variance
-  n_seasonal_variance <- control$variance.model$seasonalOrder*2 + 1
-  idx_seasonal_variance <- 0:(n_seasonal_variance-1)
-  seasonal_variance <- object$seasonal_variance$coefficients
-  names(seasonal_variance) <- paste0("c", idx_seasonal_variance)
-
-  # Conditional GARCH variance
-  GARCH_model <- object$GARCH$model@fit$coef
-  # Fix unconditional mean equal to 1
-  GARCH_model[1] <- (1- GARCH_model[2] - GARCH_model[3])
-  n_GARCH_model <- length(GARCH_model)
-  names(GARCH_model) <- paste0("omega", 0:2)
-
-  # Determine the positions
-  idx_seasonal_model_Yt <- 1:n_seasonal_model_Yt
-  idx_AR_model_Yt <- (max(idx_seasonal_model_Yt)+1):(max(idx_seasonal_model_Yt)+n_AR_model_Yt)
-  idx_seasonal_variance <- (max(idx_AR_model_Yt)+1):(max(idx_AR_model_Yt)+n_seasonal_variance)
-  idx_GARCH_model <- (max(idx_seasonal_variance)+1):(max(idx_seasonal_variance)+n_GARCH_model)
-  idx_mu_up <- (max(idx_GARCH_model)+1):(max(idx_GARCH_model)+12)
-  idx_mu_dw <- (max(idx_mu_up)+1):(max(idx_mu_up)+12)
-  idx_sd_up <- (max(idx_mu_dw)+1):(max(idx_mu_dw)+12)
-  idx_sd_dw <- (max(idx_sd_up)+1):(max(idx_sd_up)+12)
-  idx_p_up <- (max(idx_sd_dw)+1):(max(idx_sd_dw)+12)
-
-  structure(
-    list(
-      Yt = seasonal_model_Yt,
-      AR = AR_model_Yt,
-      sigma_bar = seasonal_variance,
-      GARCH = GARCH_model,
-      NM_mu_up = model$NM_model$mu_up,
-      NM_mu_dw = model$NM_model$mu_dw,
-      NM_sd_up = model$NM_model$sd_up,
-      NM_sd_dw = model$NM_model$sd_dw,
-      NM_p_up = model$NM_model$p_up
-    ),
-    Yt = idx_seasonal_model_Yt,
-    AR = idx_AR_model_Yt,
-    sigma_bar = idx_seasonal_variance,
-    GARCH = idx_GARCH_model,
-    NM_mu_up = idx_mu_up,
-    NM_mu_dw = idx_mu_dw,
-    NM_sd_up = idx_sd_up,
-    NM_sd_dw = idx_sd_dw,
-    NM_p_up = idx_p_up
-  )
-}
-
-
-#' Compute the Log-likelihood for a Solar Model
-#'
-#' @export
-logLik.solarModel <- function(model, params){
-
-  if (missing(params)){
-    params <- update.solarModel(model)
-  }
-
-  model <- update.solarModel(model, params)
-  control <- model$control
-
-  data <- model$data
-  params <- unlist(params)
-  idx_params <- attributes(update.solarModel(model))
-  # Parameters
-  seasonal_mean <- params[idx_params$Yt] # a0, a1, a2
-  conditional_mean <- params[idx_params$AR] # alpha1, alpha2
-  seasonal_variance <- params[idx_params$sigma_bar] # c0, c1, c2
-  conditional_variance <- params[idx_params$GARCH] # omega0, omega1, omega2
-  conditional_variance[1] <- 1 - conditional_variance[2] - conditional_variance[3]
-  mu_up <- params[idx_params$NM_mu_up] # mu_up(1), ..., mu_up(12)
-  mu_dw <- params[idx_params$NM_mu_dw] # mu_dw(1), ..., mu_dw(12)
-  sd_up <- params[idx_params$NM_sd_up] # sd_up(1), ..., sd_up(12)
-  sd_dw <- params[idx_params$NM_sd_dw] # sd_dw(1), ..., sd_dw(12)
-  p_up <- params[idx_params$NM_p_up]  #  p_up(1), ..., p_up(12)
-
-  if (any(p_up < 0.01 | p_up > 0.99)){
-    print("p_up")
-    return(NA)
-  }
-  if (any(conditional_variance < 0) | any(conditional_variance > 1)){
-    print("conditional_variance")
-    return(NA)
-  }
-  if (any(conditional_mean < 0) | sum(conditional_mean) > 1){
-    print("conditional_mean")
-    return(NA)
-  }
-
-  # Update Seasonal mean Yt
-  model$data$Yt_bar <- predict.seasonalModel(model$seasonal_model_Yt, n = data$n)
-  model$seasonal_data$Yt_bar <- predict.seasonalModel(model$seasonal_model_Yt, n = 1:366)
-  # Update Seasonal mean Xt
-  data$Xt_bar <- model$Xt(data$Yt_bar)
-  model$seasonal_data$Xt_bar <- model$Xt(model$seasonal_data$Yt_bar)
-  # Update Seasonal mean GHI
-  data$GHI_bar <- model$GHI(data$Ct, data$Xt_bar)
-  model$seasonal_data$GHI_bar <- model$GHI(model$seasonal_data$Ct, model$seasonal_data$Xt_bar)
-  # Update seasonal variance
-  model$seasonal_variance$coefficients <- seasonal_variance
-  data$sigma_bar <- sqrt(predict.seasonalModel(model$seasonal_variance, n = data$n))
-  model$seasonal_data$sigma_bar <- sqrt(predict.seasonalModel(model$seasonal_variance, n = 1:366))
-  # Update AR model
-  data$Yt_tilde <- data$Yt - data$Yt_bar
-  model$AR_model_Yt$coefficients <- conditional_mean
-  data$Yt_tilde_hat <- predict(model$AR_model_Yt, newdata = data)
-  data$Yt_tilde_hat[1:(control$mean.model$arOrder)] <- data$Yt_tilde[1:(control$mean.model$arOrder)]
-  # Update Fitted values Yt, Xt, GHI
-  data$Yt_hat <- data$Yt_bar + data$Yt_tilde_hat
-  data$Xt_hat <- model$Xt(data$Yt_hat)
-  data$GHI_hat <- model$GHI(data$Ct, data$Xt_hat)
-  # Update Residuals AR model
-  data$eps <- data$Yt - data$Yt_hat
-  # Update Standardized residuals
-  data$eps_tilde <- data$eps/data$sigma_bar
-  # Initialize log-likelihood
-  model$NM_model$loss <- 0
-  model$NM_model$type <- "ml"
-
-  i_start <- control$mean.model$arOrder+1
-  i <- i_start
-  for(i in i_start:nrow(data)){
-    # Garch variance
-    data$sigma2[i] <- conditional_variance[1] + conditional_variance[2]*data$eps_tilde[i-1]^2 + conditional_variance[3]*data$sigma2[i-1]
-    data$sigma[i] <- sqrt(data$sigma2[i])
-    # Garch residuals
-    data$ut[i] <- data$eps_tilde[i]/data$sigma[i]
-    # Normal mixture parameters
-    nmonth <- data$Month[i]
-    df_nm <- model$NM_model[nmonth,]
-    par <- c(mu_up =  df_nm$mu_up, mu_dw = df_nm$mu_dw, sd_up =  df_nm$sd_up, sd_dw = df_nm$sd_dw, p = df_nm$p_up)
-    # Log-likelihood for each month
-    model$NM_model$loss[nmonth] <- model$NM_model$loss[nmonth] + dnorm_mix(params = par)(data$ut[i], log = TRUE)
-    model$NM_model$mean_loss[nmonth] <- model$NM_model$loss[nmonth]/model$NM_model$nobs[nmonth]
-  }
-
-  model$data <- data
-  model$log_lik <- sum(model$NM_model$loss)
-  if(!control$quiet) message(" Log-likelihood: ", model$log_lik, "\r", appendLF = FALSE)
-  return(model)
-}
-
-
-#' Log-likelihood optimazation for Solar Model
-#'
-#' @export
-optimize.solarModel <- function(model, maxit = 100, quiet = FALSE){
-
-  init_params <- update.solarModel(model)
-  init_params <- unlist(init_params)
-
-  logLik_function <- function(params){
-    log_lik <- logLik.solarModel(model, params)$log_lik
-    message("Loss: ", log_lik)
-    return(log_lik)
-  }
-  # Optimal parameters
-  opt <- optim(par = init_params, fn = logLik_function, control = list(maxit = maxit))
-  opt_model <- update.solarModel(model, params = opt$par)
-  opt_model
-}
-
-

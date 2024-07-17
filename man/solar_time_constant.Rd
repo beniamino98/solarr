@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarFunctions.R
 \name{solar_time_constant}
 \alias{solar_time_constant}
-\title{solar_time_constant}
+\title{Solar time constant}
 \usage{
 solar_time_constant(day_date = NULL, day_end = NULL, method = "spencer")
 }

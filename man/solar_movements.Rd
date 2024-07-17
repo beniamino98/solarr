@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarFunctions.R
 \name{solar_movements}
 \alias{solar_movements}
-\title{solar_movements}
+\title{Solar movements}
 \usage{
 solar_movements(
   lat = NULL,
@@ -15,21 +15,20 @@ solar_movements(
 \arguments{
 \item{lat}{latitude}
 
+\item{lon}{longitude}
+
+\item{day_date_time}{vector of dates in the format `%YYYY-%MM-%DD HH:MM:SS`}
+
+\item{day_time_end}{end date, if it is not NULL will be end date.}
+
 \item{method}{method used for computation of solar declination, can be `cooper` or `spencer`.}
-
-\item{day_date}{vector of dates in the format `%YYYY-%MM-%DD`}
-
-\item{day_end}{end date, if it is not NULL will be end date.}
 }
 \value{
 a numeric vector containing the time adjustment in minutes.
 }
 \description{
-compute the solar angle for a latitude in different times of the day.
+Compute the solar angle for a latitude in different times of the day.
 }
 \examples{
-
-# detect the season in 2040-01-31
 solar_movements(44.23, 11.20, day_date_time = "2040-01-01", day_time_end = "2040-01-03")
-
 }

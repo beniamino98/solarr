@@ -5,13 +5,33 @@
 \alias{pesscher_mix}
 \title{Esscher transform of a Gaussian Mixture}
 \usage{
-desscher_mix(params = c(0, 1, 0, 1, 0.5))
+desscher_mix(params = c(0, 0, 1, 1, 0.5))
 
-pesscher_mix(params = c(0, 1, 0, 1, 0.5))
+pesscher_mix(params = c(0, 0, 1, 1, 0.5))
 }
 \arguments{
 \item{params}{Gaussian Mixture parameters, mu1, sigma1, mu2, sigma2, p.}
 }
 \description{
 Esscher transform of a Gaussian Mixture
+}
+\examples{
+library(ggplot2)
+grid <- seq(-5, 5, 0.01)
+pdf_1 <- desscher_mix()(grid, h = 0)
+pdf_2 <- desscher_mix()(grid, h = -0.5)
+pdf_3 <- desscher_mix()(grid, h = 0.5)
+ggplot()+
+ geom_line(aes(grid, pdf_1), color = "black")+
+ geom_line(aes(grid, pdf_2), color = "green")+
+ geom_line(aes(grid, pdf_3), color = "red")
+
+cdf_1 <- pesscher_mix()(grid, h = 0)
+cdf_2 <- pesscher_mix()(grid, h = -0.5)
+cdf_3 <- pesscher_mix()(grid, h = 0.5)
+ggplot()+
+  geom_line(aes(grid, cdf_1), color = "black")+
+  geom_line(aes(grid, cdf_2), color = "green")+
+  geom_line(aes(grid, cdf_3), color = "red")
+
 }

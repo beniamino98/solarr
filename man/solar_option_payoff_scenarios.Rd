@@ -8,15 +8,18 @@ solar_option_payoff_scenarios(
   sim,
   nmonth = 1:12,
   nsim = NULL,
-  control = control.solarOption()
+  control = control_solarOption()
 )
+}
+\arguments{
+\item{sim}{slot `sim` from `solarModel` object.}
+
+\item{nmonth}{index for the months.}
+
+\item{nsim}{number of simulation to use.}
+
+\item{control}{control function, see `control_solarOption`.}
 }
 \description{
 Payoff on Simulated Data
-}
-\examples{
-sim = Location$model$scenarios$P
-nmonth = 1:12
-nsim = NULL
-control = control.solarOption()
 }

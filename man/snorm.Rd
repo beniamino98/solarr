@@ -25,6 +25,8 @@ rsnorm(n, mean = 0, sd = 1, skew = 0)
 
 \item{skew}{vector of skewness.}
 
+\item{log}{logical; if `TRUE`, probabilities are returned as `log(p)`.}
+
 \item{log.p}{logical; if `TRUE`, probabilities p are given as `log(p)`.}
 
 \item{lower.tail}{logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.}
@@ -38,20 +40,16 @@ Probability for a skewed normal random variable.
 }
 \examples{
 x <- seq(-5, 5, 0.01)
-
 # Density function
-p <- dsnorm(x, mean = 0, scale = 1)
+p <- dsnorm(x, mean = 0, sd = 1)
 plot(x, p, type = "l")
-
 # Distribution function
-p <- psnorm(x, mean = 0, scale = 1)
+p <- psnorm(x, mean = 0, sd = 1)
 plot(x, p, type = "l")
-
 # Quantile function
 dsnorm(0.1)
 psnorm(qsnorm(0.1))
-
-# Random Numbers
+# Random numbers
 rsnorm(1000)
 plot(rsnorm(1000), type = "l")
 

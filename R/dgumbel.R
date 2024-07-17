@@ -46,7 +46,7 @@ dgumbel <- function(x, mean = 0, scale = 1, log.p = FALSE, invert = FALSE){
     # Gumbel
     p <- (1/scale)*exp(-(z + exp(-z)))
   }
-  if (log.p){
+  if (log.p) {
     return(base::log(p))
   }
   return(p)
@@ -64,10 +64,10 @@ pgumbel <- function(x, mean = 0, scale = 1, log.p = FALSE, lower.tail = TRUE, in
     # Gumbel
     p <- exp(-exp(-z))
   }
-  if (!lower.tail){
+  if (!lower.tail) {
     p <- 1 - p
   }
-  if (log.p){
+  if (log.p) {
     p <- base::log(p)
   }
   return(p)
@@ -80,7 +80,7 @@ qgumbel <- function(p, mean = 0, scale = 1, log.p = FALSE, lower.tail = TRUE, in
   if (log.p) {
     p <- exp(p)
   }
-  if (!lower.tail){
+  if (!lower.tail) {
     p <- 1 - p
   }
   x <- mean + ifelse(invert, 1, -1)*scale*log(-log(p))

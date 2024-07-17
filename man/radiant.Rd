@@ -5,15 +5,15 @@
 \alias{from_degree_to_radiant}
 \title{Conversion in Radiant or Degrees}
 \usage{
-from_radiant_to_degree(x = NULL)
+from_radiant_to_degree(x)
 
-from_degree_to_radiant(x = NULL)
+from_degree_to_radiant(x)
 }
 \arguments{
 \item{x}{numeric vector, angles in radiant or degrees.}
 }
 \value{
-numeric numeric vector.
+numeric vector.
 }
 \description{
 Convert an angle in radiant into an angle in degrees.
@@ -21,7 +21,6 @@ Convert an angle in radiant into an angle in degrees.
 \examples{
 # convert 0.34 radiant in degrees
 from_radiant_to_degree(0.34)
-
 # convert 19.48 degree in radiant
 from_degree_to_radiant(19.48)
 

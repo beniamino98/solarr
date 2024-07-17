@@ -1,13 +1,14 @@
 #' Payoff on Historical Data
 #'
+#' @param data slot `data` from `solarModel` object.
+#' @param nmonth index for the months.
+#' @param control control function, see `control_solarOption`.
+#'
+#' @rdname solar_option_payoff_historical
+#' @name solar_option_payoff_historical
 #' @export
-solar_option_payoff_historical <- function(data, nmonth = 1:12, control = control.solarOption()){
+solar_option_payoff_historical <- function(data, nmonth = 1:12, control = control_solarOption()){
 
-  #' @examples
-  #' data = model$data
-  #' nmonth = 1:12
-  #' control = control.solarOption()
-  #'
   nyears <- control$nyears
   K <- control$K
   put <- control$put
@@ -80,14 +81,15 @@ solar_option_payoff_historical <- function(data, nmonth = 1:12, control = contro
 
 #' Payoff on Simulated Data
 #'
+#' @param sim slot `sim` from `solarModel` object.
+#' @param nmonth index for the months.
+#' @param nsim number of simulation to use.
+#' @param control control function, see `control_solarOption`.
+#'
+#' @rdname solar_option_payoff_scenarios
+#' @name solar_option_payoff_scenarios
 #' @export
-solar_option_payoff_scenarios <- function(sim, nmonth = 1:12, nsim = NULL, control = control.solarOption()){
-
-  #' @examples
-  #' sim = Location$model$scenarios$P
-  #' nmonth = 1:12
-  #' nsim = NULL
-  #' control = control.solarOption()
+solar_option_payoff_scenarios <- function(sim, nmonth = 1:12, nsim = NULL, control = control_solarOption()){
 
   # Control parameters
   nyears <- control$nyears
@@ -178,15 +180,16 @@ solar_option_payoff_scenarios <- function(sim, nmonth = 1:12, nsim = NULL, contr
 
 #' Bootstrap a fair price from historical data
 #'
+#' @param model an object of the class `solarModel`.
+#' @param nsim number of simulation to bootstrap.
+#' @param ci confidence interval for quantile
+#' @param seed random seed.
+#' @param control control function, see `control_solarOption`.
+#'
+#' @rdname solar_option_payoff_bootstrap
+#' @name solar_option_payoff_bootstrap
 #' @export
-solar_option_payoff_bootstrap <- function(model, nsim = 500, ci = 0.05, seed = 1, control = control.solarOption()){
-
-  #' @examples
-  #' model <- Location$model
-  #' nsim = 500
-  #' ci = 0.05
-  #' seed = 1
-  #' control = control.solarOption()
+solar_option_payoff_bootstrap <- function(model, nsim = 500, ci = 0.05, seed = 1, control = control_solarOption()){
 
   # Historical Payoff
   payoff_hist <- solar_option_payoff_historical(model$data, nmonth = 1:12, control = control)
@@ -271,21 +274,16 @@ solar_option_payoff_bootstrap <- function(model, nsim = 500, ci = 0.05, seed = 1
 
 #' Pricing function for a solar model (for all the year)
 #'
-#' @param model an object of the class `solarModel`
+#' @param model an object of the class `solarModel`.
 #' @param lambda Esscher parameter
 #' @param vol unconditional GARCH variance, when `NA` will be used the fitted one,
+#' @param nmonths index for the months.
+#' @param control control function, see `control_solarOption`.
 #'
+#' @rdname solar_option_payoff_model
+#' @name solar_option_payoff_model
 #' @export
-
-
-solar_option_payoff_model <- function(model, lambda = 0, vol = NA, nmonths = 1:12, control = control.solarOption()){
-
-  #' @examples
-  #' model <- Location$model
-  #' nmonths = 3
-  #' lambda = 0
-  #' vol = NA
-  #' control = control.solarOption()
+solar_option_payoff_model <- function(model, lambda = 0, vol = NA, nmonths = 1:12, control = control_solarOption()){
 
   K <- control$K
   put <- control$put
@@ -394,14 +392,15 @@ solar_option_payoff_model <- function(model, lambda = 0, vol = NA, nmonths = 1:1
 
 #' Calibrate Esscher Bounds and parameters
 #'
+#' @param model an object of the class `solarModel`.
+#' @param sim simulations object.
+#' @param control_options control function, see `control_solarOption`.
+#' @param control control function, see `control_solarEsscher`.
+#'
+#' @rdname solar_option_esscher_calibrator
+#' @name solar_option_esscher_calibrator
 #' @export
-solar_option_esscher_calibrator <- function(model, sim, control_options = control.solarOption(), control = control.solarEsscher()){
-
-  #' @examples
-  #' model
-  #' sim
-  #' control_options = control.solarOption()
-  #' control = control.solarEsscher()
+solar_option_esscher_calibrator <- function(model, sim, control_options = control_solarOption(), control = control_solarEsscher()){
 
   # Esscher controls
   nsim = control$nsim
@@ -409,10 +408,11 @@ solar_option_esscher_calibrator <- function(model, sim, control_options = contro
   seed = control$seed
   quiet = control$quiet
   n_key_points = control$n_key_points
-  init_lambda <- control$init_lambda # Initial theta parameter
   # Bounds for parameters
-  lower_lambda <- control$lower_lambda
-  upper_lambda <- control$upper_lambda
+  lower_lambda = control$lower_lambda
+  upper_lambda = control$upper_lambda
+  # Initial theta parameter
+  init_lambda = control$init_lambda
 
   # Calibrator function for Esscher parameter
   loss_esscher_lambda <- function(lambda, benchmark_price){
@@ -422,7 +422,6 @@ solar_option_esscher_calibrator <- function(model, sim, control_options = contro
     if (!quiet) message("Loss: ", loss, " Lambda: ", lambda)
     return(loss)
   }
-
 
   # 1) ------- Calibrate the optimal theta bounds -------
   # Fair Payoff bootstrapped (historical)
@@ -445,6 +444,7 @@ solar_option_esscher_calibrator <- function(model, sim, control_options = contro
     }
     return(list(up = param_up, dw = param_dw))
   }
+
   # Optimal up and down parameters
   lambda_up <- esscherLambda(opt_lambda_up$par)$up
   lambda_dw <- esscherLambda(opt_lambda_up$par)$dw
@@ -452,7 +452,6 @@ solar_option_esscher_calibrator <- function(model, sim, control_options = contro
   payoff_model_Qdw <- solar_option_payoff_model(model, vol = NA, lambda = lambda_dw, control = control_options)
   # Qup-payoff: worste case scenario (model)
   payoff_model_Qup <- solar_option_payoff_model(model, vol = NA, lambda = lambda_up, control = control_options)
-
 
   # 2) ------- Calibrator function for optimal theta parameters -------
   # Historical payoff computed on data (historical)
@@ -521,7 +520,7 @@ solar_option_esscher_calibrator <- function(model, sim, control_options = contro
                                P_to_Qup = opt_lambda_Q$par - lambda_up,
                                Qup = lambda_up)
   # - Add Esscher control setups to the model
-  model$esscher$control = control_esscher
+  model$esscher$control <- control
   # - Add payoffs to the model
   # Historical
   model$payoffs$hist <- payoff_hist
@@ -541,6 +540,13 @@ solar_option_esscher_calibrator <- function(model, sim, control_options = contro
 
 #' Structure payoffs
 #'
+#' @param model an object of the class `solarModel`.
+#' @param type can be `sim` or `model`.
+#' @param exact_daily_premium when `TRUE` the historical premium is computed as daily average among all the years.
+#' Otherwise the monthly premium is computed and then divided by the number of days of the month.
+#'
+#' @rdname solar_option_payoff_structure
+#' @name solar_option_payoff_structure
 #' @export
 solar_option_payoff_structure <- function(model, type = "sim", exact_daily_premium = TRUE){
 

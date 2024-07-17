@@ -9,24 +9,21 @@
 #' @param sd vector of standard deviations.
 #' @param skew vector of skewness.
 #' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
+#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
 #' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
 #'
 #' @examples
 #' x <- seq(-5, 5, 0.01)
-#'
 #' # Density function
-#' p <- dsnorm(x, mean = 0, scale = 1)
+#' p <- dsnorm(x, mean = 0, sd = 1)
 #' plot(x, p, type = "l")
-#'
 #' # Distribution function
-#' p <- psnorm(x, mean = 0, scale = 1)
+#' p <- psnorm(x, mean = 0, sd = 1)
 #' plot(x, p, type = "l")
-#'
 #' # Quantile function
 #' dsnorm(0.1)
 #' psnorm(qsnorm(0.1))
-#'
-#' # Random Numbers
+#' # Random numbers
 #' rsnorm(1000)
 #' plot(rsnorm(1000), type = "l")
 #'

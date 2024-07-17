@@ -1,37 +1,3 @@
-cams_solar_radiation_ts <- NULL
-.onLoad <- function(libname, pkgname) {
-  module <- reticulate::import_from_path(module = "cams_solar_radiation_ts", path = system.file("py", package = packageName()))
-  cams_solar_radiation_ts <<- module$cams_solar_radiation_ts
-}
-
-#' Perform normality tests
-#'
-#' @param x vector
-#' @param p_value p.value
-#'
-#' @return a tibble
-#'
-#' @rdname normality_test
-#' @name normality_test
-#' @export
-
-normality_test <- function(x = NULL, p_value = 0.05){
-  suppressWarnings(
-    dplyr::bind_rows(
-      broom::tidy(nortest::ad.test(x)),
-      broom::tidy(nortest::cvm.test(x)),
-      broom::tidy(nortest::lillie.test(x)),
-      broom::tidy(nortest::pearson.test(x)),
-      broom::tidy(nortest::sf.test(x)),
-      broom::tidy(stats::shapiro.test(x))
-    ) %>%
-      dplyr::mutate(
-        H0 = ifelse(p.value <= p_value, "Rejected", "Non Rejected")
-      ) %>%
-      dplyr::select(method, statistic, p.value, H0)
-  )
-}
-
 #' Discount factor function
 #'
 #' @param r level of yearly constant risk-free rate
@@ -42,7 +8,9 @@ discount_factor <- function(r = 0.03){
   }
 }
 
-
+#' Aggregate payoff
+#'
+#' @keywords internal
 aggregate_payoff <- function(df_month_day, r = 0.03){
 
   #' @examples
@@ -75,13 +43,48 @@ aggregate_payoff <- function(df_month_day, r = 0.03){
 
 
 #' Method Print for Location object
-#'
-#' @examples
-#' object <- Location("Roma")
-#' object
-#' @export
+#' @keywords internal
+#' @noRd
 print.Location <- function(x){
   msg_1 <- paste0("Place: ", x$place, " \n (Lat: ", x$coords$lat, "; Lon: ", x$coords$lon, ") \n")
   msg_2 <- paste0("From: ", min(x$data$date), " - ", max(x$data$date), " (Nobs: ", nrow(x$data), ")")
   cat(paste0(msg_1, msg_2))
+}
+
+
+#'  Compute optimal number of contracts
+#'
+#' @export
+optimal_n_contracts <- function(model, type = "model", premium = "Qr", nyear = 2021,
+                                tick = 0.06, efficiency = 0.2, n_panels = 2000, pun = 0.06){
+
+  # Extract historical payoff
+  df_hist <- model$payoffs$hist$payoff
+  # Extract daily premium
+  df_premium <- model$payoffs[[type]][[premium]]$payoff_month_day
+  # Select only relevant column
+  df_premium <- dplyr::select(df_premium, Month, Day, premium)
+  # Dataset with GHI and premium
+  df_hedged <- dplyr::left_join(df_hist, df_premium, by = c("Month", "Day"))
+  # Loss function depending on the number of contracts
+  loss_function <- function(n_contracts, df_hedged){
+    df_ <- dplyr::mutate(df_hedged, hedged = pun*n_panels*efficiency*GHI + tick*n_contracts*(payoff - premium))
+    df_ <- dplyr::filter(df_, Year < nyear)
+    sd(df_$hedged)
+  }
+  # Optimize the number of contracts
+  opt <- optim(par = 10, fn = loss_function, method = "Brent",
+               lower = 1, upper = n_panels*efficiency*10, df_hedged = df_hedged)
+
+  list(
+    tick = tick,
+    efficiency = efficiency,
+    n_panels = n_panels,
+    pun = pun,
+    nyear = nyear + 1,
+    n_contracts = trunc(opt$par),
+    type = type,
+    premium = premium,
+    sd = opt$value
+  )
 }

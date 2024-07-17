@@ -1,7 +1,7 @@
 Package: solarr
 Type: Package
 Title: Stochastic model for solar radiation data
-Version: 0.1.0
+Version: 0.2.0
 Author: Beniamino Sartini
 Maintainer: Beniamino Sartini <beniamino.sartini2@unibo.it>
 Description: Implementation of stochastic models and option pricing on solar radiation data.
@@ -20,6 +20,8 @@ Imports:
     ggplot2 (>= 3.4.0),
     lubridate (>= 1.8.0),
     reticulate (>= 1.24),
+    nortest,
+    broom
 Suggests: 
     DT,
     knitr,

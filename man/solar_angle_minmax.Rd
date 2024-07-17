@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarFunctions.R
 \name{solar_angle_minmax}
 \alias{solar_angle_minmax}
-\title{solar_angle_minmax}
+\title{Solar angle minimum and maximum}
 \usage{
 solar_angle_minmax(
   lat = NULL,
@@ -14,7 +14,7 @@ solar_angle_minmax(
 \arguments{
 \item{lat}{integer, latitude.}
 
-\item{day_date}{vector of dates in the format `%YYYY-%MM-%DD`}
+\item{day_date}{vector of dates in the format `%YYYY-%MM-%DD`-}
 
 \item{day_end}{end date, if it is not NULL will be end date.}
 
@@ -27,9 +27,6 @@ a tibble.
 Compute the solar angle for a latitude in different dates.
 }
 \examples{
-
 solar_angle_minmax(55.3, "2040-01-01", day_end = "2040-12-31")
-
 solar_angle_minmax(55.3, c("2040-01-31", "2023-04-01", "2015-09-02"))
-
 }

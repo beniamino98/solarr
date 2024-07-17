@@ -9,16 +9,20 @@ solar_option_payoff_bootstrap(
   nsim = 500,
   ci = 0.05,
   seed = 1,
-  control = control.solarOption()
+  control = control_solarOption()
 )
+}
+\arguments{
+\item{model}{an object of the class `solarModel`.}
+
+\item{nsim}{number of simulation to bootstrap.}
+
+\item{ci}{confidence interval for quantile}
+
+\item{seed}{random seed.}
+
+\item{control}{control function, see `control_solarOption`.}
 }
 \description{
 Bootstrap a fair price from historical data
-}
-\examples{
-model <- Location$model
-nsim = 500
-ci = 0.05
-seed = 1
-control = control.solarOption()
 }

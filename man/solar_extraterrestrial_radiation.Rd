@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarFunctions.R
 \name{solar_extraterrestrial_radiation}
 \alias{solar_extraterrestrial_radiation}
-\title{solar_extraterrestrial_radiation}
+\title{Solar extraterrestrial radiation}
 \usage{
 solar_extraterrestrial_radiation(
   lat = NULL,
@@ -24,11 +24,8 @@ solar_extraterrestrial_radiation(
 a numeric vector containing the time adjustment in minutes.
 }
 \description{
-compute the solar angle for a latitude in different times of the day.
+Compute the solar angle for a latitude in different times of the day.
 }
 \examples{
-
-# detect the season in 2040-01-31
 solar_extraterrestrial_radiation(42.23, "2022-05-01", day_end = "2022-05-31")
-
 }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarFunctions.R
 \name{solar_time_adjustment}
 \alias{solar_time_adjustment}
-\title{solar_time_adjustment}
+\title{Solar time adjustment}
 \usage{
 solar_time_adjustment(day_date = NULL, day_end = NULL)
 }
@@ -18,11 +18,6 @@ a numeric vector containing the time adjustment in seconds.
 Compute the time adjustment for a date.
 }
 \examples{
-
-# detect the season in 2040-01-31
 solar_time_adjustment("2040-01-31")
-
-# detect the season in a vector of dates
 solar_time_adjustment(c("2040-01-31", "2023-04-01", "2015-09-02"))
-
 }
