@@ -6,7 +6,7 @@
 \alias{ptnorm}
 \alias{qtnorm}
 \alias{rtnorm}
-\title{Truncated Normal}
+\title{Truncated Normal random variable}
 \usage{
 dtnorm(x, mean = 0, sd = 1, a = -3, b = 3, log = FALSE)
 
@@ -38,7 +38,7 @@ rtnorm(n, mean = 0, sd = 1, a = -100, b = 100)
 \item{n}{number of observations. If `length(n) > 1`, the length is taken to be the number required.}
 }
 \description{
-Probability for a truncated normal random variable.
+Truncated Normal density, distribution, quantile and random generator.
 }
 \examples{
 x <- seq(-5, 5, 0.01)
@@ -57,6 +57,6 @@ ptnorm(qtnorm(0.1))
 
 # Random Numbers
 rtnorm(1000)
-plot(rtnorm(100, mean = 1, sd = 1, a = 1, b = 10), type = "l")
+plot(rtnorm(100, mean = 0, sd = 1, a = 0, b = 1), type = "l")
 
 }

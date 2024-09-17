@@ -5,19 +5,19 @@
 \title{Simulate multiple scenarios}
 \usage{
 solarModel_scenario(
-  object,
+  model,
   from = "2010-01-01",
   to = "2010-12-31",
   by = "1 month",
   nsim = 1,
   lambda = 0,
-  vol = NA,
-  rf = FALSE,
   seed = 1,
   quiet = FALSE
 )
 }
 \arguments{
+\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+
 \item{from}{character, start Date for simulations in the format `YYYY-MM-DD`.}
 
 \item{to}{character, end Date for simulations in the format `YYYY-MM-DD`.}
@@ -27,11 +27,7 @@ For each step are simulated `nsim` scenarios.}
 
 \item{nsim}{integer, number of simulations.}
 
-\item{lambda}{numeric, Esscher parameter. When `rf = FALSE`, the input parameter `lambda` will be transformed in negative.}
-
-\item{vol}{numeric, unconditional mean of GARCH(1,1) standard deviation. If `NA` will be used the estimated one.}
-
-\item{rf}{logical. When `TRUE` the AR(2) component will be set to zero.}
+\item{lambda}{numeric, Esscher parameter.}
 
 \item{seed}{scalar integer, starting random seed.}
 
@@ -39,4 +35,10 @@ For each step are simulated `nsim` scenarios.}
 }
 \description{
 Simulate multiple scenarios of solar radiation with a `solarModel` object.
+}
+\examples{
+spec <- solarModel_spec("Ferrara", from="2005-01-01", to="2020-01-01")
+model <- solarModel(spec)
+solarModel_scenario(model, from = "2010-01-01", to = "2010-12-31", nsim = 2, by = "1 month")
+
 }

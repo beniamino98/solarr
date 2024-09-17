@@ -5,29 +5,26 @@
 \title{Simulate trajectories}
 \usage{
 solarModel_simulate(
-  object,
+  model,
   from = "2010-01-01",
   to = "2010-12-31",
   nsim = 1,
   lambda = 0,
-  vol = NA,
-  rf = FALSE,
   seed = 1,
+  exclude_known = FALSE,
   quiet = FALSE
 )
 }
 \arguments{
-\item{from}{date, starting date for simulations.}
+\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
 
-\item{to}{date, end date for simulations.}
+\item{from}{character, start Date for simulations in the format `YYYY-MM-DD`.}
+
+\item{to}{character, end Date for simulations in the format `YYYY-MM-DD`.}
 
 \item{nsim}{integer, number of simulations.}
 
-\item{lambda}{numeric, Esscher parameter. When `rf = FALSE`, the input parameter `lambda` will be transformed in negative.}
-
-\item{vol}{numeric, unconditional mean of GARCH(1,1) standard deviation. If `NA` will be used the estimated one.}
-
-\item{rf}{logical. When `TRUE` the AR(2) component will be set to zero.}
+\item{lambda}{numeric, Esscher parameter.}
 
 \item{seed}{scalar integer, starting random seed.}
 
@@ -35,4 +32,10 @@ solarModel_simulate(
 }
 \description{
 Simulate trajectories of solar radiation with a `solarModel` object.
+}
+\examples{
+spec <- solarModel_spec("Ferrara", from="2005-01-01", to="2020-01-01")
+model <- solarModel(spec)
+solarModel_simulate(model, from = "2010-01-01", to = "2010-12-31", nsim = 1)
+
 }

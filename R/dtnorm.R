@@ -1,6 +1,6 @@
-#' Truncated Normal
+#' Truncated Normal random variable
 #'
-#' Probability for a truncated normal random variable.
+#' Truncated Normal density, distribution, quantile and random generator.
 #'
 #' @param x vector of quantiles.
 #' @param p vector of probabilities.
@@ -30,7 +30,7 @@
 #'
 #' # Random Numbers
 #' rtnorm(1000)
-#' plot(rtnorm(100, mean = 1, sd = 1, a = 1, b = 10), type = "l")
+#' plot(rtnorm(100, mean = 0, sd = 1, a = 0, b = 1), type = "l")
 #'
 #' @name tnorm
 #' @rdname tnorm

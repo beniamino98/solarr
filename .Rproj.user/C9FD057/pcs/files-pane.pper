@@ -3,6 +3,10 @@
         {
             "columnIndex": 2,
             "ascending": true
+        },
+        {
+            "columnIndex": 1,
+            "ascending": true
         }
     ],
     "path": "~/Documents/University/PhD/Projects/solar-project/R/solarr/R"

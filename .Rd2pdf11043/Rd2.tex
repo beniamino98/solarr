@@ -1,0 +1,2951 @@
+\documentclass[a4paper]{book}
+\usepackage[times,inconsolata,hyper]{Rd}
+\usepackage{makeidx}
+\usepackage[utf8]{inputenc} % @SET ENCODING@
+% \usepackage{graphicx} % @USE GRAPHICX@
+\makeindex{}
+\begin{document}
+\chapter*{}
+\begin{center}
+{\textbf{\huge Package `solarr'}}
+\par\bigskip{\large \today}
+\end{center}
+\begin{description}
+\raggedright{}
+\inputencoding{utf8}
+\item[Type]\AsIs{Package}
+\item[Title]\AsIs{Stochastic model for solar radiation data}
+\item[Version]\AsIs{0.2.0}
+\item[Author]\AsIs{Beniamino Sartini}
+\item[Maintainer]\AsIs{Beniamino Sartini }\email{beniamino.sartini2@unibo.it}\AsIs{}
+\item[Description]\AsIs{Implementation of stochastic models and option pricing on solar radiation data.}
+\item[Depends]\AsIs{R (>= 3.5.0),
+ggplot2,
+tibble,
+np}
+\item[Imports]\AsIs{assertive (>= 0.3-6),
+stringr (>= 1.5.0),
+rugarch (>= 1.4.1),
+dplyr (>= 1.1.3),
+purrr (>= 1.0.2),
+readr (>= 2.1.2),
+tidyr (>= 1.2.0),
+lubridate (>= 1.8.0),
+reticulate (>= 1.24),
+nortest,
+broom,
+formula.tools}
+\item[Suggests]\AsIs{DT,
+knitr,
+rmarkdown,
+testthat (>= 2.1.0)}
+\item[License]\AsIs{GPL-3}
+\item[VignetteBuilder]\AsIs{knitr}
+\item[Encoding]\AsIs{UTF-8}
+\item[LazyData]\AsIs{true}
+\item[RoxygenNote]\AsIs{7.1.1}
+\end{description}
+\Rdcontents{\R{} topics documented:}
+\inputencoding{utf8}
+\HeaderA{clearskyModel}{Seasonal model for clear sky radiation}{clearskyModel}
+%
+\begin{Description}\relax
+Fit a seasonal model for clear sky radiation in a location.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+clearskyModel(data, seasonal_data, control = control_clearskyModel())
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{data}] dataset
+
+\item[\code{seasonal\_data}] dataset with two columns: `n` with the number of the day in 1:365
+and `H0` with the extraterrestrial radiation.
+
+\item[\code{control}] list of control parameters. See \code{\LinkA{control\_clearskyModel}{control.Rul.clearskyModel}} for details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{clearskyModel\_optimize}{Optimizer for Solar Clear sky}{clearskyModel.Rul.optimize}
+%
+\begin{Description}\relax
+Find the best parameter delta for fitting clear sky radiation.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+clearskyModel_optimize(GHI, G0, control = control_clearskyModel())
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{GHI}] vector of solar radiation
+
+\item[\code{G0}] vector of extraterrestrial radiation
+
+\item[\code{control}] list of control parameters. See \code{\LinkA{control\_clearskyModel}{control.Rul.clearskyModel}} for details.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a numeric vector containing the fitted clear sky radiation.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{clearskyModel\_outliers}{clearskyModel\_outliers}{clearskyModel.Rul.outliers}
+%
+\begin{Description}\relax
+clearskyModel\_outliers
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+clearskyModel_outliers(Ct, GHI, date, quiet = FALSE)
+\end{verbatim}
+\end{Usage}
+\inputencoding{utf8}
+\HeaderA{control\_clearskyModel}{Control parameters for a `clearskyModel` object}{control.Rul.clearskyModel}
+%
+\begin{Description}\relax
+Control parameters for a `clearskyModel` object
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+control_clearskyModel(
+  method = "II",
+  include.intercept = TRUE,
+  order = 1,
+  period = 365,
+  seed = 1,
+  delta_init = 1.4,
+  tol = 30,
+  lower = 0,
+  upper = 2,
+  by = 0.001,
+  quiet = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{method}] character, method for clearsky estimate, can be `I` or `II`.
+
+\item[\code{include.intercept}] logical. When `TRUE`, the default, the intercept will be included in the model.
+
+\item[\code{order}] numeric, of sine and cosine elements.
+
+\item[\code{period}] numeric, periodicity. The default is `365`.
+
+\item[\code{seed}] numeric, random seed for reproducibility. It is used to random impute the violations.
+
+\item[\code{delta\_init}] Value for delta init in the clear sky model.
+
+\item[\code{tol}] integer, tolerance for `clearsky > GHI` condition. Maximum number of violations admitted.
+
+\item[\code{lower}] numeric, lower bound for delta grid.
+
+\item[\code{upper}] numeric, upper bound for delta grid.
+
+\item[\code{by}] numeric, step for delta grid,
+
+\item[\code{quiet}] logical. When `FALSE`, the default, the functions displays warning or messages.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Details}\relax
+The parametes `tol`, `lower`, `upper` and `by` are used exclusively in \code{\LinkA{clearskyModel\_optimize}{clearskyModel.Rul.optimize}}.
+\end{Details}
+\inputencoding{utf8}
+\HeaderA{control\_solarEsscher}{Control for Esscher calibration.}{control.Rul.solarEsscher}
+%
+\begin{Description}\relax
+Control parameters for calibration of Esscher parameters.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+control_solarEsscher(
+  nsim = 200,
+  ci = 0.05,
+  seed = 1,
+  n_key_points = 15,
+  init_lambda = 0,
+  lower_lambda = -1,
+  upper_lambda = 1,
+  quiet = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{nsim}] integer, number of simulations used to bootstrap the premium bounds.
+
+\item[\code{ci}] numeric, confidence interval for bootstrapping. See `solar\_option\_payoff\_bootstrap()`.
+
+\item[\code{seed}] integer, random seed for reproducibility.
+
+\item[\code{n\_key\_points}] integer, number of key points for interpolation.
+
+\item[\code{init\_lambda}] numeric, initial value for the Esscher parameter.
+
+\item[\code{lower\_lambda}] numeric, lower value for the Esscher parameter.
+
+\item[\code{upper\_lambda}] numeric, upper value for the Esscher parameter.
+
+\item[\code{quiet}] logical
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{control\_solarModel}{Control parameters for a `solarModel` object}{control.Rul.solarModel}
+%
+\begin{Description}\relax
+Control function for a solarModel
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+control_solarModel(
+  clearsky.model = control_clearskyModel(),
+  mean.model = list(seasonalOrder = 1, arOrder = 2, include.intercept = FALSE,
+    monthly.mean = TRUE),
+  variance.model = list(seasonalOrder = 1, unconditional_variance = NA, match_moments =
+    FALSE, monthly.mean = TRUE, abstol = 1e-20, maxit = 100),
+  threshold = 0.01,
+  outliers_quantile = 0,
+  quiet = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{clearsky.model}] list with control parameters, see \code{\LinkA{control\_clearskyModel}{control.Rul.clearskyModel}} for details.
+
+\item[\code{mean.model}] a list of parameters. Available choices are:
+\begin{description}
+
+\item[`seasonalOrder`] An integer specifying the order of the seasonal component in the model. The default is `1`.
+\item[`arOrder`] An integer specifying the order of the autoregressive component in the model. The default is `2`.
+\item[`include.intercept`] When `TRUE` the intercept will be included in the AR model. The dafault if `FALSE`.
+\item[`monthly.mean`] When `TRUE` a set of 12 monthly means parameters will be computed from the deseasonalized time series to center it perfectly around zero.
+
+\end{description}
+
+
+\item[\code{variance.model}] a list of parameters.
+
+\item[\code{threshold}] numeric, threshold for the estimation of alpha and beta.
+
+\item[\code{outliers\_quantile}] quantile for outliers detection. If different from 0, the observations that are below the quantile at confidence levels `outliers\_quantile` and
+the observation above the quantile at confidence level 1-`outliers\_quantile` will have a weight equal to zero and will be excluded from estimations.
+
+\item[\code{quiet}] logical, when `TRUE` the function will not display any message.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{control\_solarOption}{Control parameters for a solar option}{control.Rul.solarOption}
+%
+\begin{Description}\relax
+Control parameters for a solar option
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+control_solarOption(
+  nyears = c(2005, 2023),
+  K = 0,
+  put = TRUE,
+  leap_year = FALSE,
+  B = discountFactor()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{nyears}] numeric vector. Interval of years considered. The first element will be the minimum and the second the maximum years used in
+the computation of the fair payoff.
+
+\item[\code{K}] numeric, level for the strike with respect to the seasonal mean. The seasonal mean is multiplied by `exp(K)`.
+
+\item[\code{put}] logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.
+
+\item[\code{leap\_year}] logical, when `FALSE`, the default, the year will be considered of 365 days, otherwise 366.
+
+\item[\code{B}] function. Discount factor function. Should take as input a number (in years) and return a discount factor.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{desscher}{Compute the Esscher transform of a pdf function}{desscher}
+%
+\begin{Description}\relax
+Compute the Esscher transform of a pdf function
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+desscher(pdf, theta = 0, lower = -Inf, upper = Inf, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{pdf}] density function
+
+\item[\code{theta}] esscher parameter
+
+\item[\code{lower}] lower bound for domain of the pdf.
+
+\item[\code{upper}] upper bound for domain of the pdf.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A density function.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+grid <- c(-3,-2,-1,0,1,2,3)
+normal_pdf <- function(x) dnorm(x)
+esscher_pdf_1 <- desscher_norm(theta = -0.1)
+esscher_pdf_2 <- desscher(normal_pdf, theta = -0.1)
+
+# Same result
+esscher_pdf_1(grid)
+esscher_pdf_2(grid)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{desscherMixture}{Esscher transform of a Gaussian Mixture}{desscherMixture}
+\aliasA{pesscherMixture}{desscherMixture}{pesscherMixture}
+%
+\begin{Description}\relax
+Esscher transform of a Gaussian Mixture
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+desscherMixture(means = c(0, 0), sd = c(1, 1), p = c(0.5, 0.5), theta = 0)
+
+pesscherMixture(means = c(0, 0), sd = c(1, 1), p = c(0.5, 0.5), theta = 0)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{means}] vector of means parameters.
+
+\item[\code{sd}] vector of std. deviation parameters.
+
+\item[\code{p}] vector of probability parameters.
+
+\item[\code{theta}] Esscher parameter, the default is zero.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+library(ggplot2)
+grid <- seq(-5, 5, 0.01)
+pdf_1 <- desscherMixture(means = c(-3, 3), theta = 0)(grid)
+pdf_2 <- desscherMixture(means = c(-3, 3), theta = -0.5)(grid)
+pdf_3 <- desscherMixture(means = c(-3, 3), theta = 0.5)(grid)
+ggplot()+
+ geom_line(aes(grid, pdf_1), color = "black")+
+ geom_line(aes(grid, pdf_2), color = "green")+
+ geom_line(aes(grid, pdf_3), color = "red")
+
+cdf_1 <- pesscherMixture(means = c(-3, 3), theta = 0)(grid)
+cdf_2 <- pesscherMixture(means = c(-3, 3), theta = -0.2)(grid)
+cdf_3 <- pesscherMixture(means = c(-3, 3), theta = 0.2)(grid)
+ggplot()+
+  geom_line(aes(grid, cdf_1), color = "black")+
+  geom_line(aes(grid, cdf_2), color = "green")+
+  geom_line(aes(grid, cdf_3), color = "red")
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{detect\_season}{Detect the season}{detect.Rul.season}
+%
+\begin{Description}\relax
+Detect the season from a vector of dates
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+detect_season(day_date = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{day\_date}] vector of dates in the format `YYYY-MM-DD`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a character vector containing the correspondent season. Can be `spring`, `summer`, `autumn`, `winter`.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+detect_season("2040-01-31")
+detect_season(c("2040-01-31", "2023-04-01", "2015-09-02"))
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{discountFactor}{Discount factor function}{discountFactor}
+%
+\begin{Description}\relax
+Discount factor function
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+discountFactor(r = 0.03, discrete = TRUE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{r}] level of yearly constant risk-free rate
+
+\item[\code{discrete}] logical, when `TRUE`, the default, discrete compounding will be used. Otherwise continuous compounding.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{dmixnorm}{Gaussian mixture random variable}{dmixnorm}
+\aliasA{pmixnorm}{dmixnorm}{pmixnorm}
+\aliasA{qmixnorm}{dmixnorm}{qmixnorm}
+\aliasA{rmixnorm}{dmixnorm}{rmixnorm}
+%
+\begin{Description}\relax
+Gaussian mixture density, distribution, quantile and random generator.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+dmixnorm(means = rep(0, 2), sd = rep(1, 2), p = rep(1/2, 2))
+
+pmixnorm(means = rep(0, 2), sd = rep(1, 2), p = rep(1/2, 2))
+
+qmixnorm(means = rep(0, 2), sd = rep(1, 2), p = rep(1/2, 2))
+
+rmixnorm(n, means = rep(0, 3), sd = rep(1, 3), p = rep(1/3, 3), seed = 1)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{means}] vector of means parameters.
+
+\item[\code{sd}] vector of std. deviation parameters.
+
+\item[\code{p}] vector of probability parameters.
+
+\item[\code{n}] number of simulations
+
+\item[\code{x}] quantile
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A function of x
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+means = c(-3,0,3)
+sd = rep(1, 3)
+p = c(0.2, 0.3, 0.5)
+# Density function
+dmixnorm(means, sd, p)(3)
+# Distribution function
+dmixnorm(means, sd, p)(c(1,2,-3))
+# Quantile function
+qmixnorm()(0.2)
+# Random numbers
+rmixnorm(1000)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{dsolarGHI}{Density function for the GHI}{dsolarGHI}
+\aliasA{psolarGHI}{dsolarGHI}{psolarGHI}
+\aliasA{qsolarGHI}{dsolarGHI}{qsolarGHI}
+\aliasA{rsolarGHI}{dsolarGHI}{rsolarGHI}
+%
+\begin{Description}\relax
+Density function for the GHI
+
+Distribution function for the GHI
+
+Quantile function for the GHI
+
+Random generator function for the GHI
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+dsolarGHI(x, Ct, alpha, beta, pdf_Yt)
+
+psolarGHI(x, Ct, alpha, beta, pdf_Yt)
+
+qsolarGHI(p, Ct, alpha, beta, pdf_Yt)
+
+rsolarGHI(n, Ct, alpha, beta, pdf_Yt)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x, p}] value or probability.
+
+\item[\code{Ct}] clear sky radiation
+
+\item[\code{alpha}] transform params
+
+\item[\code{beta}] transform params
+
+\item[\code{pdf\_Yt}] density of Yt
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+dsolarGHI(5, 7, 0.001, 0.9, function(x) dnorm(x))
+dsolarGHI(6.993, 7, 0.001, 0.9, function(x) dnorm(x))
+psolarGHI(6.993, 7, 0.001, 0.9, function(x) dnorm(x))
+qsolarGHI(1, 7, 0.001, 0.9, function(x) dnorm(x))
+qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) dnorm(x))
+rsolarGHI(10, 7, 0.001, 0.9, function(x) dnorm(x))
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{esscher\_norm}{Esscher density of a Gaussian random variable}{esscher.Rul.norm}
+\aliasA{desscher\_norm}{esscher\_norm}{desscher.Rul.norm}
+\aliasA{pesscher\_norm}{esscher\_norm}{pesscher.Rul.norm}
+%
+\begin{Description}\relax
+Esscher density of a Gaussian random variable
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+desscher_norm(mean = 0, sd = 1, theta = 0)
+
+pesscher_norm(mean = 0, sd = 1, theta = 0)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{mean}] mean
+
+\item[\code{sd}] std. deviation
+
+\item[\code{theta}] Esscher parameter
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A density or distribution function.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+grid <- seq(-3, 3, 0.5)
+# Density
+pdf <- desscher_norm(theta = -0.1)
+pdf(grid)
+desscher_norm(theta = 0.1)(grid)
+# Distribution
+cdf <- pesscher_norm(theta = -0.1)
+cdf(grid)
+pesscher_norm(theta = 0.1)(grid)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{gaussianMixture}{Gaussian mixture}{gaussianMixture}
+%
+\begin{Description}\relax
+Fit the parameters of a gaussian mixture with k-components.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+gaussianMixture(
+  x,
+  means,
+  sd,
+  p,
+  components = 2,
+  prior_p = rep(NA, components),
+  weights,
+  maxit = 100,
+  abstol = 1e-14,
+  na.rm = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] vector
+
+\item[\code{means}] vector of initial means parameters.
+
+\item[\code{sd}] vector of initial std. deviation parameters.
+
+\item[\code{p}] vector of initial probability parameters.
+
+\item[\code{components}] number of components.
+
+\item[\code{prior\_p}] prior probability for the k-state. If the k-component is not `NA` the probability will be considered as given and
+the parameter `p[k]` will be equal to `prior\_p[k]`.
+
+\item[\code{weights}] observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
+When `missing` all the available observations will be used.
+
+\item[\code{maxit}] maximum number of iterations.
+
+\item[\code{na.rm}] logical. When `TRUE`, the default, `NA` values will be excluded from the computations.
+
+\item[\code{match\_moments}] logical. When `TRUE`, the parameters of the second distribution will be estimated such that
+the empirical first two moments of `x` matches the theoretical Gaussian mixture moments.
+
+\item[\code{absotol}] absolute level for convergence.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+list with clustered components and the optimal parameters.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+means = c(-3,0,3)
+sd = rep(1, 3)
+p = c(0.2, 0.3, 0.5)
+# Density function
+pdf <- dmixnorm(means, sd, p)
+# Distribution function
+cdf <- pmixnorm(means, sd, p)
+# Random numbers
+x <- rgaussianMixture(1000, means, sd, p)
+gaussianMixture(x$X, means, sd, p, components = 3)
+gaussianMixture(x$X, means, sd, prior_p = p, components = 3)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{gaussianMixture\_monthly}{Fit a monthly Gaussian Mixture Pdf (??NOT USED)}{gaussianMixture.Rul.monthly}
+%
+\begin{Description}\relax
+Fit the monthly parameters for the density function of a Gaussian mixture with two components.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+gaussianMixture_monthly(x, date, means, sd, p, components = 2, prior_p, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] vector
+
+\item[\code{date}] vector of dates
+
+\item[\code{means}] matrix of initial means with dimension `12 X components`.
+
+\item[\code{sd}] matrix of initial std. deviations with dimension `12 X components`.
+
+\item[\code{p}] matrix of initial p with dimension `12 X components`. The rows must sum up to 1.
+
+\item[\code{prior\_p}] matrix of prior probabilities for the each month. Any element that is different from `NA` will be not optimized and will be considered
+as given.
+
+\item[\code{...}] other parameters for the optimization function. See \code{\LinkA{gaussianMixture}{gaussianMixture}} for more details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{gumbel}{Gumbel Random Variable}{gumbel}
+\aliasA{dgumbel}{gumbel}{dgumbel}
+\aliasA{pgumbel}{gumbel}{pgumbel}
+\aliasA{qgumbel}{gumbel}{qgumbel}
+\aliasA{rgumbel}{gumbel}{rgumbel}
+%
+\begin{Description}\relax
+Probability density function for a gumbel random variable
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+dgumbel(x, mean = 0, scale = 1, log.p = FALSE, invert = FALSE)
+
+pgumbel(
+  x,
+  mean = 0,
+  scale = 1,
+  log.p = FALSE,
+  lower.tail = TRUE,
+  invert = FALSE
+)
+
+qgumbel(
+  p,
+  mean = 0,
+  scale = 1,
+  log.p = FALSE,
+  lower.tail = TRUE,
+  invert = FALSE
+)
+
+rgumbel(n, mean = 0, scale = 1, invert = FALSE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] vector of quantiles.
+
+\item[\code{mean}] vector of means.
+
+\item[\code{scale}] vector of scale parameter.
+
+\item[\code{log.p}] logical; if `TRUE`, probabilities p are given as `log(p)`.
+
+\item[\code{invert}] logical, use the inverted Gumbel distribution
+
+\item[\code{lower.tail}] logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
+
+\item[\code{p}] vector of probabilities.
+
+\item[\code{n}] number of observations. If `length(n) > 1`, the length is taken to be the number required.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+x <- seq(-5, 5, 0.01)
+
+# Density function
+p <- dgumbel(x, mean = 0, scale = 1)
+plot(x, p, type = "l")
+
+# Distribution function
+p <- pgumbel(x, mean = 0, scale = 1)
+plot(x, p, type = "l")
+
+# Quantile function
+qgumbel(0.1)
+pgumbel(qgumbel(0.1))
+
+# Random Numbers
+rgumbel(1000)
+plot(rgumbel(1000), type = "l")
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{havDistance}{Haversine distance}{havDistance}
+%
+\begin{Description}\relax
+Compute the Haversine distance between two points.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+havDistance(lat_1, lon_1, lat_2, lon_2)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{lat\_1}] numeric, latitude of first point.
+
+\item[\code{lon\_1}] numeric, longitude of first point.
+
+\item[\code{lat\_2}] numeric, latitude of second point.
+
+\item[\code{lon\_2}] numeric, longitude of second point.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+Numeric vector the distance in kilometers.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+havDistance(43.3, 12.1, 43.4, 12.2)
+havDistance(43.35, 12.15, 43.4, 12.2)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{IDW}{Inverse Distance Weighting Function}{IDW}
+%
+\begin{Description}\relax
+Return a distance weighting function
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+IDW(beta, d0)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{beta}] parameter used in exponential and power functions.
+
+\item[\code{d0}] parameter used only in exponential function.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Details}\relax
+When the parameter `d0` is not specified the function returned will be of power type otherwise of exponential type.
+\end{Details}
+%
+\begin{Examples}
+\begin{ExampleCode}
+# Power weighting
+IDW_pow <- IDW(2)
+IDW_pow(c(2, 3,10))
+IDW_pow(c(2, 3,10), normalize = TRUE)
+# Exponential weighting
+IDW_exp <- IDW(2, d0 = 5)
+IDW_exp(c(2, 3,10))
+IDW_exp(c(2, 3,10), normalize = TRUE)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{is\_leap\_year}{Is leap year?}{is.Rul.leap.Rul.year}
+%
+\begin{Description}\relax
+Check if a given year is leap (366 days) or not (365 days).
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+is_leap_year(x)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] numeric value or dates vector in the format `YYYY-MM-DD`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+Boolean. `TRUE` if it is a leap year, `FALSE` otherwise.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+is_leap_year("2024-02-01")
+is_leap_year(c(2023:2030))
+is_leap_year(c("2024-10-01", "2025-10-01"))
+is_leap_year("2029-02-01")
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{kernelRegression}{Kernel regression}{kernelRegression}
+%
+\begin{Description}\relax
+Fit a kernel regression.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+kernelRegression(formula, data, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{formula}] formula
+
+\item[\code{data}] data
+
+\item[\code{...}] other parameters to be passed to. See \code{np::npreg}.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{ks\_test}{Kolmogorov Smirnov test for a distribution}{ks.Rul.test}
+%
+\begin{Description}\relax
+Kolmogorov Smirnov test for a distribution
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+ks_test(
+  x,
+  cdf,
+  ci = 0.05,
+  min_quantile = 0.015,
+  max_quantile = 0.985,
+  k = 1000,
+  plot = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] a vector.
+
+\item[\code{ci}] p.value for rejection.
+
+\item[\code{min\_quantile}] minimum quantile for the grid of values.
+
+\item[\code{max\_quantile}] maximum quantile for the grid of values.
+
+\item[\code{k}] finite value for approximation of infinite sum.
+
+\item[\code{plot}] when `TRUE` a plot is returned, otherwise a `tibble`.
+
+\item[\code{pdf}] the theoric density function to use for comparison.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+when `plot = TRUE` a plot is returned, otherwise a `tibble`.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{ks\_ts\_test}{Two sample Kolmogorov Smirnov test for a time series}{ks.Rul.ts.Rul.test}
+%
+\begin{Description}\relax
+Two sample Kolmogorov Smirnov test for a time series
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+ks_ts_test(
+  x,
+  ci = 0.05,
+  min_quantile = 0.015,
+  max_quantile = 0.985,
+  seed = 1,
+  plot = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] a vector.
+
+\item[\code{ci}] p.value for rejection.
+
+\item[\code{min\_quantile}] minimum quantile for the grid of values.
+
+\item[\code{max\_quantile}] maximum quantile for the grid of values.
+
+\item[\code{seed}] random seed.
+
+\item[\code{plot}] when `TRUE` a plot is returned, otherwise a `tibble`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+when `plot = TRUE` a plot is returned, otherwise a `tibble`.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{kumaraswamy}{Kumaraswamy Random Variable}{kumaraswamy}
+\aliasA{dkumaraswamy}{kumaraswamy}{dkumaraswamy}
+\aliasA{pkumaraswamy}{kumaraswamy}{pkumaraswamy}
+\aliasA{qkumaraswamy}{kumaraswamy}{qkumaraswamy}
+\aliasA{rkumaraswamy}{kumaraswamy}{rkumaraswamy}
+%
+\begin{Description}\relax
+Probability functions for a Kumaraswamy random variable
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+dkumaraswamy(x, a = 1, b = 1, log.p = FALSE)
+
+pkumaraswamy(x, a = 1, b = 1, log.p = FALSE, lower.tail = TRUE)
+
+qkumaraswamy(p, a = 1, b = 1, log.p = FALSE, lower.tail = TRUE)
+
+rkumaraswamy(n, a = 1, b = 1)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] vector of quantiles.
+
+\item[\code{a}] parameter.
+
+\item[\code{b}] parameter..
+
+\item[\code{log.p}] logical; if `TRUE`, probabilities p are given as `log(p)`.
+
+\item[\code{lower.tail}] logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
+
+\item[\code{p}] vector of probabilities.
+
+\item[\code{n}] number of observations. If `length(n) > 1`, the length is taken to be the number required.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{Location}{Generate a location}{Location}
+%
+\begin{Description}\relax
+Generate a location
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+Location(
+  place,
+  nsim = 50,
+  by = "1 month",
+  exact_daily_premium = FALSE,
+  measures = c("Q", "Qdw", "Qup"),
+  control_model = control_solarModel(),
+  control_options = control_solarOption(),
+  control_esscher = control_solarEsscher(),
+  seed = 1
+)
+\end{verbatim}
+\end{Usage}
+\inputencoding{utf8}
+\HeaderA{makeSemiPositive}{Make a matrix semi-definite positive}{makeSemiPositive}
+%
+\begin{Description}\relax
+Make a matrix semi-definite positive
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+makeSemiPositive(x, neg_values = 1e-10)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] matrix, squared and symmetric.
+
+\item[\code{neg\_values}] numeric, the eigenvalues lower the zero will be substituted with this value.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+m <- matrix(c(2, 1.99, 1.99, 2), nrow = 2, byrow = TRUE)
+makeSemiPositive(m)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{number\_of\_day}{Number of day}{number.Rul.of.Rul.day}
+%
+\begin{Description}\relax
+Compute the number of day of the year given a vector of dates.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+number_of_day(day_date = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{day\_date}] dates vector in the format `YYYY-MM-DD`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+Numeric vector with the number of the day during the year.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+number_of_day("2040-01-31")
+number_of_day(c("2040-01-31", "2023-04-01", "2015-09-02"))
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{optionPayoff}{Option payoff function}{optionPayoff}
+%
+\begin{Description}\relax
+Compute the payoffs of an option at maturity.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+optionPayoff(x, strike = 0, v0 = 0, put = TRUE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] numeric, vector of values at maturity.
+
+\item[\code{strike}] numeric, option strike.
+
+\item[\code{v0}] numeric, price of the option.
+
+\item[\code{put}] logical, when `TRUE`, the default, the payoff function is a put othewise a call.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+optionPayoff(10, 9, 1, put = TRUE)
+mean(optionPayoff(seq(0, 20), 9, 1, put = TRUE))
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{pks}{Kolmogorov distribution function}{pks}
+%
+\begin{Description}\relax
+Kolmogorov distribution function
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+pks(x, k = 100)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] a vector.
+
+\item[\code{k}] finite value for approximation of infinite sum.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A probability, a numeric vector in 0, 1.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{qks}{Kolmogorov quantile function}{qks}
+%
+\begin{Description}\relax
+Kolmogorov quantile function
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+qks(p, k = 100)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{k}] finite value for approximation of infinite sum.
+
+\item[\code{x}] a vector of probabilities.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A positive number.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{radiant}{Conversion in Radiant or Degrees}{radiant}
+\aliasA{from\_degree\_to\_radiant}{radiant}{from.Rul.degree.Rul.to.Rul.radiant}
+\aliasA{from\_radiant\_to\_degree}{radiant}{from.Rul.radiant.Rul.to.Rul.degree}
+%
+\begin{Description}\relax
+Convert angles in radiant into an angles in degrees.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+from_radiant_to_degree(x)
+
+from_degree_to_radiant(x)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] numeric vector, angles in radiant or degrees.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+numeric vector with angles in radiant or degrees.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+# convert 0.34 radiant in degrees
+from_radiant_to_degree(0.34)
+# convert 19.48 degree in radiant
+from_degree_to_radiant(19.48)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{riccati\_root}{Riccati Root}{riccati.Rul.root}
+%
+\begin{Description}\relax
+Compute the square root of a symmetric matrix.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+riccati_root(x)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] matrix, squared and symmetric.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+cv <- matrix(c(1, 0.3, 0.3, 1), nrow = 2, byrow = TRUE)
+riccati_root(cv)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{seasonalModel}{Fit a seasonal model}{seasonalModel}
+%
+\begin{Description}\relax
+Fit a seasonal model as a linear combination of sine and cosine functions.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+seasonalModel(formula = "Yt ~ 1", order = 1, period = 365, data, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{formula}] formula, an object of class `formula` (or one that can be coerced to that class).
+It is a symbolic description of the model to be fitted and can be used to include or exclude the intercept or external regressors in `data`.
+
+\item[\code{order}] numeric, of sine and cosine elements.
+
+\item[\code{period}] numeric, periodicity. The default is `2*base::pi/365`.
+
+\item[\code{data}] an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
+If not found in data, the variables are taken from environment(formula), typically the environment from which `lm` is called.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{snorm}{Skewed Normal}{snorm}
+\aliasA{dsnorm}{snorm}{dsnorm}
+\aliasA{psnorm}{snorm}{psnorm}
+\aliasA{qsnorm}{snorm}{qsnorm}
+\aliasA{rsnorm}{snorm}{rsnorm}
+%
+\begin{Description}\relax
+Probability for a skewed normal random variable.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+dsnorm(x, mean = 0, sd = 1, skew = 0, log = FALSE)
+
+psnorm(x, mean = 0, sd = 1, skew = 0, log.p = FALSE, lower.tail = TRUE)
+
+qsnorm(p, mean = 0, sd = 1, skew = 0, log.p = FALSE, lower.tail = TRUE)
+
+rsnorm(n, mean = 0, sd = 1, skew = 0)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] vector of quantiles.
+
+\item[\code{mean}] vector of means.
+
+\item[\code{sd}] vector of standard deviations.
+
+\item[\code{skew}] vector of skewness.
+
+\item[\code{log}] logical; if `TRUE`, probabilities are returned as `log(p)`.
+
+\item[\code{log.p}] logical; if `TRUE`, probabilities p are given as `log(p)`.
+
+\item[\code{lower.tail}] logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
+
+\item[\code{p}] vector of probabilities.
+
+\item[\code{n}] number of observations. If `length(n) > 1`, the length is taken to be the number required.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+x <- seq(-5, 5, 0.01)
+# Density function
+p <- dsnorm(x, mean = 0, sd = 1)
+plot(x, p, type = "l")
+# Distribution function
+p <- psnorm(x, mean = 0, sd = 1)
+plot(x, p, type = "l")
+# Quantile function
+dsnorm(0.1)
+psnorm(qsnorm(0.1))
+# Random numbers
+rsnorm(1000)
+plot(rsnorm(1000), type = "l")
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarEsscher\_bounds}{Calibrate Esscher Bounds and parameters}{solarEsscher.Rul.bounds}
+%
+\begin{Description}\relax
+Calibrate Esscher Bounds and parameters
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarEsscher_bounds(
+  model,
+  control_options = control_solarOption(),
+  control_esscher = control_solarEsscher()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{control\_options}] control function. See \code{\LinkA{control\_solarOption}{control.Rul.solarOption}} for details.
+
+\item[\code{control\_esscher}] control function. See \code{\LinkA{control\_solarEsscher}{control.Rul.solarEsscher}} for details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarEsscher\_calibrator}{Calibrator for Esscher parameter}{solarEsscher.Rul.calibrator}
+%
+\begin{Description}\relax
+Calibrator for Esscher parameter
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarEsscher_calibrator(
+  model,
+  target_price,
+  nmonths = 1:12,
+  control_esscher = control_solarEsscher(),
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{target\_price}] target price for the calibration.
+
+\item[\code{nmonths}] months used in the model computation.
+
+\item[\code{control\_esscher}] control function. See \code{\LinkA{control\_solarEsscher}{control.Rul.solarEsscher}} for details.
+
+\item[\code{control\_options}] control function. See \code{\LinkA{control\_solarOption}{control.Rul.solarOption}} for details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarEsscher\_calibrator\_month}{Calibrate monthly Esscher parameter given the expected return}{solarEsscher.Rul.calibrator.Rul.month}
+%
+\begin{Description}\relax
+Calibrator function for the monthly Esscher parameter of a solarOption given a
+desired level of expected return at maturity.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarEsscher_calibrator_month(
+  model,
+  nmonth = 1,
+  expected_return = 0,
+  target_price = NA,
+  control_esscher = control_solarEsscher(),
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] solar model
+
+\item[\code{nmonth}] month
+
+\item[\code{expected\_return}] expected return at maturity. The benchmark for the `target\_price` to match will be the
+mean cumulated net payoff on the last day of the month plus the model price paid under the Esscher measure.
+The return of the `target\_price` with respect to the model price will match the parameter `expected\_return`. For example `0.01`, `0.02`, ecc.
+
+\item[\code{target\_price}] alternative to the `expected\_return` parameter. Submitting a `target\_price` will imply that the `expected\_return = 0` so that
+the model price under the Esscher measure matches the `target\_price`
+
+\item[\code{control\_esscher}] control
+
+\item[\code{control\_options}] control
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarModel}{Fit a model for solar radiation}{solarModel}
+%
+\begin{Description}\relax
+Fit a model for solar radiation
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel(spec)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{spec}] an object with class `solarModelSpec`. See the function \code{\LinkA{solarModel\_spec}{solarModel.Rul.spec}} for details.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+control <- control_solarModel(outliers_quantile = 0.0005)
+spec <- solarModel_spec("Berlino", from="2005-01-01", to="2024-01-01", control_model = control)
+model <- solarModel(spec)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarModel\_calibrator}{Calibrator for solar Options}{solarModel.Rul.calibrator}
+%
+\begin{Description}\relax
+Calibrator for solar Options
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_calibrator(
+  model,
+  nmonths = 1:12,
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+\inputencoding{utf8}
+\HeaderA{solarModel\_empiric\_GM}{Empiric Gaussian Mixture parameters}{solarModel.Rul.empiric.Rul.GM}
+%
+\begin{Description}\relax
+Empiric Gaussian Mixture parameters
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_empiric_GM(model, match_moments = FALSE)
+\end{verbatim}
+\end{Usage}
+\inputencoding{utf8}
+\HeaderA{solarModel\_loglik}{Compute the log-likelihood of a `solarModel` object}{solarModel.Rul.loglik}
+%
+\begin{Description}\relax
+Compute the log-likelihood of a `solarModel` object
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_loglik(model, target = c("Yt", "GHI"), nmonths = 1:12)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] `solarModel` object
+
+\item[\code{nmonths}] months to consider
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarModel\_parameters}{Extract the parameters of a `solarModel`}{solarModel.Rul.parameters}
+%
+\begin{Description}\relax
+Extract the parameters of a `solarModel`
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_parameters(model, as_tibble = FALSE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{as\_tibble}] logical, when `TRUE` the output will be converted in a tibble.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a named list with all the parameters
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+spec <- solarModel_spec("Ferrara", from="2005-01-01", to="2020-01-01")
+model <- solarModel(spec)
+solarModel_parameters(model)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarModel\_scenario}{Simulate multiple scenarios}{solarModel.Rul.scenario}
+%
+\begin{Description}\relax
+Simulate multiple scenarios of solar radiation with a `solarModel` object.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_scenario(
+  model,
+  from = "2010-01-01",
+  to = "2010-12-31",
+  by = "1 month",
+  nsim = 1,
+  lambda = 0,
+  seed = 1,
+  quiet = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{from}] character, start Date for simulations in the format `YYYY-MM-DD`.
+
+\item[\code{to}] character, end Date for simulations in the format `YYYY-MM-DD`.
+
+\item[\code{by}] character, steps for multiple scenarios, e.g. `1 day` (day-ahead simulations), `15 days`, `1 month`, `3 months`, ecc.
+For each step are simulated `nsim` scenarios.
+
+\item[\code{nsim}] integer, number of simulations.
+
+\item[\code{lambda}] numeric, Esscher parameter.
+
+\item[\code{seed}] scalar integer, starting random seed.
+
+\item[\code{quiet}] logical
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+spec <- solarModel_spec("Ferrara", from="2005-01-01", to="2020-01-01")
+model <- solarModel(spec)
+solarModel_scenario(model, from = "2010-01-01", to = "2010-12-31", nsim = 2, by = "1 month")
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarModel\_simulate}{Simulate trajectories}{solarModel.Rul.simulate}
+%
+\begin{Description}\relax
+Simulate trajectories of solar radiation with a `solarModel` object.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_simulate(
+  model,
+  from = "2010-01-01",
+  to = "2010-12-31",
+  nsim = 1,
+  lambda = 0,
+  seed = 1,
+  exclude_known = FALSE,
+  quiet = FALSE
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{from}] character, start Date for simulations in the format `YYYY-MM-DD`.
+
+\item[\code{to}] character, end Date for simulations in the format `YYYY-MM-DD`.
+
+\item[\code{nsim}] integer, number of simulations.
+
+\item[\code{lambda}] numeric, Esscher parameter.
+
+\item[\code{seed}] scalar integer, starting random seed.
+
+\item[\code{quiet}] logical
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+spec <- solarModel_spec("Ferrara", from="2005-01-01", to="2020-01-01")
+model <- solarModel(spec)
+solarModel_simulate(model, from = "2010-01-01", to = "2010-12-31", nsim = 1)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarModel\_spec}{Specification function for a `solarModel`}{solarModel.Rul.spec}
+%
+\begin{Description}\relax
+Specification function for a `solarModel`
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_spec(
+  place,
+  min_date,
+  max_date,
+  from,
+  to,
+  CAMS_data = solarr::CAMS_data,
+  control_model = control_solarModel()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{place}] character, name of an element in the `CAMS\_data` list.
+
+\item[\code{min\_date}] character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.
+
+\item[\code{max\_date}] character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.
+
+\item[\code{from}] character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
+If `missing` will be used the minimum data available after filtering for `min\_date`.
+
+\item[\code{to}] character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.
+If `missing` will be used the maximum data available after filtering for `max\_date`.
+
+\item[\code{CAMS\_data}] named list with radiation data for different locations.
+
+\item[\code{control\_model}] list with control parameters, see \code{\LinkA{control\_solarModel}{control.Rul.solarModel}} for details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarModel\_test\_residuals}{Stationarity and distribution test (Gaussian mixture) for a `solarModel`}{solarModel.Rul.test.Rul.residuals}
+%
+\begin{Description}\relax
+Stationarity and distribution test (Gaussian mixture) for a `solarModel`
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_test_residuals(model, seed = 1, nrep = 500, ...)
+\end{verbatim}
+\end{Usage}
+\inputencoding{utf8}
+\HeaderA{solarModel\_update\_GM}{Update Gaussian Mixture parameters for a given month}{solarModel.Rul.update.Rul.GM}
+%
+\begin{Description}\relax
+Update Gaussian Mixture parameters for a given month
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_update_GM(model, params, nmonth)
+\end{verbatim}
+\end{Usage}
+\inputencoding{utf8}
+\HeaderA{solarModel\_update\_params}{Update the parameters of a `solarModel` object}{solarModel.Rul.update.Rul.params}
+%
+\begin{Description}\relax
+Update the parameters of a `solarModel` object
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarModel_update_params(model, params)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] `solarModel` object
+
+\item[\code{params}] named list of parameters. See the function \code{\LinkA{solarModel\_parameters}{solarModel.Rul.parameters}} to structure the list of new parameters.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarOption\_bootstrap}{Bootstrap a fair premium from historical data}{solarOption.Rul.bootstrap}
+%
+\begin{Description}\relax
+Bootstrap a fair premium from historical data
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_bootstrap(
+  model,
+  nsim = 500,
+  ci = 0.05,
+  seed = 1,
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{nsim}] number of simulation to bootstrap.
+
+\item[\code{ci}] confidence interval for quantile
+
+\item[\code{seed}] random seed.
+
+\item[\code{control\_options}] control function, see \code{\LinkA{control\_solarOption}{control.Rul.solarOption}} for details.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+An object of the class `solarOptionPayoffBoot`.
+\end{Value}
+\inputencoding{utf8}
+\HeaderA{solarOption\_contracts}{Optimal number of contracts}{solarOption.Rul.contracts}
+%
+\begin{Description}\relax
+Compute the optimal number of contracts given a particular setup.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_contracts(
+  model,
+  type = "model",
+  premium = "Q",
+  nyear = 2021,
+  tick = 0.06,
+  efficiency = 0.2,
+  n_panels = 2000,
+  pun = 0.06
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{type}] character, method used for computing the premium. Can be `model` (Model with integral) or `sim` (Monte Carlo).
+
+\item[\code{premium}] character, premium used. Can be `P`, `Qdw`, `Qup`, or `Q`.
+
+\item[\code{nyear}] integer, actual year. The optimization will be performed excluding the year `nyear` and the following.
+
+\item[\code{tick}] numeric, conversion tick for the monetary payoff of a contract.
+
+\item[\code{efficiency}] numeric, mean efficiency of the solar panels.
+
+\item[\code{n\_panels}] numeric, number of meters squared of solar panels.
+
+\item[\code{pun}] numeric, reference electricity price at which the energy is sold for computing the cash-flows.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarOption\_historical}{Payoff on Historical Data}{solarOption.Rul.historical}
+%
+\begin{Description}\relax
+Payoff on Historical Data
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_historical(
+  model,
+  nmonths = 1:12,
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{nmonths}] numeric, months of which the payoff will be computed.
+
+\item[\code{control\_options}] control list, see \code{\LinkA{control\_solarOption}{control.Rul.solarOption}} for more details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarOption\_implied\_return}{Implied expected return at maturity}{solarOption.Rul.implied.Rul.return}
+%
+\begin{Description}\relax
+Implied expected return at maturity
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_implied_return(
+  model,
+  target_prices = NA,
+  nmonths = 1:12,
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+\inputencoding{utf8}
+\HeaderA{solarOption\_model}{Pricing function under the solar model}{solarOption.Rul.model}
+%
+\begin{Description}\relax
+Pricing function under the solar model
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_model(
+  model,
+  nmonths = 1:12,
+  theta = 0,
+  implvol = 1,
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{nmonths}] numeric, months of which the payoff will be computed.
+
+\item[\code{theta}] Esscher parameter
+
+\item[\code{implvol}] implied unconditional GARCH variance, the default is `1`.
+
+\item[\code{control\_options}] control list, see \code{\LinkA{control\_solarOption}{control.Rul.solarOption}} for more details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarOption\_model\_spatial}{Pricing function under the solar model}{solarOption.Rul.model.Rul.spatial}
+%
+\begin{Description}\relax
+Pricing function under the solar model
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_model_spatial(
+  object,
+  lat,
+  lon,
+  nmonths = 1:12,
+  theta = 0,
+  implvol = 1,
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] a `spatialModel` object
+
+\item[\code{lat}] numeric, latitude of the point.
+
+\item[\code{lon}] numeric, longitude of the point.
+
+\item[\code{nmonths}] numeric, months of which the payoff will be computed.
+
+\item[\code{theta}] Esscher parameter
+
+\item[\code{implvol}] implied unconditional GARCH variance, the default is `1`.
+
+\item[\code{control\_options}] control list, see \code{\LinkA{control\_solarOption}{control.Rul.solarOption}} for more details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarOption\_scenario}{Payoff on Simulated Data}{solarOption.Rul.scenario}
+%
+\begin{Description}\relax
+Payoff on Simulated Data
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_scenario(
+  sim,
+  nmonths = 1:12,
+  nsim,
+  control_options = control_solarOption()
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{sim}] simulated scenarios with the function \code{\LinkA{solarModel\_scenarios}{solarModel.Rul.scenarios}}.
+
+\item[\code{nmonths}] numeric, months of which the payoff will be computed.
+
+\item[\code{nsim}] number of simulation to use for computation.
+
+\item[\code{control\_options}] control function, see \code{\LinkA{control\_solarOption}{control.Rul.solarOption}} for details.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarOption\_structure}{Structure payoffs}{solarOption.Rul.structure}
+%
+\begin{Description}\relax
+Structure payoffs
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarOption_structure(model, type = "model", exact_daily_premium = TRUE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{model}] object with the class `solarModel`. See the function \code{\LinkA{solarModel}{solarModel}} for details.
+
+\item[\code{type}] method used for computing the premium. If `model`, the default will be used the analytic model,
+otherwise with `sim` the monte carlo scenarios stored inside the `model\$scenarios\$P`.
+
+\item[\code{exact\_daily\_premium}] when `TRUE` the historical premium is computed as daily average among all the years.
+Otherwise the monthly premium is computed and then divided by the number of days of the month.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarRiskDriver}{Compute Solar Risk driver}{solarRiskDriver}
+%
+\begin{Description}\relax
+Compute Solar Risk driver
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarRiskDriver(GHI, Ct)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{GHI}] radiation time series
+
+\item[\code{Ct}] clear sky radiation time series
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Details}\relax
+The function computes:
+
+\deqn{x_t = 1 - \frac{GHI}{C_t}}{}
+\end{Details}
+%
+\begin{Value}
+A risk drivers time series.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solarRiskDriver(8, 12)
+solarRiskDriver(11, 12)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarTransform}{Solar Model transformation functions}{solarTransform}
+%
+\begin{Description}\relax
+Solar Model transformation functions
+
+Solar Model transformation functions
+\end{Description}
+%
+\begin{Section}{Methods}
+%
+\begin{SubSection}{Public methods}
+\begin{itemize}
+
+\item \Rhref{#method-new}{\code{solarTransform\$new()}}
+\item \Rhref{#method-Yt}{\code{solarTransform\$Yt()}}
+\item \Rhref{#method-Xt}{\code{solarTransform\$Xt()}}
+\item \Rhref{#method-GHI}{\code{solarTransform\$GHI()}}
+\item \Rhref{#method-Ct}{\code{solarTransform\$Ct()}}
+\item \Rhref{#method-Yt_bar}{\code{solarTransform\$Yt\_bar()}}
+\item \Rhref{#method-Xt_bar}{\code{solarTransform\$Xt\_bar()}}
+\item \Rhref{#method-GHI_bar}{\code{solarTransform\$GHI\_bar()}}
+\item \Rhref{#method-clone}{\code{solarTransform\$clone()}}
+
+\end{itemize}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-new}{}
+%
+\begin{SubSection}{Method \code{new()}}
+Solar Model transformation functions
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$new(params, seasonal_model_Ct, seasonal_model_Yt)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{params}] bounds parameters
+
+\item[\code{seasonal\_model\_Ct}] seasonal model clearsky.
+
+\item[\code{seasonal\_model\_Yt}] seasonal model Yt.
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-Yt}{}
+%
+\begin{SubSection}{Method \code{Yt()}}
+Transformation from Xt to Yt
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$Yt(Xt)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{Xt}] risk driver in (alpha, alpha+beta)
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-Xt}{}
+%
+\begin{SubSection}{Method \code{Xt()}}
+Transformation from Yt to Xt
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$Xt(Yt)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{Yt}] transformed risk driver in (-Inf, Inf)
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-GHI}{}
+%
+\begin{SubSection}{Method \code{GHI()}}
+Solar radiation function
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$GHI(x, t)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{x}] risk driver in (alpha, alpha+beta).
+
+\item[\code{t}] time index, number of day of the year.
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-Ct}{}
+%
+\begin{SubSection}{Method \code{Ct()}}
+Seasonal function clear sky radiation
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$Ct(t)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{t}] time index, number of day of the year.
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-Yt_bar}{}
+%
+\begin{SubSection}{Method \code{Yt\_bar()}}
+Seasonal function transformed risk driver
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$Yt_bar(t)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{t}] time index, number of day of the year.
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-Xt_bar}{}
+%
+\begin{SubSection}{Method \code{Xt\_bar()}}
+Seasonal function risk driver
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$Xt_bar(t)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{t}] time index, number of day of the year.
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-GHI_bar}{}
+%
+\begin{SubSection}{Method \code{GHI\_bar()}}
+Seasonal function solar radiation
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$GHI_bar(t)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{t}] time index, number of day of the year.
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+
+
+\hypertarget{method-clone}{}
+%
+\begin{SubSection}{Method \code{clone()}}
+The objects of this class are cloneable with this method.
+%
+\begin{SubSubSection}{Usage}
+\begin{alltt}solarTransform$clone(deep = FALSE)\end{alltt}
+
+\end{SubSubSection}
+
+
+%
+\begin{SubSubSection}{Arguments}
+
+\begin{description}
+
+\item[\code{deep}] Whether to make a deep clone.
+
+\end{description}
+
+
+\end{SubSubSection}
+
+\end{SubSection}
+
+\end{Section}
+\inputencoding{utf8}
+\HeaderA{solarTransform\_GHI}{Solar Model transformation function for GHI}{solarTransform.Rul.GHI}
+%
+\begin{Description}\relax
+Solar Model transformation function for GHI
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarTransform_GHI(x, Ct)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] risk driver time series in (0,1)
+
+\item[\code{Ct}] clear sky radiation time series
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+A radiation time series.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+Xt <- solarRiskDriver(8, 12)
+solarTransform_GHI(Xt, 12)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarTransform\_params}{Solar Model transformation from Xt to Yt}{solarTransform.Rul.params}
+%
+\begin{Description}\relax
+Compute optimal parameters given the threshold.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarTransform_params(x, threshold = 0.01)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] series of Xt
+
+\item[\code{threshold}] param
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solarTransform\_Xt}{Transformation function from Yt to Xt}{solarTransform.Rul.Xt}
+%
+\begin{Description}\relax
+Transformation function from Yt to Xt
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarTransform_Xt(Yt, alpha, beta)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{alpha}] param
+
+\item[\code{beta}] param
+
+\item[\code{y}] transformed time series in (-infty, infty)
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+Yt <- solarTransform_Yt(0.5, 0.01, 0.9)
+solarTransform_Xt(Yt, 0.01, 0.9)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solarTransform\_Yt}{Transformation function from Xt to Yt}{solarTransform.Rul.Yt}
+%
+\begin{Description}\relax
+Transformation function from Xt to Yt
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solarTransform_Yt(x, alpha, beta)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] risk driver time series in (0,1)
+
+\item[\code{alpha}] param
+
+\item[\code{beta}] param
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solarTransform_Yt(0.5, 0.01, 0.9)
+solarTransform_Yt(0.5, 0.02, 0.94)
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solar\_angle\_minmax}{Solar angle minimum and maximum}{solar.Rul.angle.Rul.minmax}
+%
+\begin{Description}\relax
+Compute the solar angle for a latitude in different dates.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solar_angle_minmax(
+  lat = NULL,
+  day_date = Sys.Date(),
+  day_end = NULL,
+  method = "cooper"
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{lat}] integer, latitude.
+
+\item[\code{day\_date}] vector of dates in the format `YYYY-MM-DD`.
+
+\item[\code{day\_end}] end date, if it is not NULL will be end date.
+
+\item[\code{method}] method used for computation of solar declination, can be `cooper` or `spencer`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a tibble.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solar_angle_minmax(55.3, "2040-01-01", day_end = "2040-12-31")
+solar_angle_minmax(55.3, c("2040-01-31", "2023-04-01", "2015-09-02"))
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solar\_extraterrestrial\_radiation}{Solar extraterrestrial radiation}{solar.Rul.extraterrestrial.Rul.radiation}
+%
+\begin{Description}\relax
+Compute the solar angle for a latitude in different times of the day.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solar_extraterrestrial_radiation(
+  lat = NULL,
+  day_date = Sys.Date(),
+  day_end = NULL,
+  method = "spencer"
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{lat}] latitude
+
+\item[\code{day\_date}] vector of dates in the format `YYYY-MM-DD`
+
+\item[\code{day\_end}] end date, if it is not NULL will be end date.
+
+\item[\code{method}] method used for computation of solar declination, can be `cooper` or `spencer`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a numeric vector containing the time adjustment in minutes.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solar_extraterrestrial_radiation(42.23, "2022-05-01", day_end = "2022-05-31")
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solar\_monthly\_mixture}{Monthly Gaussian mixture with two components}{solar.Rul.monthly.Rul.mixture}
+%
+\begin{Description}\relax
+Monthly Gaussian mixture with two components
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solar_monthly_mixture(x, date, weights, match_moments = FALSE, prior_p, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] arg
+
+\item[\code{date}] arg
+
+\item[\code{weights}] arg
+
+\item[\code{match\_moments}] arg
+
+\item[\code{...}] arg
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{solar\_movements}{Solar movements}{solar.Rul.movements}
+%
+\begin{Description}\relax
+Compute the solar angle for a latitude in different times of the day.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solar_movements(
+  lat = NULL,
+  lon = NULL,
+  day_date_time = NULL,
+  day_time_end = NULL,
+  method = "spencer"
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{lat}] latitude
+
+\item[\code{lon}] longitude
+
+\item[\code{day\_date\_time}] vector of dates in the format `YYYY-MM-DD HH:MM:SS`
+
+\item[\code{day\_time\_end}] end date, if it is not NULL will be end date.
+
+\item[\code{method}] method used for computation of solar declination, can be `cooper` or `spencer`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a numeric vector containing the time adjustment in minutes.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solar_movements(44.23, 11.20, day_date_time = "2040-01-01", day_time_end = "2040-01-03")
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solar\_time\_adjustment}{Solar time adjustment}{solar.Rul.time.Rul.adjustment}
+%
+\begin{Description}\relax
+Compute the time adjustment for a date.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solar_time_adjustment(day_date = NULL, day_end = NULL)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{day\_date}] vector of dates in the format `YYYY-MM-DD`.
+
+\item[\code{day\_end}] end date, if it is not NULL will be end date.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solar_time_adjustment("2040-01-31")
+solar_time_adjustment(c("2040-01-31", "2023-04-01", "2015-09-02"))
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solar\_time\_constant}{Solar time constant}{solar.Rul.time.Rul.constant}
+%
+\begin{Description}\relax
+Compute the solar constant for a date.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solar_time_constant(day_date = NULL, day_end = NULL, method = "spencer")
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{day\_date}] vector of dates in the format `YYYY-MM-DD`.
+
+\item[\code{day\_end}] end date, if it is not `NULL` will be end date.
+
+\item[\code{method}] method used for computation, can be `cooper` or `spencer`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a numeric vector containing the solar constant.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solar_time_constant("2040-01-31")
+solar_time_constant(c("2040-01-31", "2023-04-01", "2015-09-02"))
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{solar\_time\_declination}{Solar time declination}{solar.Rul.time.Rul.declination}
+%
+\begin{Description}\relax
+Compute the solar declination for different dates.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+solar_time_declination(
+  day_date = NULL,
+  day_end = NULL,
+  method = c("cooper", "spencer")
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{day\_date}] vector of dates in the format `YYYY-MM-DD`
+
+\item[\code{day\_end}] end date, if it is not NULL will be end date.
+
+\item[\code{method}] method used for computation, can be `cooper` or `spencer`.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a numeric vector containing the solar declination in minutes.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+solar_time_declination("2040-01-01", day_end = "2040-12-31")
+solar_time_declination(c("2040-01-31", "2023-04-01", "2015-09-02"))
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{spatialGrid}{Spatial Grid}{spatialGrid}
+%
+\begin{Description}\relax
+Create a grid from a range of latitudes and longitudes.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialGrid(lat = c(43.7, 45.1), lon = c(9.2, 12.7), by = c(0.1, 0.1))
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{by}] step for longitudes and latitudes. If two values are specified the first will be used for
+latitudes and the second for longitudes
+
+\item[\code{range\_lat}] vector with latitudes. Only the minimum and maximum values are considered.
+
+\item[\code{range\_lon}] vector with longitudes. Only the minimum and maximum values are considered.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a tibble with two columns `lat` and `lon`.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+spatialGrid(lat = c(43.7, 43.8), lon = c(12.5, 12.7), by = 0.1)
+spatialGrid(lat = c(43.7, 43.75, 43.8), lon = c(12.6, 12.6, 12.7), by = c(0.05, 0.01))
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{spatialModel}{Spatial model object}{spatialModel}
+%
+\begin{Description}\relax
+Spatial model object
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialModel(locations, solarModels)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{locations}] grid of locations
+
+\item[\code{solarModels}] list of `solarModel` objects
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{spatialModel\_combinations}{Compute all possible states}{spatialModel.Rul.combinations}
+%
+\begin{Description}\relax
+Compute all possible states
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialModel_combinations(object, lat, lon)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] a `spatialModel` object
+
+\item[\code{lat}] numeric, latitude of the point.
+
+\item[\code{lon}] numeric, longitude of the point.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{spatialModel\_interpolate}{Compute a solar model for a location}{spatialModel.Rul.interpolate}
+%
+\begin{Description}\relax
+Compute a solar model for a location
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialModel_interpolate(object, lat, lon, n = 4, quiet = FALSE, ...)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] a `spatialModel` object
+
+\item[\code{lat}] numeric, latitude of the point.
+
+\item[\code{lon}] numeric, longitude of the point.
+
+\item[\code{n}] number of neighborhoods
+
+\item[\code{quiet}] logical
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{spatialModel\_interpolate\_GHI}{Interpolate the solar radiation for a location}{spatialModel.Rul.interpolate.Rul.GHI}
+%
+\begin{Description}\relax
+Interpolate the solar radiation for a location
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialModel_interpolate_GHI(
+  object,
+  lat,
+  lon,
+  n = 4,
+  day_date,
+  quiet = FALSE,
+  ...
+)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] a `spatialModel` object
+
+\item[\code{lat}] numeric, latitude of the point.
+
+\item[\code{lon}] numeric, longitude of the point.
+
+\item[\code{n}] number of neighborhoods
+
+\item[\code{day\_date}] day date for interpolation. If missing all the available dates will be used.
+
+\item[\code{quiet}] logical
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{spatialModel\_neighborhoods}{Find the n-closest neighborhoods of a point}{spatialModel.Rul.neighborhoods}
+%
+\begin{Description}\relax
+Find the n-closest neighborhoods of a point
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialModel_neighborhoods(object, lat, lon, n = 4, beta = 2, d0)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] a `spatialModel` object
+
+\item[\code{lat}] numeric, latitude of the point.
+
+\item[\code{lon}] numeric, longitude of the point.
+
+\item[\code{n}] number of neighborhoods
+
+\item[\code{beta}] parameter used in exponential and power functions.
+
+\item[\code{d0}] parameter used only in exponential function.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{spatialParameters}{Spatial kernel regression}{spatialParameters}
+%
+\begin{Description}\relax
+Fit kernel regression on all the parameters of a list containing
+`solarModels` at different coordinates.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialParameters(solarModels, quiet = FALSE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{solarModels}] a list containing `solarModels` objects.
+
+\item[\code{quiet}] logical
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{spatialParameters\_predict}{Predict method}{spatialParameters.Rul.predict}
+%
+\begin{Description}\relax
+Predict method for the class `spatialParameters`.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spatialParameters_predict(object, lat, lon, as_tibble = FALSE, quiet = FALSE)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{object}] an object of the class `spatialParameters`. See \code{\LinkA{clearskyModel}{clearskyModel}}.
+
+\item[\code{lat}] numeric latitude of the locations.
+
+\item[\code{lon}] numeric longitude of the locations.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{spectralDistribution}{Compute the spectral distribution for a black body}{spectralDistribution}
+%
+\begin{Description}\relax
+Compute the spectral distribution for a black body
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+spectralDistribution(lambda = NULL, measure = "nanometer")
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{lambda}] numeric, wave length in micrometers.
+
+\item[\code{measure}] character, measure of the irradiated energy. If `nanometer` the final energy will be in W/m2 x nanometer,
+otherwise if `micrometer` the final energy will be in W/m2 x micrometer.
+\end{ldescription}
+\end{Arguments}
+\inputencoding{utf8}
+\HeaderA{test\_normality}{Perform normality tests}{test.Rul.normality}
+%
+\begin{Description}\relax
+Perform normality tests
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+test_normality(x = NULL, pvalue = 0.05)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] numeric, a vector of observation.
+
+\item[\code{pvalue}] numeric, the desiderd level of `p.value` at which the null hypothesis will be rejected.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Value}
+a tibble with the results of the normality tests.
+\end{Value}
+%
+\begin{Examples}
+\begin{ExampleCode}
+set.seed(1)
+x <- rnorm(1000, 0, 1) + rchisq(1000, 1)
+test_normality(x)
+x <- rnorm(1000, 0, 1)
+test_normality(x)
+
+\end{ExampleCode}
+\end{Examples}
+\inputencoding{utf8}
+\HeaderA{tnorm}{Truncated Normal}{tnorm}
+\aliasA{dtnorm}{tnorm}{dtnorm}
+\aliasA{ptnorm}{tnorm}{ptnorm}
+\aliasA{qtnorm}{tnorm}{qtnorm}
+\aliasA{rtnorm}{tnorm}{rtnorm}
+%
+\begin{Description}\relax
+Probability for a truncated normal random variable.
+\end{Description}
+%
+\begin{Usage}
+\begin{verbatim}
+dtnorm(x, mean = 0, sd = 1, a = -3, b = 3, log = FALSE)
+
+ptnorm(x, mean = 0, sd = 1, a = -3, b = 3, log.p = FALSE, lower.tail = TRUE)
+
+qtnorm(p, mean = 0, sd = 1, a = -3, b = 3, log.p = FALSE, lower.tail = TRUE)
+
+rtnorm(n, mean = 0, sd = 1, a = -100, b = 100)
+\end{verbatim}
+\end{Usage}
+%
+\begin{Arguments}
+\begin{ldescription}
+\item[\code{x}] vector of quantiles.
+
+\item[\code{mean}] vector of means.
+
+\item[\code{sd}] vector of standard deviations.
+
+\item[\code{a}] lower bound.
+
+\item[\code{b}] upper bound.
+
+\item[\code{log}] logical; if `TRUE`, probabilities are returned as `log(p)`.
+
+\item[\code{log.p}] logical; if `TRUE`, probabilities p are given as `log(p)`.
+
+\item[\code{lower.tail}] logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
+
+\item[\code{p}] vector of probabilities.
+
+\item[\code{n}] number of observations. If `length(n) > 1`, the length is taken to be the number required.
+\end{ldescription}
+\end{Arguments}
+%
+\begin{Examples}
+\begin{ExampleCode}
+x <- seq(-5, 5, 0.01)
+
+# Density function
+p <- dtnorm(x, mean = 0, sd = 1, a = -1)
+plot(x, p, type = "l")
+
+# Distribution function
+p <- ptnorm(x, mean = 0, sd = 1, b = 1)
+plot(x, p, type = "l")
+
+# Quantile function
+dtnorm(0.1)
+ptnorm(qtnorm(0.1))
+
+# Random Numbers
+rtnorm(1000)
+plot(rtnorm(100, mean = 1, sd = 1, a = 1, b = 10), type = "l")
+
+\end{ExampleCode}
+\end{Examples}
+\printindex{}
+\end{document}

@@ -14,7 +14,7 @@ solar_extraterrestrial_radiation(
 \arguments{
 \item{lat}{latitude}
 
-\item{day_date}{vector of dates in the format `%YYYY-%MM-%DD`}
+\item{day_date}{vector of dates in the format `YYYY-MM-DD`}
 
 \item{day_end}{end date, if it is not NULL will be end date.}
 

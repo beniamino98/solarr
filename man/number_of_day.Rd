@@ -7,7 +7,7 @@
 number_of_day(day_date = NULL)
 }
 \arguments{
-\item{day_date}{dates vector in the format `%YYYY-%MM-%DD`.}
+\item{day_date}{dates vector in the format `YYYY-MM-DD`.}
 }
 \value{
 Numeric vector with the number of the day during the year.

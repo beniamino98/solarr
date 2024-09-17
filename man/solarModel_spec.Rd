@@ -2,30 +2,35 @@
 % Please edit documentation in R/solarModel.R
 \name{solarModel_spec}
 \alias{solarModel_spec}
-\title{Specification for a `solarModel` object}
+\title{Specification function for a `solarModel`}
 \usage{
 solarModel_spec(
   place,
-  year_max = NULL,
-  from = NULL,
-  to = NULL,
+  min_date,
+  max_date,
+  from,
+  to,
   CAMS_data = solarr::CAMS_data,
-  control = solarModel_control()
+  control_model = control_solarModel()
 )
 }
 \arguments{
-\item{place}{character, name for the selected location in `CAMS_data` list.}
+\item{place}{character, name of an element in the `CAMS_data` list.}
 
-\item{year_max}{integer, maximum year in the dataset}
+\item{min_date}{character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.}
 
-\item{from}{character. Date in the format `YYYY-MM-DD`. Minimum date in the data in `CAMS_data`. If `NULL` will be used the maximum available.}
+\item{max_date}{character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.}
 
-\item{to}{character. Date in the format `YYYY-MM-DD`. Maximum date in the data in `CAMS_data`. If `NULL` will be used the maximum available.}
+\item{from}{character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
+If `missing` will be used the minimum data available after filtering for `min_date`.}
 
-\item{CAMS_data}{list with radiation data for different locations.}
+\item{to}{character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.
+If `missing` will be used the maximum data available after filtering for `max_date`.}
 
-\item{control}{list with control parameters, see `control_solarModel()`.}
+\item{CAMS_data}{named list with radiation data for different locations.}
+
+\item{control_model}{list with control parameters, see \code{\link{control_solarModel}} for details.}
 }
 \description{
-Specification for a `solarModel` object
+Specification function for a `solarModel`
 }

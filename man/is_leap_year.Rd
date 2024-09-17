@@ -4,19 +4,20 @@
 \alias{is_leap_year}
 \title{Is leap year?}
 \usage{
-is_leap_year(day_date)
+is_leap_year(x)
 }
 \arguments{
-\item{day_date}{dates vector in the format `%YYYY-%MM-%DD`.}
+\item{x}{numeric value or dates vector in the format `YYYY-MM-DD`.}
 }
 \value{
 Boolean. `TRUE` if it is a leap year, `FALSE` otherwise.
 }
 \description{
-Check if an year is leap (366 days) or not (365 days).
+Check if a given year is leap (366 days) or not (365 days).
 }
 \examples{
 is_leap_year("2024-02-01")
+is_leap_year(c(2023:2030))
 is_leap_year(c("2024-10-01", "2025-10-01"))
 is_leap_year("2029-02-01")
 }

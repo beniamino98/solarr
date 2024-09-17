@@ -7,12 +7,9 @@
 solar_time_adjustment(day_date = NULL, day_end = NULL)
 }
 \arguments{
-\item{day_date}{vector of dates in the format `%YYYY-%MM-%DD`}
+\item{day_date}{vector of dates in the format `YYYY-MM-DD`.}
 
 \item{day_end}{end date, if it is not NULL will be end date.}
-}
-\value{
-a numeric vector containing the time adjustment in seconds.
 }
 \description{
 Compute the time adjustment for a date.

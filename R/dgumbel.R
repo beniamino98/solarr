@@ -1,25 +1,28 @@
-#' Gumbel Random Variable
+#' Gumbel random variable
 #'
-#' Probability density function for a gumbel random variable
+#' Gumbel density, distribution, quantile and random generator.
 #'
 #' @param x vector of quantiles.
 #' @param p vector of probabilities.
 #' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
-#' @param mean vector of means.
-#' @param scale vector of scale parameter.
+#' @param location location parameter.
+#' @param scale scale parameter.
+#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
 #' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
 #' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
-#' @param invert logical, use the inverted Gumbel distribution
+#'
+#' @references Gumbel distribution [\href{https://en.wikipedia.org/wiki/Gumbel_distribution}{W}].
 #'
 #' @examples
+#' # Grid
 #' x <- seq(-5, 5, 0.01)
 #'
 #' # Density function
-#' p <- dgumbel(x, mean = 0, scale = 1)
+#' p <- dgumbel(x, location = 0, scale = 1)
 #' plot(x, p, type = "l")
 #'
 #' # Distribution function
-#' p <- pgumbel(x, mean = 0, scale = 1)
+#' p <- pgumbel(x, location = 0, scale = 1)
 #' plot(x, p, type = "l")
 #'
 #' # Quantile function
@@ -30,68 +33,73 @@
 #' rgumbel(1000)
 #' plot(rgumbel(1000), type = "l")
 #'
-#' @name gumbel
-#' @rdname gumbel
+#' @name dgumbel
+#' @rdname dgumbel
 #' @aliases dgumbel
 #' @aliases pgumbel
 #' @aliases qgumbel
 #' @aliases rgumbel
 #' @export
-dgumbel <- function(x, mean = 0, scale = 1, log.p = FALSE, invert = FALSE){
-  z <- (x-mean)/scale
-  if (invert) {
-    # Inverted Gumbel
-    p <- (1/scale)*exp(z - exp(z))
-  } else {
-    # Gumbel
-    p <- (1/scale)*exp(-(z + exp(-z)))
+dgumbel <- function(x, location = 0, scale = 1, log = FALSE){
+  # Standardized values
+  z <- (x-location)/scale
+  # Density
+  probs <- (1/scale)*exp(-(z + exp(-z)))
+  # Log probability
+  if (log) {
+    probs <- base::log(probs)
   }
-  if (log.p) {
-    return(base::log(p))
-  }
-  return(p)
+  return(probs)
 }
 
 
 #' @export
-#' @rdname gumbel
-pgumbel <- function(x, mean = 0, scale = 1, log.p = FALSE, lower.tail = TRUE, invert = FALSE){
-  z <- (x - mean)*scale
-  if (invert) {
-    # Inverted Gumbel
-    p <- exp(-exp(z))
-  } else {
-    # Gumbel
-    p <- exp(-exp(-z))
-  }
+#' @rdname dgumbel
+pgumbel <- function(x, location = 0, scale = 1, log.p = FALSE, lower.tail = TRUE){
+  # Standardized values
+  z <- (x - location)*scale
+  # Distribution
+  probs <- exp(-exp(-z))
+  # Lower tail
   if (!lower.tail) {
-    p <- 1 - p
+    probs <- 1 - probs
   }
+  # Log-probability
   if (log.p) {
-    p <- base::log(p)
+    probs <- base::log(probs)
   }
-  return(p)
+  return(probs)
 }
 
 
 #' @export
-#' @rdname gumbel
-qgumbel <- function(p, mean = 0, scale = 1, log.p = FALSE, lower.tail = TRUE, invert = FALSE) {
+#' @rdname dgumbel
+qgumbel <- function(p, location = 0, scale = 1, log.p = FALSE, lower.tail = TRUE) {
+  probs <- p
+  # Log probability
   if (log.p) {
-    p <- exp(p)
+    probs <- exp(probs)
   }
+  # Lower tail
   if (!lower.tail) {
-    p <- 1 - p
+    probs <- 1 - probs
   }
-  x <- mean + ifelse(invert, 1, -1)*scale*log(-log(p))
+  # Quantiles
+  x <- location + scale*log(-log(probs))
   return(x)
 }
 
 
 #' @export
-#' @rdname gumbel
-rgumbel <- function(n, mean = 0, scale = 1, invert = FALSE){
+#' @rdname dgumbel
+rgumbel <- function(n, location = 0, scale = 1){
+  # Control
+  if (length(n) > 1){
+    n <- length(n)
+  }
+  # Simulated grades
   u <- runif(n, min = 0, max = 1)
-  qgumbel(u, mean = mean, scale = scale, log.p = FALSE, lower.tail = TRUE, invert = invert)
+  # Simulated values
+  qgumbel(u, location, scale, log.p = FALSE, lower.tail = TRUE)
 }
 

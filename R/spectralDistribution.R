@@ -1,5 +1,14 @@
-# Compute the spectral distribution for a blackbody (sun)
-spectralDistribution <- function(lambda = NULL, measure = c("nanometer", "micrometer")){
+#' Compute the spectral distribution for a black body
+#'
+#' @param lambda numeric, wave length in micrometers.
+#' @param measure character, measure of the irradiated energy. If `nanometer` the final energy will be in W/m2 x nanometer,
+#' otherwise if `micrometer` the final energy will be in W/m2 x micrometer.
+#'
+#' @rdname spectralDistribution
+#' @name spectralDistribution
+#'
+#' @export
+spectralDistribution <- function(lambda = NULL, measure = "nanometer"){
 
   # choose the measure: nanometer or mircrometer
   measure <- match.arg(measure, choices = c("nanometer", "micrometer"))
@@ -10,14 +19,16 @@ spectralDistribution <- function(lambda = NULL, measure = c("nanometer", "microm
   C1 <- 3.742*10^(8)  # constant, in (W micro-meter^4)/meter^2
   C2 <- 1.439*10^(4)  # constant, in (micro-meter*Kelvin)
 
-  # if "lambda" is "nanometer", the final energy will be in (W/m2 x nano-meter)
+  spectra <- NA
+  # if "lambda" is "nanometer", the final energy will be in (W/m2 x nanometer)
   if (measure == "nanometer") {
-    lambda <- lambda/1000  # from micrometer to nanometer
+    # from micrometer to nanometer
+    lambda <- lambda/1000
     spectra <- (Rs/R)^(2)*(C1/(lambda^(5)*(exp(C2/lambda*Ts) - 1))) # Plank's Law
-    return(spectra/1000)
-    # if "lambda" is "micrometer", the final energy will be in (W/m2 x micro-meter)
-  } else if(measure == "micrometer") {
+    spectra <- spectra/1000
+  } else if (measure == "micrometer") {
+    # if "lambda" is "micrometer", the final energy will be in (W/m2 x micrometer)
     spectra <- (Rs/R)^(2)*(C1/(lambda^(5)*(exp(C2/lambda*Ts) - 1))) # Plank's Law
-    return(spectra)
   }
+  return(spectra)
 }

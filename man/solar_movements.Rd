@@ -17,7 +17,7 @@ solar_movements(
 
 \item{lon}{longitude}
 
-\item{day_date_time}{vector of dates in the format `%YYYY-%MM-%DD HH:MM:SS`}
+\item{day_date_time}{vector of dates in the format `YYYY-MM-DD HH:MM:SS`}
 
 \item{day_time_end}{end date, if it is not NULL will be end date.}
 

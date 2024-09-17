@@ -1,15 +1,20 @@
 #' Conversion in Radiant or Degrees
 #'
-#' Convert an angle in radiant into an angle in degrees.
+#' Convert angles in radiant into an angles in degrees.
 #'
 #' @param x numeric vector, angles in radiant or degrees.
+#'
 #' @examples
 #' # convert 0.34 radiant in degrees
 #' from_radiant_to_degree(0.34)
+#' # convert 19.48 degree in radiant
+#' from_degree_to_radiant(19.48)
+#'
 #' @aliases from_radiant_to_degree
 #' @aliases from_degree_to_radiant
 #' @rdname radiant
-#' @return numeric vector.
+#' @name radiant
+#' @return numeric vector with angles in radiant or degrees.
 #' @export
 from_radiant_to_degree <- function(x){
   assertive::assert_is_numeric(x)
@@ -18,10 +23,6 @@ from_radiant_to_degree <- function(x){
   return(y)
 }
 
-#' @examples
-#' # convert 19.48 degree in radiant
-#' from_degree_to_radiant(19.48)
-#'
 #' @rdname radiant
 #' @export
 from_degree_to_radiant <- function(x){
@@ -31,16 +32,20 @@ from_degree_to_radiant <- function(x){
   return(y)
 }
 
+
 #' Detect the season
 #'
-#' Detect the season from a vector of dates.
+#' Detect the season from a vector of dates
 #'
-#' @param day_date vector of dates in the format `%YYYY-%MM-%DD`.
+#' @param day_date vector of dates in the format `YYYY-MM-DD`.
+#'
 #' @examples
 #' detect_season("2040-01-31")
 #' detect_season(c("2040-01-31", "2023-04-01", "2015-09-02"))
+#'
 #' @name detect_season
 #' @rdname detect_season
+#'
 #' @return a character vector containing the correspondent season. Can be `spring`, `summer`, `autumn`, `winter`.
 #' @export
 detect_season <- function(day_date = NULL){
@@ -72,41 +77,36 @@ detect_season <- function(day_date = NULL){
 }
 
 
-
 #' Is leap year?
 #'
-#' Check if an year is leap (366 days) or not (365 days).
+#' Check if a given year is leap (366 days) or not (365 days).
 #'
-#' @param day_date dates vector in the format `%YYYY-%MM-%DD`.
+#' @param x numeric value or dates vector in the format `YYYY-MM-DD`.
+#'
 #' @examples
 #' is_leap_year("2024-02-01")
+#' is_leap_year(c(2023:2030))
 #' is_leap_year(c("2024-10-01", "2025-10-01"))
 #' is_leap_year("2029-02-01")
 #' @name is_leap_year
 #' @rdname is_leap_year
 #' @return Boolean. `TRUE` if it is a leap year, `FALSE` otherwise.
 #' @export
-is_leap_year <- function(day_date){
-  day_date <- lubridate::as_date(day_date)
-  out <- c()
-  for(i in 1:length(day_date)){
-    date_year <- lubridate::year(day_date[i])
-    if (date_year %% 4 == 0) {
-      out[i] <- TRUE
-    } else {
-      out[i] <- FALSE
-    }
+is_leap_year <- function(x){
+  if (is.numeric(x)) {
+    date_year <- x
+  } else {
+    date_year <- lubridate::year(lubridate::as_date(x))
   }
-  return(out)
+  return(date_year %% 4 == 0)
 }
-
 
 
 #' Number of day
 #'
 #' Compute the number of day of the year given a vector of dates.
 #'
-#' @param day_date dates vector in the format `%YYYY-%MM-%DD`.
+#' @param day_date dates vector in the format `YYYY-MM-DD`.
 #'
 #' @examples
 #' number_of_day("2040-01-31")
@@ -142,17 +142,15 @@ number_of_day <- function(day_date = NULL){
 }
 
 
-
 #' Solar time adjustment
 #'
 #' Compute the time adjustment for a date.
 #'
-#' @param day_date vector of dates in the format `%YYYY-%MM-%DD`
+#' @param day_date vector of dates in the format `YYYY-MM-DD`.
 #' @param day_end end date, if it is not NULL will be end date.
 #' @examples
 #' solar_time_adjustment("2040-01-31")
 #' solar_time_adjustment(c("2040-01-31", "2023-04-01", "2015-09-02"))
-#' @return a numeric vector containing the time adjustment in seconds.
 #' @name solar_time_adjustment
 #' @rdname solar_time_adjustment
 #' @export
@@ -178,7 +176,6 @@ solar_time_adjustment <- function(day_date = NULL, day_end = NULL){
   out <- dplyr::tibble(date = day_date, time_adjustment = time_adj)
   return(out)
 }
-
 
 
 #' Solar time constant
@@ -226,12 +223,11 @@ solar_time_constant <- function(day_date = NULL, day_end = NULL, method = "spenc
 }
 
 
-
 #' Solar time declination
 #'
 #' Compute the solar declination for different dates.
 #'
-#' @param day_date vector of dates in the format `%YYYY-%MM-%DD`
+#' @param day_date vector of dates in the format `YYYY-MM-DD`
 #' @param day_end end date, if it is not NULL will be end date.
 #' @param method method used for computation, can be `cooper` or `spencer`.
 #' @examples
@@ -272,13 +268,12 @@ solar_time_declination <- function(day_date = NULL, day_end = NULL, method = c("
 }
 
 
-
 #' Solar angle minimum and maximum
 #'
 #' Compute the solar angle for a latitude in different dates.
 #'
 #' @param lat integer, latitude.
-#' @param day_date vector of dates in the format `%YYYY-%MM-%DD`-
+#' @param day_date vector of dates in the format `YYYY-MM-DD`.
 #' @param day_end end date, if it is not NULL will be end date.
 #' @param method method used for computation of solar declination, can be `cooper` or `spencer`.
 #' @examples
@@ -334,13 +329,14 @@ solar_angle_minmax <- function(lat = NULL, day_date = Sys.Date(), day_end = NULL
   return(out)
 }
 
+
 #' Solar movements
 #'
 #' Compute the solar angle for a latitude in different times of the day.
 #'
 #' @param lat latitude
 #' @param lon longitude
-#' @param day_date_time vector of dates in the format `%YYYY-%MM-%DD HH:MM:SS`
+#' @param day_date_time vector of dates in the format `YYYY-MM-DD HH:MM:SS`
 #' @param day_time_end end date, if it is not NULL will be end date.
 #' @param method method used for computation of solar declination, can be `cooper` or `spencer`.
 #' @examples
@@ -428,12 +424,13 @@ solar_movements <- function(lat = NULL, lon = NULL, day_date_time = NULL, day_ti
   return(output)
 }
 
+
 #' Solar extraterrestrial radiation
 #'
 #' Compute the solar angle for a latitude in different times of the day.
 #'
 #' @param lat latitude
-#' @param day_date vector of dates in the format `%YYYY-%MM-%DD`
+#' @param day_date vector of dates in the format `YYYY-MM-DD`
 #' @param day_end end date, if it is not NULL will be end date.
 #' @param method method used for computation of solar declination, can be `cooper` or `spencer`.
 #' @examples
@@ -473,78 +470,4 @@ solar_extraterrestrial_radiation <- function(lat = NULL, day_date = Sys.Date(), 
   output <- dplyr::bind_rows(output_ls)
   return(output)
 }
-
-#' Solar clear sky hourly
-#'
-#' Compute the clear sky radiation for hourly data.
-#'
-#' @param cosZ cosine angle of incidence
-#' @param G0 extraterrestrial radiation
-#' @param altitude altitude in meters.
-#' @param clime correction for different climes, can be `No Correction`, `Summer`, `Winter`, `Subartic Summer`, `Tropical`.
-#'
-#' @examples
-#' solar_clearsky_hourly(cosZ = 0.4, G0 = 4, altitude = 2.5, clime = "No Correction")
-#'
-#' @name solar_clearsky_hourly
-#' @rdname solar_clearsky_hourly
-#' @return a numeric vector containing the time adjustment in minutes.
-#' @export
-solar_clearsky_hourly <- function(cosZ = NULL, G0 = NULL, altitude = 2.5, clime = "No Correction"){
-
-  # correction for different climes
-  clime <- match.arg(clime[1], choices = c("No Correction", "Summer", "Winter", "Subartic Summer", "Tropical"))
-
-  # altitude must be converted from metre to km
-  altitude <- altitude/1000
-  if (altitude > 2.5) {
-    a0_star <- 0.6*(1-exp(-0.214*(altitude - 1.12)))
-  } else {
-    a0_star <- 0.4237 - 0.00821*(6.0 - altitude)^2
-  }
-
-  a1_star <- 0.5055 - 0.00595*(6.5 - altitude)^2
-  a2_star <- 0.2711 - 0.01858*(2.5 - altitude)^2
-
-  # Correction for Climetypes
-  if(clime == "No Correction"){
-
-    a0 <- a0_star
-    a1 <- a1_star
-    a2 <- a2_star
-
-  } else if (clime == "Summer"){
-
-    a0 <- a0_star*0.97
-    a1 <- a1_star*0.99
-    a2 <- a2_star*1.02
-
-  } else if (clime == "Winter"){
-
-    a0 <- a0_star*1.03
-    a1 <- a1_star*1.01
-    a2 <- a2_star*1.00
-
-  } else if (clime == "Subartic Summer"){
-
-    a0 <- a0_star*0.99
-    a1 <- a1_star*0.99
-    a2 <- a2_star*1.01
-
-  } else if (clime == "Tropical"){
-
-    a0 <- a0_star*0.95
-    a1 <- a1_star*0.98
-    a2 <- a2_star*1.02
-  }
-
-  output <- dplyr::tibble(tau_beam = a0 + a1*exp(-a2/cosZ), tau_diffuse = 0.271 - 0.294*tau_beam)
-  output <- dplyr::mutate(output,
-                          tau_beam = ifelse(tau_beam > 1 | tau_beam  < 0, 0, tau_beam),
-                          tau_diffuse = ifelse(tau_diffuse > 1 | tau_diffuse  < 0, 0, tau_diffuse))
-
-  skymax <- G0*output$tau_beam + G0*output$tau_diffuse
-  return(skymax)
-}
-
 

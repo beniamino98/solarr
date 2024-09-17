@@ -7,7 +7,7 @@
 riccati_root(x)
 }
 \arguments{
-\item{x}{matrix, squared and symmetric.}
+\item{x}{squared and symmetric matrix.}
 }
 \description{
 Compute the square root of a symmetric matrix.

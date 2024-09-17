@@ -1,0 +1,136 @@
+\indexentry{clearskyModel@\texttt  {clearskyModel}|hyperpage}{2}
+\indexentry{control\_clearskyModel@\texttt  {control\_clearskyModel}|hyperindexformat{\textit}}{2}
+\indexentry{clearskyModel\_optimize@\texttt  {clearskyModel\_optimize}|hyperpage}{2}
+\indexentry{control\_clearskyModel@\texttt  {control\_clearskyModel}|hyperindexformat{\textit}}{2}
+\indexentry{clearskyModel\_outliers@\texttt  {clearskyModel\_outliers}|hyperpage}{3}
+\indexentry{control\_clearskyModel@\texttt  {control\_clearskyModel}|hyperpage}{3}
+\indexentry{clearskyModel\_optimize@\texttt  {clearskyModel\_optimize}|hyperindexformat{\textit}}{4}
+\indexentry{control\_solarEsscher@\texttt  {control\_solarEsscher}|hyperpage}{4}
+\indexentry{control\_solarModel@\texttt  {control\_solarModel}|hyperpage}{5}
+\indexentry{control\_clearskyModel@\texttt  {control\_clearskyModel}|hyperindexformat{\textit}}{5}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperpage}{6}
+\indexentry{desscher@\texttt  {desscher}|hyperpage}{6}
+\indexentry{desscherMixture@\texttt  {desscherMixture}|hyperpage}{7}
+\indexentry{pesscherMixture@\texttt  {pesscherMixture} \textit  {(\texttt  {desscherMixture})}|hyperpage}{7}
+\indexentry{detect\_season@\texttt  {detect\_season}|hyperpage}{8}
+\indexentry{discountFactor@\texttt  {discountFactor}|hyperpage}{8}
+\indexentry{dmixnorm@\texttt  {dmixnorm}|hyperpage}{9}
+\indexentry{pmixnorm@\texttt  {pmixnorm} \textit  {(\texttt  {dmixnorm})}|hyperpage}{9}
+\indexentry{qmixnorm@\texttt  {qmixnorm} \textit  {(\texttt  {dmixnorm})}|hyperpage}{9}
+\indexentry{rmixnorm@\texttt  {rmixnorm} \textit  {(\texttt  {dmixnorm})}|hyperpage}{9}
+\indexentry{dsolarGHI@\texttt  {dsolarGHI}|hyperpage}{10}
+\indexentry{psolarGHI@\texttt  {psolarGHI} \textit  {(\texttt  {dsolarGHI})}|hyperpage}{10}
+\indexentry{qsolarGHI@\texttt  {qsolarGHI} \textit  {(\texttt  {dsolarGHI})}|hyperpage}{10}
+\indexentry{rsolarGHI@\texttt  {rsolarGHI} \textit  {(\texttt  {dsolarGHI})}|hyperpage}{10}
+\indexentry{esscher\_norm@\texttt  {esscher\_norm}|hyperpage}{10}
+\indexentry{desscher\_norm@\texttt  {desscher\_norm} \textit  {(\texttt  {esscher\_norm})}|hyperpage}{10}
+\indexentry{pesscher\_norm@\texttt  {pesscher\_norm} \textit  {(\texttt  {esscher\_norm})}|hyperpage}{10}
+\indexentry{gaussianMixture@\texttt  {gaussianMixture}|hyperpage}{11}
+\indexentry{gaussianMixture\_monthly@\texttt  {gaussianMixture\_monthly}|hyperpage}{12}
+\indexentry{gaussianMixture@\texttt  {gaussianMixture}|hyperindexformat{\textit}}{13}
+\indexentry{gumbel@\texttt  {gumbel}|hyperpage}{13}
+\indexentry{dgumbel@\texttt  {dgumbel} \textit  {(\texttt  {gumbel})}|hyperpage}{13}
+\indexentry{pgumbel@\texttt  {pgumbel} \textit  {(\texttt  {gumbel})}|hyperpage}{13}
+\indexentry{qgumbel@\texttt  {qgumbel} \textit  {(\texttt  {gumbel})}|hyperpage}{13}
+\indexentry{rgumbel@\texttt  {rgumbel} \textit  {(\texttt  {gumbel})}|hyperpage}{13}
+\indexentry{havDistance@\texttt  {havDistance}|hyperpage}{14}
+\indexentry{IDW@\texttt  {IDW}|hyperpage}{15}
+\indexentry{is\_leap\_year@\texttt  {is\_leap\_year}|hyperpage}{15}
+\indexentry{kernelRegression@\texttt  {kernelRegression}|hyperpage}{16}
+\indexentry{ks\_test@\texttt  {ks\_test}|hyperpage}{16}
+\indexentry{ks\_ts\_test@\texttt  {ks\_ts\_test}|hyperpage}{17}
+\indexentry{kumaraswamy@\texttt  {kumaraswamy}|hyperpage}{17}
+\indexentry{dkumaraswamy@\texttt  {dkumaraswamy} \textit  {(\texttt  {kumaraswamy})}|hyperpage}{17}
+\indexentry{pkumaraswamy@\texttt  {pkumaraswamy} \textit  {(\texttt  {kumaraswamy})}|hyperpage}{17}
+\indexentry{qkumaraswamy@\texttt  {qkumaraswamy} \textit  {(\texttt  {kumaraswamy})}|hyperpage}{17}
+\indexentry{rkumaraswamy@\texttt  {rkumaraswamy} \textit  {(\texttt  {kumaraswamy})}|hyperpage}{17}
+\indexentry{Location@\texttt  {Location}|hyperpage}{18}
+\indexentry{makeSemiPositive@\texttt  {makeSemiPositive}|hyperpage}{18}
+\indexentry{number\_of\_day@\texttt  {number\_of\_day}|hyperpage}{19}
+\indexentry{optionPayoff@\texttt  {optionPayoff}|hyperpage}{19}
+\indexentry{pks@\texttt  {pks}|hyperpage}{20}
+\indexentry{qks@\texttt  {qks}|hyperpage}{20}
+\indexentry{radiant@\texttt  {radiant}|hyperpage}{21}
+\indexentry{from\_degree\_to\_radiant@\texttt  {from\_degree\_to\_radiant} \textit  {(\texttt  {radiant})}|hyperpage}{21}
+\indexentry{from\_radiant\_to\_degree@\texttt  {from\_radiant\_to\_degree} \textit  {(\texttt  {radiant})}|hyperpage}{21}
+\indexentry{riccati\_root@\texttt  {riccati\_root}|hyperpage}{21}
+\indexentry{seasonalModel@\texttt  {seasonalModel}|hyperpage}{22}
+\indexentry{snorm@\texttt  {snorm}|hyperpage}{22}
+\indexentry{dsnorm@\texttt  {dsnorm} \textit  {(\texttt  {snorm})}|hyperpage}{22}
+\indexentry{psnorm@\texttt  {psnorm} \textit  {(\texttt  {snorm})}|hyperpage}{22}
+\indexentry{qsnorm@\texttt  {qsnorm} \textit  {(\texttt  {snorm})}|hyperpage}{22}
+\indexentry{rsnorm@\texttt  {rsnorm} \textit  {(\texttt  {snorm})}|hyperpage}{22}
+\indexentry{solarEsscher\_bounds@\texttt  {solarEsscher\_bounds}|hyperpage}{23}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{23}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperindexformat{\textit}}{23}
+\indexentry{control\_solarEsscher@\texttt  {control\_solarEsscher}|hyperindexformat{\textit}}{23}
+\indexentry{solarEsscher\_calibrator@\texttt  {solarEsscher\_calibrator}|hyperpage}{24}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{24}
+\indexentry{control\_solarEsscher@\texttt  {control\_solarEsscher}|hyperindexformat{\textit}}{24}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperindexformat{\textit}}{24}
+\indexentry{solarEsscher\_calibrator\_month@\texttt  {solarEsscher\_calibrator\_month}|hyperpage}{24}
+\indexentry{solarModel@\texttt  {solarModel}|hyperpage}{25}
+\indexentry{solarModel\_spec@\texttt  {solarModel\_spec}|hyperindexformat{\textit}}{25}
+\indexentry{solarModel\_calibrator@\texttt  {solarModel\_calibrator}|hyperpage}{26}
+\indexentry{solarModel\_empiric\_GM@\texttt  {solarModel\_empiric\_GM}|hyperpage}{26}
+\indexentry{solarModel\_loglik@\texttt  {solarModel\_loglik}|hyperpage}{26}
+\indexentry{solarModel\_parameters@\texttt  {solarModel\_parameters}|hyperpage}{27}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{27}
+\indexentry{solarModel\_scenario@\texttt  {solarModel\_scenario}|hyperpage}{27}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{28}
+\indexentry{solarModel\_simulate@\texttt  {solarModel\_simulate}|hyperpage}{28}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{28}
+\indexentry{solarModel\_spec@\texttt  {solarModel\_spec}|hyperpage}{29}
+\indexentry{control\_solarModel@\texttt  {control\_solarModel}|hyperindexformat{\textit}}{29}
+\indexentry{solarModel\_test\_residuals@\texttt  {solarModel\_test\_residuals}|hyperpage}{30}
+\indexentry{solarModel\_update\_GM@\texttt  {solarModel\_update\_GM}|hyperpage}{30}
+\indexentry{solarModel\_update\_params@\texttt  {solarModel\_update\_params}|hyperpage}{30}
+\indexentry{solarModel\_parameters@\texttt  {solarModel\_parameters}|hyperindexformat{\textit}}{30}
+\indexentry{solarOption\_bootstrap@\texttt  {solarOption\_bootstrap}|hyperpage}{31}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{31}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperindexformat{\textit}}{31}
+\indexentry{solarOption\_contracts@\texttt  {solarOption\_contracts}|hyperpage}{31}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{32}
+\indexentry{solarOption\_historical@\texttt  {solarOption\_historical}|hyperpage}{32}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{32}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperindexformat{\textit}}{32}
+\indexentry{solarOption\_implied\_return@\texttt  {solarOption\_implied\_return}|hyperpage}{33}
+\indexentry{solarOption\_model@\texttt  {solarOption\_model}|hyperpage}{33}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{33}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperindexformat{\textit}}{33}
+\indexentry{solarOption\_model\_spatial@\texttt  {solarOption\_model\_spatial}|hyperpage}{34}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperindexformat{\textit}}{34}
+\indexentry{solarOption\_scenario@\texttt  {solarOption\_scenario}|hyperpage}{34}
+\indexentry{solarModel\_scenarios@\texttt  {solarModel\_scenarios}|hyperindexformat{\textit}}{35}
+\indexentry{control\_solarOption@\texttt  {control\_solarOption}|hyperindexformat{\textit}}{35}
+\indexentry{solarOption\_structure@\texttt  {solarOption\_structure}|hyperpage}{35}
+\indexentry{solarModel@\texttt  {solarModel}|hyperindexformat{\textit}}{35}
+\indexentry{solarRiskDriver@\texttt  {solarRiskDriver}|hyperpage}{35}
+\indexentry{solarTransform@\texttt  {solarTransform}|hyperpage}{36}
+\indexentry{solarTransform\_GHI@\texttt  {solarTransform\_GHI}|hyperpage}{38}
+\indexentry{solarTransform\_params@\texttt  {solarTransform\_params}|hyperpage}{38}
+\indexentry{solarTransform\_Xt@\texttt  {solarTransform\_Xt}|hyperpage}{39}
+\indexentry{solarTransform\_Yt@\texttt  {solarTransform\_Yt}|hyperpage}{39}
+\indexentry{solar\_angle\_minmax@\texttt  {solar\_angle\_minmax}|hyperpage}{40}
+\indexentry{solar\_extraterrestrial\_radiation@\texttt  {solar\_extraterrestrial\_radiation}|hyperpage}{40}
+\indexentry{solar\_monthly\_mixture@\texttt  {solar\_monthly\_mixture}|hyperpage}{41}
+\indexentry{solar\_movements@\texttt  {solar\_movements}|hyperpage}{41}
+\indexentry{solar\_time\_adjustment@\texttt  {solar\_time\_adjustment}|hyperpage}{42}
+\indexentry{solar\_time\_constant@\texttt  {solar\_time\_constant}|hyperpage}{43}
+\indexentry{solar\_time\_declination@\texttt  {solar\_time\_declination}|hyperpage}{43}
+\indexentry{spatialGrid@\texttt  {spatialGrid}|hyperpage}{44}
+\indexentry{spatialModel@\texttt  {spatialModel}|hyperpage}{44}
+\indexentry{spatialModel\_combinations@\texttt  {spatialModel\_combinations}|hyperpage}{45}
+\indexentry{spatialModel\_interpolate@\texttt  {spatialModel\_interpolate}|hyperpage}{45}
+\indexentry{spatialModel\_interpolate\_GHI@\texttt  {spatialModel\_interpolate\_GHI}|hyperpage}{46}
+\indexentry{spatialModel\_neighborhoods@\texttt  {spatialModel\_neighborhoods}|hyperpage}{46}
+\indexentry{spatialParameters@\texttt  {spatialParameters}|hyperpage}{47}
+\indexentry{spatialParameters\_predict@\texttt  {spatialParameters\_predict}|hyperpage}{47}
+\indexentry{clearskyModel@\texttt  {clearskyModel}|hyperindexformat{\textit}}{47}
+\indexentry{spectralDistribution@\texttt  {spectralDistribution}|hyperpage}{47}
+\indexentry{test\_normality@\texttt  {test\_normality}|hyperpage}{48}
+\indexentry{tnorm@\texttt  {tnorm}|hyperpage}{48}
+\indexentry{dtnorm@\texttt  {dtnorm} \textit  {(\texttt  {tnorm})}|hyperpage}{48}
+\indexentry{ptnorm@\texttt  {ptnorm} \textit  {(\texttt  {tnorm})}|hyperpage}{48}
+\indexentry{qtnorm@\texttt  {qtnorm} \textit  {(\texttt  {tnorm})}|hyperpage}{48}
+\indexentry{rtnorm@\texttt  {rtnorm} \textit  {(\texttt  {tnorm})}|hyperpage}{48}
