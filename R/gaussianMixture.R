@@ -9,8 +9,6 @@
 #' @param components number of components.
 #' @param match_moments logical. When `TRUE`, the parameters of the second distribution will be estimated such that
 #' the empirical first two moments of `x` matches the theoretical Gaussian mixture moments.
-#' @param prior_p prior probability for the k-state. If the k-component is not `NA` the probability will be considered as given and
-#' the parameter `p[k]` will be equal to `prior_p[k]`.
 #' @param weights observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
 #' When `missing` all the available observations will be used.
 #' @param maxit maximum number of iterations.
@@ -34,7 +32,7 @@
 #' @rdname gaussianMixture
 #' @name gaussianMixture
 #' @export
-gaussianMixture <- function(x, means, sd, p, components = 2, prior_p = rep(NA, components), weights, maxit = 100, abstol = 10e-15,  na.rm = FALSE){
+gaussianMixture <- function(x, means, sd, p, components = 2, weights, maxit = 100, abstol = 10e-15,  na.rm = FALSE){
 
   # Initialization
   n <- length(x)
@@ -66,26 +64,30 @@ gaussianMixture <- function(x, means, sd, p, components = 2, prior_p = rep(NA, c
   if (missing(p) || any(is.na(p))) {
     p <- rep(1/components, components)
   }
-  # Fixed prior probabilities
-  p <- ifelse(is.na(prior_p), p, prior_p)
+  # Rescale probabilities
   p <- p/sum(p)
 
   # Routine
   # 0. Initialization
   log_likelihood <- 0
   previous_log_likelihood <- -Inf
-  responsibilities <- matrix(0, nrow = n, ncol = components)
+  prev_responsibilities <- matrix(0, nrow = n, ncol = components)
   previous_params <- list(mean = means, sd = sd, p = p)
   # EM Algorithm
   for (iteration in 1:maxit) {
     # E-step: posterior probabilities
+    responsibilities <- prev_responsibilities
     for (i in 1:n) {
       for(k in 1:components){
         responsibilities[i, k] <- previous_params$p[k]*dnorm(x[i], previous_params$mean[k], previous_params$sd[k])
       }
       # Normalize the posterior probabilities
+      responsibilities[i,][is.na(responsibilities[i,])] <- 0
+      responsibilities[i,][is.nan(responsibilities[i,])] <- 0
       responsibilities[i,] <- (responsibilities[i,])/sum(responsibilities[i,])
+      responsibilities[i,][is.nan(responsibilities[i,])] <- 0
     }
+
     # Optimal parameters
     params <- previous_params
     # M-step: Update the parameters
@@ -97,8 +99,14 @@ gaussianMixture <- function(x, means, sd, p, components = 2, prior_p = rep(NA, c
       # Std. deviation k-component
       params$sd[k] <- sqrt(sum(responsibilities[, k]*w*(x - params$mean[k])^2, na.rm = na.rm)/n_k)
       # Probability k-component
-      params$p[k] <- ifelse(is.na(prior_p[k]), n_k/n_w, prior_p[k])
+      params$p[k] <- n_k/n_w
     }
+
+    if (any(params$p > 0.9)){
+      responsibilities <- prev_responsibilities
+      break
+    }
+
     # Calculate the log-likelihood
     log_likelihood <- 0
     for(i in 1:n) {
@@ -108,6 +116,7 @@ gaussianMixture <- function(x, means, sd, p, components = 2, prior_p = rep(NA, c
       }
       log_likelihood <- sum(c(log_likelihood, log(ll)*w[i]), na.rm = TRUE)
     }
+
     # Check for convergence
     stop_condition <- abs(log_likelihood - previous_log_likelihood) < abstol
     if (stop_condition) {
@@ -193,132 +202,171 @@ gaussianMixture <- function(x, means, sd, p, components = 2, prior_p = rep(NA, c
   )
 }
 
-#' Fit a monthly Gaussian Mixture Pdf (??NOT USED)
+
+#' Multivariate gaussian mixture
 #'
-#' Fit the monthly parameters for the density function of a Gaussian mixture with two components.
-#'
-#' @param x vector
-#' @param date vector of dates
-#' @param means matrix of initial means with dimension `12 X components`.
-#' @param sd matrix of initial std. deviations with dimension `12 X components`.
-#' @param p matrix of initial p with dimension `12 X components`. The rows must sum up to 1.
-#' @param prior_p matrix of prior probabilities for the each month. Any element that is different from `NA` will be not optimized and will be considered
-#' as given.
-#' @param ... other parameters for the optimization function. See \code{\link{gaussianMixture}} for more details.
-#'
-#' @rdname gaussianMixture_monthly
-#' @name gaussianMixture_monthly
+#' @rdname mvgaussianMixture
+#' @name mvgaussianMixture
 #' @export
-gaussianMixture_monthly <- function(x, date, means, sd, p, components = 2, prior_p, ...){
+mvgaussianMixture <- function(x, means, sd, p, components = 2, maxit = 100, abstol = 10e-15, na.rm = FALSE){
 
-  data <- dplyr::tibble(date = date, Month = lubridate::month(date), eps = x)
+  # Ensure that there are not NAs or NaN observations
+  idx_NA <- is.na(x)
+  if (any(idx_NA)) {
+    x <- na.omit(x)
+    wrn <- paste0("Removed ", sum(idx_NA), " NA observations!")
+    warning(wrn)
+  }
+  # Number of observations
+  n_w <- nrow(x)
+  # Number of variables
+  j_w <- ncol(x)
+  # Empirical moments
+  e_x_hat <- colMeans(x, na.rm = na.rm)
+  v_x_hat <- apply(x, 2, var)
 
-  # Check matrix of means
-  if (missing(means)) {
-    means <- matrix(NA, nrow = 12, ncol = components)
-  } else {
-    if (ncol(mean) != components || nrow(means) != 12) {
-      msg <- paste0("The matrix `means` has not dimension: ", "12 X ", components)
-      stop(msg)
-    }
-  }
-  # Check matrix of std. deviations
-  if (missing(sd)) {
-    sd <- matrix(NA, nrow = 12, ncol = components)
-  } else {
-    if (ncol(sd) != components || nrow(sd) != 12) {
-      msg <- paste0("The matrix `sd` has not dimension: ", "12 X ", components)
-      stop(msg)
-    }
-  }
-  # Check matrix of probabilities
-  if (missing(p)) {
-    p <- matrix(NA, nrow = 12, ncol = components)
-  } else {
-    if (ncol(p) != components || nrow(p) != 12) {
-      msg <- paste0("The matrix `p` has not dimension: ", "12 X ", components)
-      stop(msg)
-    }
-    if (any(rowSums(p)!=1)) {
-      msg <- paste0("The rows of the matrix `p` do not sum up to 1! ")
-      stop(msg)
-    }
-  }
-  # Check matrix of prior probabilities
-  if (missing(prior_p)){
-    prior_p <- matrix(NA, nrow = 12, ncol = components)
-  } else {
-    if (ncol(prior_p) != components || nrow(prior_p) != 12) {
-      msg <- paste0("The matrix `prior_p` has not dimension: ", "12 X ", components)
-      stop(msg)
-    }
-    if (any(rowSums(prior_p)!=1)) {
-      msg <- paste0("The rows of the matrix `prior_p` do not sum up to 1! ")
-      stop(msg)
+  # Default starting means
+  if (missing(means) || any(is.na(means))){
+    # Initialize a matrix for the components
+    means <- matrix(0, nrow = components, ncol = j_w, dimnames = list(1:components, dimnames(x)[[2]]))
+    probs <- seq(0.8, 0.2, length.out = components)
+    for(k in 1:components){
+      means[k,] <- apply(x, 2, quantile, probs = probs[k])
     }
   }
 
-  # Initialization
-  GM_model <- list()
-  data_months <- list()
-  params <- list()
-  # Monthly Gaussian Mixture
-  for(m in unique(data$Month)){
-    # Monthly data
-    data_months[[m]] <- dplyr::filter(data, Month == m)
-    # Monthly data
-    eps <- data_months[[m]]$eps
-    # Fitted parameters
-    gm <- gaussianMixture(eps, means = means[m,], sd = sd[m,], p = p[m,], prior_p = prior_p[m,])
-    # Dataset with fitted parameters
-    params[[m]] <- list(means = gm$par$mean,
-                        sd = gm$par$sd,
-                        p = gm$par$p)
-    # Theoretical first moment
-    e_u <- sum(gm$par$mean*gm$par$p)
-    # Theoretical variance
-    v_u <- sum((gm$par$mean^2 + gm$par$sd^2)*gm$par$p) - e_u^2
-    # Sample mean
-    e_u_hat <- mean(eps, na.rm = TRUE)
-    # Sample variance
-    v_u_hat <- var(eps, na.rm = TRUE)
-    # Store classified series
-    data_months[[m]] <- dplyr::bind_cols(data_months[[m]], gm$fitted)
-    # Monthly data
-    GM_model[[m]] <- dplyr::tibble(Month = m,
-                                   loss = gm$log_lik,
-                                   nobs = length(eps),
-                                   e_x = e_u,
-                                   v_x = v_u,
-                                   e_x_hat = e_u_hat,
-                                   v_x_hat = v_u_hat)
+  # Default std. deviations
+  if (missing(sd) || any(is.na(sd))){
+    sd <- list()
+    for(k in 1:components){
+      sd[[k]] <- diag(v_x_hat)
+    }
+  }
+  # Default probabilities
+  if (missing(p) || any(is.na(p))) {
+    p <- rep(1/components, components)
   }
 
-  # Reorder the variables
-  GM_model <- dplyr::bind_rows(GM_model)
-  names(params) <- lubridate::month(1:12, label = TRUE)
-  # Dataset with all the parameters
-  l_params <- list(
-    means = purrr::map_df(params, ~dplyr::bind_rows(.x$means)),
-    sd = purrr::map_df(params, ~dplyr::bind_rows(.x$sd)),
-    p = purrr::map_df(params, ~dplyr::bind_rows(.x$p))
-  )
-  l_params <- purrr::map(l_params, ~dplyr::bind_cols(Month = 1:12, .x))
+  # Routine
+  # 0. Initialization
+  log_likelihood <- 0
+  previous_log_likelihood <- -Inf
+  prev_responsibilities <- matrix(0, nrow = n_w, ncol = components)
+  previous_params <- list(mean = means, sd = sd, p = p)
+  iteration <- 1
+  # EM Algorithm
+  for (iteration in 1:maxit) {
+    # E-step: posterior probabilities
+    responsibilities <- prev_responsibilities
+    for (i in 1:n_w) {
+      for(k in 1:components){
+        responsibilities[i, k] <- previous_params$p[k]*mvtnorm::dmvnorm(x[i,], mean = previous_params$mean[k,], sigma = previous_params$sd[[k]])
+      }
+      # Normalize the posterior probabilities
+      responsibilities[i,] <- (responsibilities[i,])/sum(responsibilities[i,], na.rm = TRUE)
+      responsibilities[i,][is.na(responsibilities[i,])] <- 0
+    }
+
+    # Optimal parameters
+    k <- 1
+    params <- previous_params
+    # M-step: Update the parameters
+    for(k in 1:components){
+      # Normalizing factor for each component
+      n_k <- sum(responsibilities[, k], na.rm = na.rm)
+      # Mean parameters k-component
+      params$mean[k,] <- apply(responsibilities[, k]*x, 2, sum)/n_k
+      # Covariance matrix k-component
+      params$sd[[k]] <- diag(apply(x^2*responsibilities[, k], 2, sum)/n_k - params$mean[k,]^2)
+      params$sd[[k]][1,2] <- params$sd[[k]][2,1] <- sum(x[,1]*x[,2]*responsibilities[, k])/n_k - params$mean[k,][1]*params$mean[k,][2]
+      # Probability k-component
+      params$p[k] <- n_k/n_w
+    }
+
+    if(any(params$p > 0.9)){
+      warning("Probability greater than 0.9 Break!")
+      params <- previous_params
+      break
+    }
+
+    # Calculate the log-likelihood
+    log_likelihood <- 0
+    for(i in 1:n_w) {
+      ll <- 0
+      for(k in 1:components){
+        ll <- ll + params$p[k]*mvtnorm::dmvnorm(x[i,], mean = params$mean[,k], sigma = params$sd[[k]])
+      }
+      log_likelihood <- sum(c(log_likelihood, log(ll)), na.rm = TRUE)
+    }
+
+    # Check for convergence
+    stop_condition <- abs(log_likelihood - previous_log_likelihood) < abstol
+    if (stop_condition) {
+      break
+    } else {
+      # Update log-likelihood
+      previous_log_likelihood <- log_likelihood
+      # Update parameters
+      previous_params <- params
+    }
+    print(log_likelihood)
+    if (iteration == maxit) {
+      message("Max iteration reached (", iteration, ")")
+    }
+  }
+
+  # Final classification of each component
+  B_hat <- matrix(0, nrow = n_w, ncol = components)
+  for(i in 1:n_w) {
+    ll <- c()
+    for(k in 1:components){
+      ll[k] <- sum(responsibilities[i,k])
+    }
+    B_hat[i, which.max(ll)] <- 1
+  }
+  colnames(B_hat) <- paste0("B", 1:components)
+  B_hat <- dplyr::as_tibble(B_hat)
+
+  # ML-parameters
+  params <- previous_params
+  # Reorder the components by decreasing means
+  colnames(responsibilities) <- paste0("B", 1:components)
+  responsibilities <- dplyr::as_tibble(responsibilities)
+
+  # Log-likelihood on fitted parameters
+  # Calculate the log-likelihood
+  # Calculate the log-likelihood
+  log_likelihood <- 0
+  for(i in 1:n_w) {
+    ll <- 0
+    for(k in 1:components){
+      ll <- ll + params$p[k]*mvtnorm::dmvnorm(x[i,], mean = params$mean[,k], sigma = params$sd[[k]])
+    }
+    log_likelihood <- sum(c(log_likelihood, log(ll)), na.rm = TRUE)
+  }
+
+  upd_params <- list()
+  upd_params$means <- params$mean
+  upd_params$sigma2 <- params$mean
+  upd_params$rho <- c(0,0)
+  upd_params$p <- params$p
+  i <- 1
+  for(i in 1:length(params$sd)){
+    upd_params$sigma2[i,] <- diag(params$sd[[i]])
+    upd_params$rho[i] <-  params$sd[[i]][upper.tri(params$sd[[i]])]/prod(sqrt(diag(params$sd[[i]])))
+  }
 
   structure(
     list(
-      fitted = dplyr::bind_rows(data_months),
-      params = params,
-      l_params = l_params,
-      model = GM_model
-    )
+      B_hat = B_hat,
+      iteration = iteration,
+      params = upd_params,
+      responsibilities = responsibilities,
+      log_lik = log_likelihood
+    ),
+    class = c("mvgaussianMixture")
   )
 }
-
-
-
-
-
 
 
 

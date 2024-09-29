@@ -4,7 +4,7 @@
 \alias{makeSemiPositive}
 \title{Make a matrix positive semi-definite}
 \usage{
-makeSemiPositive(x, neg_values = 1e-10)
+makeSemiPositive(x, neg_values = 1e-05)
 }
 \arguments{
 \item{x}{matrix, squared and symmetric.}

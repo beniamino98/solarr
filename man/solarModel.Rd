@@ -13,7 +13,17 @@ solarModel(spec)
 Fit a model for solar radiation
 }
 \examples{
-control <- control_solarModel(outliers_quantile = 0.0005)
-spec <- solarModel_spec("Palermo", from="2005-01-01", to="2024-01-01", control_model = control)
+control <- control_solarModel(outliers_quantile = 0.005)
+spec <- solarModel_spec("Bologna", from="2005-01-01", to="2022-01-01", control_model = control)
 model <- solarModel(spec)
+# Stochastic clearsky
+spec$control$stochastic_clearsky <- TRUE
+model2 <- solarModel(spec)
+# Clearsky model
+spec_Ct <- spec
+spec_Ct$target <- "clearsky"
+model_Ct <- solarModel(spec)
+
+# Bologna <- model
+# save(Bologna, file = "data/Bologna.RData")
 }

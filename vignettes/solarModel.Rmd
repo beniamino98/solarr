@@ -47,13 +47,51 @@ ggplot()+
 # Parameters
 
 ```{r}
-solarModel_parameters(model, as_tibble = T) %>%
+solarModel_parameters(model, as_tibble = TRUE) %>%
   tidyr::gather("parameter", "value")
 ```
 
 # Log-likelihood
 
 ```{r}
-purrr::map_dbl(1:12, ~solarModel_loglik(model, nmonths = .x)$log_lik)
+solarModel_loglik(model)
+purrr::map_dbl(1:12, ~solarModel_loglik(model, nmonths = .x))
+```
+
+```{r}
+c_moments <- solarModel_moments(model)
+
+c_moments$GHI_up <- model$transform$GHI(model$transform$Yt(c_moments$mu_up, inverse = TRUE), c_moments$Ct)
+c_moments$GHI_up_hi <- model$transform$GHI(model$transform$Yt(c_moments$mu_up + c_moments$sd_up, inverse = TRUE), c_moments$Ct)
+c_moments$GHI_up_lo <- model$transform$GHI(model$transform$Yt(c_moments$mu_up - c_moments$sd_up, inverse = TRUE), c_moments$Ct)
+c_moments[3:368,] %>%
+  ggplot()+
+  geom_line(aes(date, GHI), color = "black")+
+  geom_line(aes(date, GHI_up), color = "green")+
+  geom_line(aes(date, GHI_up_hi), color = "red")+
+  geom_line(aes(date, GHI_up_lo), color = "red")
+
+c_moments[3:368,] %>%
+  ggplot()+
+  geom_line(aes(date, mu_up), color = "green")+
+  geom_line(aes(date, mu_dw), color = "red")
+
+c_moments[3:368,] %>%
+  ggplot()+
+  geom_line(aes(date, mu_up), color = "green")+
+  geom_line(aes(date, mu_up + 3*sd_up), color = "red")+
+  geom_line(aes(date, mu_up - 3*sd_up), color = "red")
+
+c_moments$GHI_dw <- model$transform$GHI(model$transform$Yt(c_moments$mu_dw, inverse = TRUE), c_moments$Ct)
+c_moments$GHI_dw_hi <- model$transform$GHI(model$transform$Yt(c_moments$mu_dw + c_moments$sd_dw, inverse = TRUE), c_moments$Ct)
+c_moments$GHI_dw_lo <- model$transform$GHI(model$transform$Yt(c_moments$mu_dw - c_moments$sd_dw, inverse = TRUE), c_moments$Ct)
+
+c_moments[3:368,] %>%
+  ggplot()+
+  geom_line(aes(date, GHI), color = "black")+
+  geom_line(aes(date, GHI_dw), color = "green")+
+  geom_line(aes(date, GHI_dw_hi), color = "red")+
+  geom_line(aes(date, GHI_dw_lo), color = "red")
+
 ```
 

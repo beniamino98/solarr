@@ -6,7 +6,7 @@
 \usage{
 solarModel_test_residuals(
   model,
-  nrep = 500,
+  nrep = 50,
   ci = 0.05,
   min_quantile = 0.015,
   max_quantile = 0.985,
@@ -15,4 +15,8 @@ solarModel_test_residuals(
 }
 \description{
 Stationarity and distribution test (Gaussian mixture) for a `solarModel`
+}
+\examples{
+model <- Bologna
+solarModel_test_residuals(model)
 }

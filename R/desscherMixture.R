@@ -42,7 +42,7 @@ desscherMixture <- function(means = c(0,0), sd = c(1,1), p = c(0.5, 0.5), theta 
   }
   # Update probabilities
   p <- num/den
-  # Update means
+  # Update means parameters
   means <- means + theta*sd^2
   # Mixture pdf
   pdf <- function(x) dmixnorm(x, means, sd, p)

@@ -3,14 +3,222 @@
 \name{spatialModel}
 \alias{spatialModel}
 \title{Spatial model object}
-\usage{
-spatialModel(locations, solarModels)
-}
-\arguments{
-\item{locations}{grid of locations}
-
-\item{solarModels}{list of `solarModel` objects}
-}
 \description{
 Spatial model object
+
+Spatial model object
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-new}{\code{spatialModel$new()}}
+\item \href{#method-neighborhoods}{\code{spatialModel$neighborhoods()}}
+\item \href{#method-is_known_location}{\code{spatialModel$is_known_location()}}
+\item \href{#method-gridModel}{\code{spatialModel$gridModel()}}
+\item \href{#method-is_inside_limits}{\code{spatialModel$is_inside_limits()}}
+\item \href{#method-interpolator}{\code{spatialModel$interpolator()}}
+\item \href{#method-solarModel}{\code{spatialModel$solarModel()}}
+\item \href{#method-combinations}{\code{spatialModel$combinations()}}
+\item \href{#method-clone}{\code{spatialModel$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize the spatial model
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$new(locations, models, paramsModels, beta = 2, d0, quiet = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{locations}}{grid of locations, (`place`, `lat`, `lon`, `from`, `to`, `nobs`).}
+
+\item{\code{models}}{list of `solarModel` objects}
+
+\item{\code{paramsModels}}{list of `spatialParameters` objects.}
+
+\item{\code{beta}}{parameter used in exponential and power functions.}
+
+\item{\code{d0}}{parameter used only in exponential function.}
+
+\item{\code{quiet}}{logical}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-neighborhoods"></a>}}
+\if{latex}{\out{\hypertarget{method-neighborhoods}{}}}
+\subsection{Method \code{neighborhoods()}}{
+Find the n-closest neighborhoods of a point
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$neighborhoods(lat, lon, n = 4)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{numeric, latitude of a point in the grid.}
+
+\item{\code{lon}}{numeric, longitude of a point in the grid.}
+
+\item{\code{n}}{number of neighborhoods}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-is_known_location"></a>}}
+\if{latex}{\out{\hypertarget{method-is_known_location}{}}}
+\subsection{Method \code{is_known_location()}}{
+Check if a point is already in the spatial grid
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$is_known_location(lat, lon)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{numeric, latitude of a location.}
+
+\item{\code{lon}}{numeric, longitude of a location.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+`TRUE` when the point is a known point and `FALSE` otherwise.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gridModel"></a>}}
+\if{latex}{\out{\hypertarget{method-gridModel}{}}}
+\subsection{Method \code{gridModel()}}{
+Get a known model in the grid from place or coordinates.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$gridModel(place, lat, lon)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{place}}{character, id of the location.}
+
+\item{\code{lat}}{numeric, latitude of a location.}
+
+\item{\code{lon}}{numeric, longitude of a location.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-is_inside_limits"></a>}}
+\if{latex}{\out{\hypertarget{method-is_inside_limits}{}}}
+\subsection{Method \code{is_inside_limits()}}{
+Check if a point is inside the limits of the spatial grid.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$is_inside_limits(lat, lon)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{numeric, latitude of a location.}
+
+\item{\code{lon}}{numeric, longitude of a location.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+`TRUE` when the point is inside the limits and `FALSE` otherwise.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-interpolator"></a>}}
+\if{latex}{\out{\hypertarget{method-interpolator}{}}}
+\subsection{Method \code{interpolator()}}{
+Perform the bilinear interpolation for a target variable.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$interpolator(lat, lon, target = "GHI", n = 4, day_date)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{numeric, latitude of the location to be interpolated.}
+
+\item{\code{lon}}{numeric, longitude of the location to be interpolated.}
+
+\item{\code{target}}{character, name of the target variable to interpolate.}
+
+\item{\code{n}}{number of neighborhoods to use for interpolation.}
+
+\item{\code{day_date}}{date for interpolation, if missing all the available dates will be used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel}{}}}
+\subsection{Method \code{solarModel()}}{
+Interpolator function for a `solarModel` object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$solarModel(lat, lon, n = 4)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{numeric, latitude of a point in the grid.}
+
+\item{\code{lon}}{numeric, longitude of a point in the grid.}
+
+\item{\code{n}}{number of neighborhoods}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-combinations"></a>}}
+\if{latex}{\out{\hypertarget{method-combinations}{}}}
+\subsection{Method \code{combinations()}}{
+Compute monthly moments for mixture with 16 components
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$combinations(lat, lon, nmonths = 1:12, nobs.min = 3)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{numeric, latitude of a point in the grid.}
+
+\item{\code{lon}}{numeric, longitude of a point in the grid.}
+
+\item{\code{nmonths}}{numeric, months to consider}
+
+\item{\code{nobs.min}}{numeric, minimum number of joint states under which the state is considered with 0 probability.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

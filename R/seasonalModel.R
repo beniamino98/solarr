@@ -15,7 +15,7 @@ seasonalModel <- R6::R6Class("seasonalModel",
                                #' @param data 	an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
                                #' If not found in data, the variables are taken from environment(formula), typically the environment from which `lm` is called.
                                #' @param ... other parameters to be passed to the function lm.
-                               initialize = function(formula = "Yt ~ 1", order = 1, period = 365, data, ...){
+                               initialize = function(formula, order = 1, period = 365, data, ...){
                                  # Model formula
                                  if (order > 0) {
                                    for (i in 1:order){
@@ -23,60 +23,65 @@ seasonalModel <- R6::R6Class("seasonalModel",
                                                        "sin((2*base::pi)/", eval(period), "*n*", i, ")")
                                    }
                                  }
+                                 # Store the formula
+                                 private$formula <- as.formula(formula)
                                  # Fit seasonal model
-                                 private$model <- lm(as.formula(formula), data = data, ...)
-                                 # Store model, period, order and formula
+                                 private$..model <- lm(private$formula, data = data, ...)
+                                 # Extract external seasonal regressors
+                                 external_regressors <- formula.tools::get.vars(formula(private$..model))[-c(1)]
+                                 external_regressors <- external_regressors[!stringr::str_detect(external_regressors, "cos|sin")]
+                                 if (!purrr::is_empty(external_regressors)){
+                                   external_regressors <- data[, c("n", external_regressors)]
+                                   external_regressors <- external_regressors[!duplicated(external_regressors$n),]
+                                   private$external_regressors <- dplyr::left_join(private$external_regressors, external_regressors, by = c("n"))
+                                 }
+                                 # Store model, period and order
                                  private$period = period
                                  private$order = order
-                                 private$formula = as.formula(formula)
                                },
                                #' @description
-                               #' Convert a date into the respective number of day of the year.
-                               #' @param x character or Date object.
-                               from_date_to_n = function(x){
-                                 purrr::map_int(x, ~ifelse(is.character(.x) | lubridate::is.Date(.x), number_of_day(.x), .x))
-                               },
-                               #' @description
-                               #' Predict method for a `seasonalModel`
+                               #' Predict method for a `seasonalModel`,
                                #' @param n integer, number of day of the year.
                                predict = function(n){
                                  if (missing(n)){
-                                   predict.lm(private$model)
+                                   predict.lm(private$..model)
                                  } else {
-                                   n <- self$from_date_to_n(n)
+                                   n <- number_of_day(n)
                                    newdata <- data.frame(n = n %% private$period)
                                    newdata$n <- ifelse(newdata$n == 0, 1, newdata$n)
-                                   newdata <- dplyr::left_join(newdata, private$seasonal_data, by = "n")
-                                   predict.lm(private$model, newdata = newdata)
+                                   newdata <- dplyr::left_join(newdata, private$external_regressors, by = "n")
+                                   predict.lm(private$..model, newdata = newdata)
                                  }
                                },
                                #' @description
                                #' Update the parameters of a `seasonalModel`.
-                               #' @param n integer, number of day of the year.
+                               #' @param coefficients vector of parameters.
                                update = function(coefficients){
-                                 old_coef <- private$model$coefficients
+                                 old_coef <- private$..model$coefficients
                                  # Check lenght
                                  if (length(old_coef) != length(coefficients)){
                                    warning("The lenght of `coefficients` do not match the length of the old coefficients.")
                                    return(invisible(NULL))
                                  }
                                  # Update parameters
-                                 private$model$coefficients <- coefficients
+                                 private$..model$coefficients <- coefficients
                                }
                              ),
                              private = list(
-                               model = NA,
+                               ..model = NA,
                                period = NA,
                                order = NA,
                                formula = NA,
                                params = list(),
-                               seasonal_data = dplyr::tibble(n = 1:366)
+                               external_regressors = dplyr::tibble(n = c(seq(1, 59), 59.5, seq(60, 365)))
                              ),
                              active = list(
-                               coefficients = function(){
-                                 private$model$coefficients
+                                coefficients = function(){
+                                  private$..model$coefficients
+                                  },
+                                model = function(){
+                                  private$..model
                                }
                              )
-
 )
 

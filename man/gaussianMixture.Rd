@@ -10,7 +10,6 @@ gaussianMixture(
   sd,
   p,
   components = 2,
-  prior_p = rep(NA, components),
   weights,
   maxit = 100,
   abstol = 1e-14,
@@ -27,9 +26,6 @@ gaussianMixture(
 \item{p}{vector of initial probability parameters.}
 
 \item{components}{number of components.}
-
-\item{prior_p}{prior probability for the k-state. If the k-component is not `NA` the probability will be considered as given and
-the parameter `p[k]` will be equal to `prior_p[k]`.}
 
 \item{weights}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
 When `missing` all the available observations will be used.}

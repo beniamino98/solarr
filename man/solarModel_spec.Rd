@@ -6,6 +6,7 @@
 \usage{
 solarModel_spec(
   place,
+  target = "GHI",
   min_date,
   max_date,
   from,
@@ -16,6 +17,8 @@ solarModel_spec(
 }
 \arguments{
 \item{place}{character, name of an element in the `CAMS_data` list.}
+
+\item{target}{character, target variable to model. Can be `GHI` or `clearsky`.}
 
 \item{min_date}{character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.}
 
@@ -33,4 +36,9 @@ If `missing` will be used the maximum data available after filtering for `max_da
 }
 \description{
 Specification function for a `solarModel`
+}
+\examples{
+control <- control_solarModel(outliers_quantile = 0)
+spec <- solarModel_spec("Bologna", from="2005-01-01", to="2022-01-01", control_model = control)
+
 }

@@ -12,7 +12,6 @@ Seasonal model object
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{seasonalModel$new()}}
-\item \href{#method-from_date_to_n}{\code{seasonalModel$from_date_to_n()}}
 \item \href{#method-predict}{\code{seasonalModel$predict()}}
 \item \href{#method-update}{\code{seasonalModel$update()}}
 \item \href{#method-clone}{\code{seasonalModel$clone()}}
@@ -24,7 +23,7 @@ Seasonal model object
 \subsection{Method \code{new()}}{
 Fit a seasonal model as a linear combination of sine and cosine functions.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(formula = "Yt ~ 1", order = 1, period = 365, data, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(formula, order = 1, period = 365, data, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -46,27 +45,10 @@ If not found in data, the variables are taken from environment(formula), typical
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-from_date_to_n"></a>}}
-\if{latex}{\out{\hypertarget{method-from_date_to_n}{}}}
-\subsection{Method \code{from_date_to_n()}}{
-Convert a date into the respective number of day of the year.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$from_date_to_n(x)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{x}}{character or Date object.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-predict}{}}}
 \subsection{Method \code{predict()}}{
-Predict method for a `seasonalModel`
+Predict method for a `seasonalModel`,
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$predict(n)}\if{html}{\out{</div>}}
 }
@@ -91,7 +73,7 @@ Update the parameters of a `seasonalModel`.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{n}}{integer, number of day of the year.}
+\item{\code{coefficients}}{vector of parameters.}
 }
 \if{html}{\out{</div>}}
 }

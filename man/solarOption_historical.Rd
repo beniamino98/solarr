@@ -20,3 +20,7 @@ solarOption_historical(
 \description{
 Payoff on Historical Data
 }
+\examples{
+model <- Bologna
+solarOption_historical(model)
+}

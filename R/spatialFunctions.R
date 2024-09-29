@@ -60,8 +60,8 @@ havDistance <- function(lat_1, lon_1, lat_2, lon_2){
     coord_A <- c(lat_1[i], lon_1[i])
     coord_B <- c(lat_2[i], lon_2[i])
     # Convert in radiant
-    point_A <- from_degree_to_radiant(coord_A)
-    point_B <- from_degree_to_radiant(coord_B)
+    point_A <- seasonalSolarFunctions$new()$radiant(coord_A)
+    point_B <- seasonalSolarFunctions$new()$radiant(coord_B)
     # Latitudes
     phi <- c(point_A[1], point_B[1])
     delta_phi <- phi[2] - phi[1]

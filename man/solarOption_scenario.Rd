@@ -5,14 +5,14 @@
 \title{Payoff on Simulated Data}
 \usage{
 solarOption_scenario(
-  sim,
+  scenario,
   nmonths = 1:12,
   nsim,
   control_options = control_solarOption()
 )
 }
 \arguments{
-\item{sim}{simulated scenarios with the function \code{\link{solarModel_scenarios}}.}
+\item{scenario}{object with the class `solarModelScenario`. See the function \code{\link{solarModel_scenarios}} for details.}
 
 \item{nmonths}{numeric, months of which the payoff will be computed.}
 

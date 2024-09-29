@@ -1,0 +1,281 @@
+#' Simulate trajectories
+#'
+#' Simulate trajectories of solar radiation with a `solarModel` object.
+#'
+#' @inheritParams solarScenario
+#' @param exclude_known when true the two starting points (equals for all the simulations) will be excluded from the output.
+#'
+#' @examples
+#' model <- Bologna
+#' simSpec <- solarSimulation_spec(model)
+#'
+#' @rdname solarSimulation_spec
+#' @name solarSimulation_spec
+#' @export
+solarSimulation_spec <- function(model, from = "2010-01-01", to = "2010-12-31", theta = 0, exclude_known = FALSE, quiet = FALSE){
+
+  esscher_probability <- function(params = c(0,0,1,1,0.5), df_n, theta = 0){
+    params <- list(
+      mu_up = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[1],
+      mu_dw = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[2],
+      sd_up = params[3]*df_n$sigma_bar*df_n$sigma,
+      sd_dw = params[4]*df_n$sigma_bar*df_n$sigma,
+      p_up = params[5]
+    )
+    params <- unlist(params)
+    num <- params[5]*exp(theta*params[1] + 0.5*(theta^2*params[3])^2)
+    den <- (1-params[5])*exp(theta*params[2] + 0.5*(theta^2*params[4])^2)
+    num/(num + den)
+  }
+
+  residuals_simulation <- function(df_sim){
+    # Simulate Normal mixture (z)
+    df_sim$z <- rnorm(nrow(df_sim), mean = 0, sd = 1)
+    if (df_sim$theta[1] == 0){
+      # Simulated Bernoulli jump
+      df_sim$B <- purrr::map_dbl(df_sim$p_up, ~rbinom(1, 1, .x))
+    }
+    return(df_sim)
+  }
+
+  # Extract informations
+  data <- model$data
+  place <- model$place
+  # Number of lags to consider
+  i_start <- model$control$mean.model$arOrder+1
+  i_start <- max(c(model$control$variance.model@model$maxOrder, i_start))
+  # Initial date
+  from <- as.Date(from)
+  # End date
+  to <- as.Date(to)
+
+  # Initialize a dataset
+  max_date_from <- max(data$date)
+  max_date_to <- max_date_from - i_start
+  if (max_date_to >= to) {
+    df_emp <- dplyr::filter(data, date >= (from - lubridate::days(i_start-1)) & date <= to)
+    df_emp <- dplyr::bind_cols(place = place, df_emp)
+  } else if (max_date_to >= from & max_date_from >= from) {
+    df_emp <- dplyr::filter(data, date >= (from - lubridate::days(i_start-1)))
+    df_new_emp <- dplyr::tibble(date = seq.Date(max(df_emp$date) + 1, to, by = "1 day"))
+    df_emp <- dplyr::bind_rows(df_emp, df_new_emp)
+    df_emp <- dplyr::mutate(df_emp,
+                            Year = lubridate::year(date),
+                            Month = lubridate::month(date),
+                            Day = lubridate::day(date))
+    df_emp$n <- solarr::number_of_day(df_emp$date)
+  } else {
+    msg <- paste0("The maximum date for starting a simulation is: ", max_date_from)
+    if (!quiet) warning(msg)
+    return(NULL)
+  }
+
+  # Initialize simulation dataset
+  df_sim <- df_emp
+  # Extract and add seasonal and monthly data
+  df_sim <- dplyr::left_join(df_sim, dplyr::select(model$seasonal_data, -H0), by = c("Month", "Day"))
+  df_sim <- dplyr::left_join(df_sim, model$monthly_data, by = c("Month"))
+  # Extract and add mixture parameters
+  NM_model <- model$NM_model[, c("Month","mu_up", "mu_dw", "sd_up", "sd_dw", "p_up")]
+  df_sim <- dplyr::left_join(df_sim, NM_model, by = "Month")
+  # Initialize lambda
+  df_sim$theta <- theta
+
+  # GARCH(p,q) model
+  GARCH <- model$GARCH
+  # Intercept
+  GARCH$omega <- GARCH$coef[names(GARCH$coef) == "omega"]
+  # Arch parameters
+  GARCH$alpha <- GARCH$coef[stringr::str_detect(names(GARCH$coef), "alpha")]
+  archOrder <- max(c(length(GARCH$alpha), 1))
+  # Garch parameters
+  GARCH$beta <- GARCH$coef[stringr::str_detect(names(GARCH$coef), "beta")]
+  garchOrder <- max(c(length(GARCH$beta), 1))
+  # Garch next step function
+  GARCH_next_step <- GARCH_pq_next_step(GARCH$omega, GARCH$alpha, GARCH$beta)
+
+  # Remove redundant variables
+  df_sim <- dplyr::select(df_sim, -isTrain)
+  # Filter df_emp to be in [from - to] dates
+  if (exclude_known) {
+    df_emp <- dplyr::filter(df_emp, date >= from & date <= to)
+  }
+
+  # Output structure
+  structure(
+    list(
+      sim = df_sim,
+      emp = df_emp,
+      target = model$target,
+      AR_model_Yt = model$AR_model_Yt,
+      arOrder = model$control$mean.model$arOrder,
+      archOrder = archOrder,
+      garchOrder = garchOrder,
+      GARCH_next_step = GARCH_next_step,
+      i_start = i_start,
+      transform = model$transform,
+      esscher_probability = esscher_probability,
+      residuals_simulation = residuals_simulation,
+      exclude_known = exclude_known,
+      quiet = quiet
+    ),
+    class = c("solarSimulationSpec", "list")
+  )
+}
+
+
+#' Simulate trajectories
+#'
+#' Simulate trajectories of solar radiation with a `solarModel` object.
+#'
+#' @param simSpec
+#' @inheritParams solarScenario
+#' @inheritParams solarSimulation_spec
+#'
+#' @examples
+#' model <- Bologna
+#' simSpec <- solarSimulation_spec(model)
+#' sim <- solarSimulation(simSpec)
+#' ggplot()+
+#' geom_line(data = sim$emp, aes(date, GHI))+
+#' geom_line(data = sim$sim[[1]], aes(date, GHI), color = "red")
+#'
+#' @rdname solarSimulation
+#' @name solarSimulation
+#' @export
+solarSimulation <- function(simSpec, nsim = 1, seed = 1){
+
+  # Number of lags to consider
+  i_start <- simSpec$i_start
+
+  j <- 1
+  simulations <- list()
+  for(j in 1:nsim){
+    # Initialize dataset for storing the simulation
+    df_sim <- simSpec$sim
+    set.seed(seed)
+    df_sim <- simSpec$residuals_simulation(df_sim)
+
+    if (!simSpec$quiet) message("Simulation: ", j, "/", nsim, " (", round(j/nsim*100, 4), " %) \r", appendLF = FALSE)
+
+    i <- i_start
+    for(i in i_start:nrow(df_sim)){
+      # Simulated GARCH standard deviation
+      df_sim$sigma[i] <- simSpec$GARCH_next_step(df_sim$eps_tilde[(i-simSpec$archOrder):(i-1)], df_sim$sigma[(i-simSpec$garchOrder):(i-1)])
+      # Simulated Yt_tilde
+      df_sim$Yt_tilde_hat[i] <- predict(simSpec$AR_model_Yt, newdata = df_sim[(i-(simSpec$arOrder+1)):i,])[i_start]
+      # Simulated standardized monthly normal mixture
+      df_sim$u_tilde[i] <- (df_sim$mu_up[i] + df_sim$sd_up[i]*df_sim$z[i])*df_sim$B[i] + (df_sim$mu_dw[i] + df_sim$sd_dw[i]*df_sim$z[i])*(1-df_sim$B[i])
+      # IF theta != 0 the probabilities has to be distorted and B and u_tilde re-simulated
+      if (df_sim$theta[1] != 0) {
+        # Distort probability according to Esscher parameter
+        params <- c(df_sim$mu_up[i], df_sim$mu_dw[i], df_sim$sd_up[i], df_sim$sd_dw[i], df_sim$p_up[i])
+        df_sim$p_up[i] <- simSpec$esscher_probability(params, df_n = df_sim[i,], df_sim$theta[i])
+        # Simulated bernoulli jump
+        df_sim$B[i] <- rbinom(1, 1, df_sim$p_up[i])
+        # Simulated standardized monthly normal mixture
+        df_sim$u_tilde[i] <- (df_sim$mu_up[i] + df_sim$sd_up[i]*df_sim$z[i])*df_sim$B[i] + (df_sim$mu_dw[i] + df_sim$sd_dw[i]*df_sim$z[i])*(1-df_sim$B[i])
+        # Simulated Esscher parameter
+        df_sim$theta[i] <- df_sim$theta[i]*(df_sim$sigma[i]*df_sim$sigma_bar[i])^2*(df_sim$sd_up[i]^2*df_sim$B[i] + df_sim$sd_dw[i]^2*(1-df_sim$B[i]))
+      }
+      # Simulated GARCH residuals
+      df_sim$u[i] <- df_sim$sigma_m[i]*df_sim$u_tilde[i]
+      # Simulated deseasonalized residuals
+      df_sim$eps_tilde[i] <- df_sim$sigma[i]*df_sim$u[i]
+      # Simulated AR residuals
+      df_sim$eps[i] <- df_sim$eps_tilde[i]*df_sim$sigma_bar[i]
+      # Simulated Yt_tilde
+      df_sim$Yt_tilde[i] <- df_sim$Yt_tilde_hat[i] + df_sim$eps[i]
+      # Simulated Yt
+      df_sim$Yt[i] <- df_sim$Yt_bar[i] + df_sim$Yt_tilde[i] + df_sim$Yt_tilde_uncond[i] + df_sim$theta[i]
+      # Simulated Xt
+      df_sim$Xt[i] <- simSpec$transform$iY(df_sim$Yt[i])
+      # Simulated GHI
+      df_sim[[simSpec$target]][i] <- simSpec$transform$GHI(df_sim$Xt[i], df_sim$Ct[i])
+    }
+    # Remove redundant variables
+    df_sim <- dplyr::select(df_sim, -mu_up, -mu_dw, -sd_up, -sd_dw, -p_up, -Ct, -Yt_bar, -sigma_bar, -sigma_m, -Yt_tilde_hat, -Yt_tilde_uncond)
+    # Remove initial values
+    if (simSpec$exclude_known) {
+      df_sim <- dplyr::filter(df_sim, date >= from & date <= to)
+    }
+    # Store simulations
+    simulations[[j]] <- dplyr::bind_cols(seed = seed, df_sim)
+    # Update seed
+    seed <- seed + j
+  }
+
+  structure(
+    list(
+      sim = simulations,
+      emp = simSpec$emp,
+      params = list(seed = seed, nsim = nsim)
+    ),
+    class = c("solarSimulation", "list")
+  )
+}
+
+
+#' Simulate multiple scenarios
+#'
+#' Simulate multiple scenarios of solar radiation with a `solarModel` object.
+#'
+#' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
+#' @param from character, start Date for simulations in the format `YYYY-MM-DD`.
+#' @param to character, end Date for simulations in the format `YYYY-MM-DD`.
+#' @param by character, steps for multiple scenarios, e.g. `1 day` (day-ahead simulations), `15 days`, `1 month`, `3 months`, ecc.
+#' For each step are simulated `nsim` scenarios.
+#' @param nsim integer, number of simulations.
+#' @param theta numeric, Esscher parameter.
+#' @param seed scalar integer, starting random seed.
+#' @param quiet logical
+#'
+#' @examples
+#' model <- Bologna
+#' scen <- solarScenario(model)
+#' scen <- solarScenario(model, to = "2010-02-01", by = "1 day")
+#' @rdname solarScenario
+#' @name solarScenario
+#' @export
+solarScenario <- function(model, from = "2010-01-01", to = "2010-12-31", by = "1 month", theta = 0, nsim = 1, seed = 1, quiet = FALSE){
+
+  idx_date <- seq.Date(as.Date(from), as.Date(to), by = by)
+  scenarios <- list()
+  df_emp <- dplyr::tibble()
+  n_scenario <- length(idx_date)
+  j <- 2
+  for(j in 2:n_scenario){
+    if (!quiet) {
+      # To report progress
+      pb <- txtProgressBar(min = 1,            # Minimum value of the progress bar
+                           max = n_scenario,   # Maximum value of the progress bar
+                           style = 3,          # Progress bar style (also available style = 1 and style = 2)
+                           width = 50,         # Progress bar width. Defaults to getOption("width")
+                           char = "#")
+      setTxtProgressBar(pb, j)
+    }
+    simSpec <- solarSimulation_spec(model, from = idx_date[j-1], to = idx_date[j]-1, theta = theta, exclude_known = TRUE, quiet = TRUE)
+    sim <- solarSimulation(simSpec, nsim = nsim, seed = seed)
+    df_emp <- dplyr::bind_rows(df_emp, sim$emp)
+    scenarios[[j]] <- dplyr::bind_rows(sim$sim)
+    seed <- sim$params$seed + 1
+  }
+  if (!quiet) close(pb)
+  df_emp <- df_emp[!duplicated(df_emp),]
+  df_sim <- dplyr::bind_rows(scenarios) %>%
+    dplyr::group_by(date, Year, Month, Day, n)%>%
+    tidyr::nest() %>%
+    dplyr::ungroup()
+
+  structure(
+    list(
+      sim = df_sim,
+      emp = df_emp,
+      seed = seed,
+      target = model$target
+    ),
+    class = c("solarScenario", "list")
+  )
+}
+
+

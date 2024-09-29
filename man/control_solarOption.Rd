@@ -8,6 +8,7 @@ control_solarOption(
   nyears = c(2005, 2023),
   K = 0,
   put = TRUE,
+  target.Yt = FALSE,
   leap_year = FALSE,
   B = discountFactor()
 )
@@ -20,10 +21,15 @@ the computation of the fair payoff.}
 
 \item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
 
+\item{target.Yt}{logical, when `TRUE`, the default, the computations will consider the pdf of `Yt` otherwise the pdf of solar radiation.}
+
 \item{leap_year}{logical, when `FALSE`, the default, the year will be considered of 365 days, otherwise 366.}
 
 \item{B}{function. Discount factor function. Should take as input a number (in years) and return a discount factor.}
 }
 \description{
 Control parameters for a solar option
+}
+\examples{
+control_options <- control_solarOption()
 }

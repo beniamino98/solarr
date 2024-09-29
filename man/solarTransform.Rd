@@ -12,8 +12,11 @@ Solar Model transformation functions
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{solarTransform$new()}}
-\item \href{#method-Yt}{\code{solarTransform$Yt()}}
 \item \href{#method-GHI}{\code{solarTransform$GHI()}}
+\item \href{#method-GHI_y}{\code{solarTransform$GHI_y()}}
+\item \href{#method-iGHI}{\code{solarTransform$iGHI()}}
+\item \href{#method-Y}{\code{solarTransform$Y()}}
+\item \href{#method-iY}{\code{solarTransform$iY()}}
 \item \href{#method-parameters}{\code{solarTransform$parameters()}}
 \item \href{#method-update}{\code{solarTransform$update()}}
 \item \href{#method-clone}{\code{solarTransform$clone()}}
@@ -25,7 +28,7 @@ Solar Model transformation functions
 \subsection{Method \code{new()}}{
 Solar Model transformation functions
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarTransform$new(alpha = 0.001, beta = 0.95)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$new(alpha = 0, beta = 1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -39,12 +42,84 @@ Solar Model transformation functions
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Yt"></a>}}
-\if{latex}{\out{\hypertarget{method-Yt}{}}}
-\subsection{Method \code{Yt()}}{
-Transformation from Xt to Yt and viceversa
+\if{html}{\out{<a id="method-GHI"></a>}}
+\if{latex}{\out{\hypertarget{method-GHI}{}}}
+\subsection{Method \code{GHI()}}{
+Solar radiation function
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarTransform$Yt(x, inverse = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$GHI(x, Ct)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{numeric vector in \eqn{(\alpha, \alpha+\beta)}.}
+
+\item{\code{Ct}}{clear sky radiation.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function computes:
+\deqn{GHI(x) = C_t(1 - x)}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-GHI_y"></a>}}
+\if{latex}{\out{\hypertarget{method-GHI_y}{}}}
+\subsection{Method \code{GHI_y()}}{
+Solar radiation function in terms of y
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$GHI_y(y, Ct)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{y}}{numeric vector in \eqn{(-\infty, \infty)}.}
+
+\item{\code{Ct}}{clear sky radiation.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function computes:
+\deqn{GHI(y) = C_t(1 - \alpha-\beta \exp(-\exp(x)))}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-iGHI"></a>}}
+\if{latex}{\out{\hypertarget{method-iGHI}{}}}
+\subsection{Method \code{iGHI()}}{
+Compute the risk driver process for solar radiation
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$iGHI(x, Ct)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{numeric vector in \eqn{C_t (\alpha, \alpha+\beta)}.}
+
+\item{\code{Ct}}{clear sky radiation.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function computes the inverse of the `GHI`funcion
+\deqn{iGHI(x) = 1 - \frac{x}{C_t}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Y"></a>}}
+\if{latex}{\out{\hypertarget{method-Y}{}}}
+\subsection{Method \code{Y()}}{
+Transformation function from X to Y
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$Y(x)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -58,41 +133,29 @@ Transformation from Xt to Yt and viceversa
 }
 \subsection{Details}{
 The function computes the transformation:
-
-\deqn{Y_t = \log(\log(\beta) - \log(x - \alpha))}
-
-In case in which `inverse = TRUE` it computes
-
-\deqn{X_t = \alpha + \beta \exp(-\exp(Y_t))}
+\deqn{Y(x) = \log(\log(\beta) - \log(x - \alpha))}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-GHI"></a>}}
-\if{latex}{\out{\hypertarget{method-GHI}{}}}
-\subsection{Method \code{GHI()}}{
-Solar radiation function
+\if{html}{\out{<a id="method-iY"></a>}}
+\if{latex}{\out{\hypertarget{method-iY}{}}}
+\subsection{Method \code{iY()}}{
+Inverse transformation from Y to X.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarTransform$GHI(x, Ct, inverse = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$iY(y)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{numeric vector in \eqn{(\alpha, \alpha+\beta)}.}
-
-\item{\code{Ct}}{clearsky radiation.}
+\item{\code{y}}{numeric vector in \eqn{(-\infty, \infty)}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The function computes the inverse of `GHI`
-
-\deqn{GHI = C_t(1 - x)}
-
-In case in which `inverse = TRUE` it computes
-
-\deqn{X_t = 1 - \frac{x}{C_t}}
+The function computes the transformation:
+\deqn{iY(y) = \alpha + \beta \exp(-\exp(y))}
 }
 
 }
@@ -100,7 +163,7 @@ In case in which `inverse = TRUE` it computes
 \if{html}{\out{<a id="method-parameters"></a>}}
 \if{latex}{\out{\hypertarget{method-parameters}{}}}
 \subsection{Method \code{parameters()}}{
-Compute parameters from a time series
+Fit the best parameters from a time series
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$parameters(x, threshold = 0.01)}\if{html}{\out{</div>}}
 }
@@ -108,7 +171,7 @@ Compute parameters from a time series
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{time series of risk driver}
+\item{\code{x}}{time series of solar risk drivers in \eqn{(0, 1)}.}
 
 \item{\code{threshold}}{for minimum}
 }

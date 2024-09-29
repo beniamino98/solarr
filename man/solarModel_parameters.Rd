@@ -18,6 +18,8 @@ a named list with all the parameters
 Extract the parameters of a `solarModel`
 }
 \examples{
-solarModel_parameters(Bologna)
+model <- Bologna
+solarModel_parameters(model)
+solarModel_parameters(model, as_tibble = TRUE)
 
 }

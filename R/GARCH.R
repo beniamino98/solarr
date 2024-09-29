@@ -1,3 +1,40 @@
+#' Separate a named list of parameter into ARCH and GARCH components
+#' @param params named vector of GARCH parameters. Tthe ARCH parameters `alpha1` for first lag, `alpha2` for second lag, etc.
+#' Finally, the GARCH parameters `beta1` for first lag, `beta2` for second lag and so on. The intercept is named `omega`.
+#' @examples
+#' init_params <- c(omega=1, beta2=0.2, beta3=0.1, beta1=0.3, alpha1 = 0.01, alpha2 = 0.02)
+#' params <- GARCH_parameters(init_params)
+#' @keywords internal
+#' @noRd
+#' @export
+GARCH_parameters <- function(params){
+  if (is.list(params)){
+    names(params) <- NULL
+    params <- unlist(params)
+  }
+  params_names <- names(params)
+  # Extract intercept
+  omega <- params[stringr::str_detect(params_names, "omega")]
+  # Extract ARCH component
+  idx_arch <- which(stringr::str_detect(params_names, "alpha"))
+  alpha <- 0
+  if (!purrr::is_empty(idx_arch)){
+    alpha <- params[idx_arch]
+  }
+  # Extract GARCH component
+  idx_garch <- which(stringr::str_detect(params_names, "beta"))
+  beta <- 0
+  if (!purrr::is_empty(idx_garch)){
+    beta <- params[idx_garch]
+    beta <- beta[order(names(beta))]
+  }
+  list(
+    omega = omega,
+    alpha = alpha,
+    beta = beta
+  )
+}
+
 #' Filter for a GARCH(1,1)
 #'
 #' @param x vector, time series to filter.
@@ -8,7 +45,6 @@
 #'
 #' @examples
 #' set.seed(1)
-#' x <- rnorm(10)
 #' GARCH_filter(x, params = c(0.2, 0.3, 0.5), x0 = NA, sigma0 = 1, sigma2_bar = 1.3)
 #' GARCH_filter(x, params = c(0.2, 0.3, 0.5), x0 = 1, sigma0 = 0.8)
 #' @rdname GARCH_filter
@@ -115,9 +151,9 @@ GARCH_logLik <- function(params, x, weights, ...){
 #' @inheritParams GARCH_filter
 #'
 #' @examples
-#' params <- c(0.2, 0.3, 0.1)
+#' params <- c(0.6, 0.1, 0.2)
 #' x <- GARCH_simulate(5000, params = params, x0 = NA, sigma0 = 1)
-#' y <- GARCH_optimize(params, x$x, sigma2 = 1)
+#' GARCH_optimize(params, x$x, sigma2 = 1)
 #' @param control list of control for `optim`.
 #' @rdname GARCH_optimize
 #' @keywords internal
@@ -142,103 +178,88 @@ GARCH_optimize <- function(params, x, sigma2 = NA, weights, ..., control = list(
 }
 
 
-AR_GARCH_filter <- function(x, params, x0 = NA, sigma0 = NA, sigma2 = NA, t0 = 0){
+#' GARCH models with flexible weights
+#'
+#' @keywords internal
+#' @export
+ugarchfit_fp <- function(spec, data, weights, sigma0, ...){
 
-  if (missing(x)) {
-    stop("Please, provide a vector for `x`!")
+  if (missing(weights)){
+    weights <- 1
+  } else {
+    weights <- ifelse(weights == 0, 0, 1)
   }
-
-  # Length of the time series
-  n <- length(x)
-  names(params) <- c("phi1", "phi2", "omega0", "omega1", "omega2", "c0", "c1", "c2")
-
-  # AR parameters
-  phi <- params[c("phi1", "phi2")]
-
-  # Garch parameters
-  omega <- params[c("omega0", "omega1", "omega2")]
-  # Long term GARCH variance
-  sigma0_2 <- omega[1]/(1 - omega[2] - omega[3])
-  if (sigma0_2 < 0 | any(omega > 1) | any(omega < 0)) {
-    warning("The GARCH parameters are not valid!")
-    return(NA)
+  # Initial parameters
+  if (is.null(spec@model$start.pars)) {
+    # Safe GARCH model
+    safe_GARCH <- purrr::safely(rugarch::ugarchfit)
+    # Fitted model
+    model <- safe_GARCH(data = data, spec = spec, out.sample = 0)$result
+    if (model@fit$convergence == 0){
+      # Store the parameters inside the specification of the GARCH
+      spec@model$fixed.pars <- model@fit$coef
+      spec@model$start.pars <- model@fit$coef
+    } else {
+      fixed.pars <- spec@model$pars[,4][spec@model$pars[,4] == 1]
+      fixed.pars <- runif(length(fixed.pars), 0, 0.1)
+      fixed.pars <- fixed.pars/sum(fixed.pars)
+      fixed.pars[1] <- 1 - sum(fixed.pars[-1])
+      names(fixed.pars) <- names(spec@model$pars[,4][spec@model$pars[,4] == 1])
+      spec@model$start.pars <- fixed.pars
+      spec@model$fixed.pars <- fixed.pars
+    }
   }
+  # Extract original attributes
+  params_attr <- attributes(spec@model$start.pars)
+  # Loss function
+  log.likelihood <- function(params, spec, sigma0){
+    attributes(params) <- params_attr
+    if (any(params[stringr::str_detect(names(params), "omega|alpha|beta")] < 0)) return(NA)
+    # Unconditional variance
+    if (!missing(sigma0)) {
+      params[1] <- sigma0*(1-sum(params[stringr::str_detect(names(params), "alpha|beta")]))
+    }
+    spec@model$fixed.pars <- params
+    log.lik <- rugarch::ugarchfilter(spec, data, ...)@filter$log.likelihoods
+    sum(-log.lik*weights)
+  }
+  # Optimization function
+  opt <- optim(spec@model$start.pars, log.likelihood, spec = spec, sigma0 = sigma0)
   # Unconditional variance
-  if (!is.na(sigma2)) {
-    omega[1] <- sigma2*(1 - omega[2] - omega[3])
-    sigma0_2 <- omega[1]/(1 - omega[2] - omega[3])
+  if (!missing(sigma0)) {
+    opt$par[1] <- sigma0*(1-sum(opt$par[stringr::str_detect(names(opt$par), "alpha|beta")]))
   }
-
-  # Seasonal variance
-  c_ <- params[c("c0", "c1", "c2")]
-  # Positive constraint
-  if (c_[1] < sqrt(c_[2]^2 + c_[3]^2)){
-    warning("The Seasonal parameters are not valid!")
-    return(NA)
-  }
-
-  # Initialize std. deviation
-  if (is.na(sigma0)) {
-    sigma0 <- sqrt(sigma0_2)
-  } else {
-    sigma0 <- 1
-  }
-  sigma <- rep(sigma0, n)
-
-  # Default initial residuals
-  if (!is.na(x0)) {
-    x[1] <- x0
-  }
-  mu <- x
-  loglik <- rep(0, n)
-  # AR-GARCH loop
-  for(t in 3:n){
-    mu[t] <- phi[1]*x[t-1] + phi[2]*x[t-2]
-    omega_t <- (2*base::pi*(t0 + t))/365
-    sigma_bar <-  sqrt(c_[1] + c_[2]*cos(omega_t) + c_[3]*sin(omega_t))
-    sigma[t] <- sqrt(omega[1] + omega[2]*(x[t-1]/sigma_bar)^2 + omega[3]*sigma[t-1]^2)
-    loglik[t] <- dnorm(x[t], mean = mu[t], sd = sigma[t]*sigma_bar, log = TRUE)
-  }
-  message("Log-likelihood: ", sum(loglik), "\r", appendLF = FALSE)
-
-  params <- c(phi, omega, c_)
-  # Output
-  structure(
-    list(
-      params = params,
-      fitted = dplyr::tibble(
-        t = 1:n,
-        sigma = sigma,
-        sigma_bar = sigma_bar,
-        mu_t = mu,
-        loglik = loglik,
-        u = (x-mu_t)/(sigma*sigma_bar)
-      )
-    )
-  )
+  # Update the parameters
+  spec@model$fixed.pars <- opt$par
+  return(spec)
 }
 
-AR_GARCH_logLik <- function(params, x, ...){
-  garch_filter <- AR_GARCH_filter(x = x, params = params, ...)
-  if (length(garch_filter) == 1 && is.na(garch_filter)){
-    return(NA)
-  } else {
-    sum(garch_filter$fitted$loglik)
+#' Next step function for a GARCH(p,q)
+#'
+#' @param omega The intercept
+#' @param alpha ARCH parameters
+#' @param beta GARCH parameters
+#'
+#' @keywords internal
+#' @export
+GARCH_pq_next_step <- function(omega = 1, alpha, beta){
+
+  # ARCH order
+  p <- ifelse(missing(alpha), 0, length(alpha))
+  # GARCH order
+  q <- ifelse(missing(beta), 0, length(beta))
+
+  function(x = 1, sigma = 1){
+    # Initialize GARCH variance
+    sigma2_next <- omega
+    # ARCH(p) component
+    if (p > 0) {
+      sigma2_next <- sigma2_next + sum(alpha*x^2)
+    }
+    # GARCH(q) component
+    if (q > 0) {
+      sigma2_next <- sigma2_next + sum(beta*sigma^2)
+    }
+    return(sqrt(sigma2_next))
   }
-}
-
-AR_GARCH_optimize <- function(x, params, sigma2 = NA, ..., control = list(maxit = 1e5, fnscale = -1, ndeps = 1e-5)){
-
-  names(params) <- c("phi1", "phi2", "omega0", "omega1", "omega2", "c0", "c1", "c2")
-  opt <- optim(par = params, AR_GARCH_logLik, x = x, sigma2 = sigma2, ..., control = control)
-
-  garch_filter <- AR_GARCH_filter(x, params = opt$par, sigma2 = sigma2, ...)
-  structure(
-    list(
-      init_params = params,
-      params = garch_filter$params,
-      logLik = sum(garch_filter$fitted$loglik, na.rm = TRUE),
-      fitted = garch_filter$fitted
-    )
-  )
 }

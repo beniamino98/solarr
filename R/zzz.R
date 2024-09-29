@@ -1,19 +1,73 @@
 #' Print method for the class `solarModel`
-#' @param object an object of the class `solarModel`.
+#'
+#' @param object an object of the class `\code{\link{solarModel}}.
+#'
 #' @keywords internal
-#' @export
 #' @noRd
-print.solarModel <- function(object){
-  msg_1 <- paste0("Place: ", object$place, " \n (Lat: ", object$coords$lat, "; Lon: ", object$coords$lon, ") \n")
-  msg_2 <- paste0("From: ", min(object$data$date), " - ", max(object$data$date), " (Nobs: ", nrow(object$data), ")")
-  cat(paste0(msg_1, msg_2))
+#' @export
+print.solarModelSpec <- function(object){
+  model_type <- class(object)[1]
+  # Complete data specifications
+  data <- object$dates$data
+  # Train data specifications
+  train <- object$dates$train
+  train$perc <- format(train$perc*100, digits = 4)
+  # Test data specifications
+  test <- object$dates$test
+  test$perc <- format(test$perc*100, digits = 4)
+  msg_0 <- paste0("--------------------- ", model_type, " (", object$place, ") ", "--------------------- \n")
+  msg_1 <- paste0("Target: ", object$target, " \n Lat: ", object$coords$lat, "\n Lon: ", object$coords$lon, "\n Alt: ", object$coords$alt, " \n")
+  msg_1 <- paste0("Target: ", object$target, " \n Coordinates: (Lat: ", object$coords$lat, ", Lon: ", object$coords$lon, ", Alt: ", object$coords$alt, ") \n")
+  msg_2 <- paste0(" Dates: ", data$from, " - ", data$to, "\n Observations: ", data$nobs, "\n")
+  msg_3 <- paste0("---------------------------------------------------------------\n")
+  msg_4 <- paste0("Train dates: ", train$from, " - ", train$to, " (", train$nobs, " points ~ ", train$perc, "%)", "\n")
+  msg_5 <- paste0("Test  dates: ", test$from, " - ", test$to, " (", test$nobs, " points ~ ", test$perc, "%)", "\n")
+  msg_6 <- paste0("---------------------------------------------------------------\n")
+  cat(paste0(msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6))
 }
 
-#' Print method for the class `solarOptionPayoff`
-#' @param object an object of the class `solarOptionPayoff`.
+#' Print method for the class `solarModel`
+#'
+#' @param object an object of the class `\code{\link{solarModel}}.
+#'
 #' @keywords internal
-#' @export
 #' @noRd
+#' @export
+print.solarModel <- function(object){
+  NextMethod(object)
+}
+
+
+#' Print method for the class `seasonalModel`
+#'
+#' @param object an object of the class  \code{\link{seasonalModel}}.
+#'
+#' @keywords internal
+#' @noRd
+#' @export
+print.seasonalModel <- function(object){
+  env_ <- object$.__enclos_env__$private
+  cat(paste0("----------------------- ", class(object)[1], " ----------------------- \n"))
+  msg_1 <- paste0(" - Order: ", env_$order, "\n - Period: ", env_$period, "\n")
+  n_external_reg <- ncol(env_$external_regressors)-1
+  if (n_external_reg == 0) {
+    msg_2 <- paste0("- External regressors: ", ncol(env_$external_regressors)-1, "\n")
+  } else {
+    msg_2 <- paste0("- External regressors: ", ncol(env_$external_regressors)-1, " (", names(env_$external_regressors)[-1], ")\n")
+  }
+  cat(c(msg_1, msg_2))
+  cat(paste0("--------------------------------------------------------------\n"))
+  print(object$model)
+}
+
+
+#' Print method for the class `solarOption`
+#'
+#' @param object an object of the class  \code{\link{solarOption}}.
+#'
+#' @keywords internal
+#' @noRd
+#' @export
 print.solarOption <- function(object){
 
   msg_1 <- paste0("------------------------ Solar Option Payoff ------------------------ \n")
@@ -35,10 +89,12 @@ print.solarOption <- function(object){
 }
 
 #' Print method for the class `spatialModel`
-#' @param object an object of the class `spatialModel`.
+#'
+#' @param object an object of the class \code{\link{spatialModel}}.
+#'
 #' @keywords internal
-#' @export
 #' @noRd
+#' @export
 print.spatialModel <- function(object){
 
   range_lat <- range(object$locations$lat)
@@ -55,11 +111,13 @@ print.spatialModel <- function(object){
   cat(paste0(msg_1, msg_2))
 }
 
-#' Print method for the class `spatialTransform`
-#' @param object an object of the class `spatialTransform`.
+#' Print method for the class `solarTransform`
+#'
+#' @param object an object of the class \code{\link{solarTransform}}.
+#'
 #' @keywords internal
-#' @export
 #' @noRd
+#' @export
 print.solarTransform <- function(object){
   alpha_ <- format(object$params$alpha, digits = 3, scientific = FALSE)
   beta_ <- format(object$params$beta, digits = 3, scientific = FALSE)

@@ -3,16 +3,76 @@
 \name{kernelRegression}
 \alias{kernelRegression}
 \title{Kernel regression}
-\usage{
-kernelRegression(formula, data, ...)
-}
-\arguments{
-\item{formula}{formula}
-
-\item{data}{data}
-
-\item{...}{other parameters to be passed to. See \code{np::npreg}.}
-}
 \description{
+Kernel regression
+
+Kernel regression
+}
+\details{
 Fit a kernel regression.
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-new}{\code{kernelRegression$new()}}
+\item \href{#method-predict}{\code{kernelRegression$predict()}}
+\item \href{#method-clone}{\code{kernelRegression$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a `kernelRegression` object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{kernelRegression$new(formula, data, ...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{formula}}{formula, an object of class `formula` (or one that can be coerced to that class).}
+
+\item{\code{data}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
+If not found in data, the variables are taken from environment(formula), typically the environment from which `lm` is called.}
+
+\item{\code{...}}{other parameters to be passed to the function `np::npreg`.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-predict"></a>}}
+\if{latex}{\out{\hypertarget{method-predict}{}}}
+\subsection{Method \code{predict()}}{
+Predict method
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{kernelRegression$predict(...)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{...}}{arguments to fit.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{kernelRegression$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

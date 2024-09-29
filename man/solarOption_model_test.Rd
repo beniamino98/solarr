@@ -4,8 +4,17 @@
 \alias{solarOption_model_test}
 \title{Test errors solar Option model}
 \usage{
-solarOption_model_test(model, control_options = control_solarOption())
+solarOption_model_test(
+  model,
+  nmonths = 1:12,
+  control_options = control_solarOption()
+)
 }
 \description{
 Test errors solar Option model
+}
+\examples{
+model <- Bologna
+solarOption_model_test(model)
+solarOption_model_test(model, nmonths = 6)
 }

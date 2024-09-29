@@ -14,3 +14,9 @@ solarModel_update(model, params)
 \description{
 Update the parameters of a `solarModel` object
 }
+\examples{
+model <- Bologna
+params <- solarModel_parameters(model)
+model <- solarModel_update(model, params)
+model
+}

@@ -8,6 +8,7 @@ solarOption_model(
   model,
   nmonths = 1:12,
   theta = 0,
+  combinations = NA,
   implvol = 1,
   control_options = control_solarOption()
 )
@@ -19,17 +20,21 @@ solarOption_model(
 
 \item{theta}{Esscher parameter}
 
+\item{combinations}{list of 12 elements with gaussian mixture components.}
+
 \item{implvol}{implied unconditional GARCH variance, the default is `1`.}
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
+
+\item{target.Yt}{pdf to use for expectation}
 }
 \description{
 Pricing function under the solar model
 }
 \examples{
-control <- control_solarModel(outliers_quantile = 0.0005)
-spec <- solarModel_spec("Berlino", from="2005-01-01", to="2024-01-01", control_model = control)
-model <- solarModel(spec)
-solarOption_model(model)
-solarOption_historical(model)
+model <- Bologna
+control_options <- control_solarOption(put = FALSE)
+df_call <- solarOption_model(model, control_options = control_options)
+control_options <- control_solarOption(put = TRUE)
+df_put <- solarOption_model(model, control_options = control_options)
 }

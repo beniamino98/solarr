@@ -18,7 +18,7 @@ control_solarEsscher(
 \arguments{
 \item{nsim}{integer, number of simulations used to bootstrap the premium bounds.}
 
-\item{ci}{numeric, confidence interval for bootstrapping. See `solar_option_payoff_bootstrap()`.}
+\item{ci}{numeric, confidence interval for bootstrapping. See \code{\link{solarOption_bootstrap}}.}
 
 \item{seed}{integer, random seed for reproducibility.}
 

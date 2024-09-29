@@ -2,27 +2,37 @@
 % Please edit documentation in R/solarEsscher.R
 \name{solarEsscher_calibrator}
 \alias{solarEsscher_calibrator}
-\title{Calibrator for Esscher parameter}
+\title{Calibrate an Esscher parameter given a target price}
 \usage{
 solarEsscher_calibrator(
   model,
+  nmonths = 1,
   target_price,
-  nmonths = 1:12,
   control_esscher = control_solarEsscher(),
   control_options = control_solarOption()
 )
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{solar model}
 
-\item{target_price}{target price for the calibration.}
+\item{nmonths}{month or months}
 
-\item{nmonths}{months used in the model computation.}
+\item{target_price}{the `target_price` represent the model price under the target Q-measure.}
 
-\item{control_esscher}{control function. See \code{\link{control_solarEsscher}} for details.}
+\item{control_esscher}{control}
 
-\item{control_options}{control function. See \code{\link{control_solarOption}} for details.}
+\item{control_options}{control}
 }
 \description{
-Calibrator for Esscher parameter
+Calibrator function for the monthly Esscher parameter of a solarOption
+}
+\examples{
+model <- Bologna
+# Compute realized historical payoffs
+payoff_hist <- solarOption_historical(model, nmonths = 1:12)
+# Monthly calibration
+solarEsscher_calibrator(model, 1:3, payoff_hist$payoff_month$premium[1:3])
+# Yearly calibration
+solarEsscher_calibrator(model, 1:12, payoff_hist$payoff_year$premium)
+
 }

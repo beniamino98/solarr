@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarModel.R
 \name{solarModel_filter}
 \alias{solarModel_filter}
-\title{Update the time series of a `solarModel` object}
+\title{Update the time series inside a `solarModel` object}
 \usage{
 solarModel_filter(model)
 }
@@ -10,5 +10,11 @@ solarModel_filter(model)
 \item{model}{`solarModel` object}
 }
 \description{
-Update the time series of a `solarModel` object
+Update the time series inside a `solarModel` object
+}
+\examples{
+model <- Bologna
+params <- solarModel_parameters(model)
+model <- solarModel_update(model, params)
+model <- solarModel_filter(model)
 }

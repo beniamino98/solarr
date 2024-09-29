@@ -5,28 +5,46 @@
 \title{Control parameters for a `solarModel` object}
 \usage{
 control_solarModel(
-  clearsky.model = control_clearskyModel(),
-  mean.model = list(seasonalOrder = 1, arOrder = 2, include.intercept = FALSE,
+  clearsky = control_seasonalClearsky(),
+  stochastic_clearsky = FALSE,
+  seasonal.mean = list(seasonalOrder = 1, include.H0 = FALSE, include.intercept = TRUE,
     monthly.mean = TRUE),
-  variance.model = list(seasonalOrder = 1, unconditional_variance = NA, match_moments =
-    FALSE, monthly.mean = TRUE, abstol = 1e-20, maxit = 100),
+  seasonal.variance = list(seasonalOrder = 1, correction = TRUE, monthly.mean = TRUE),
+  mean.model = list(arOrder = 2, include.intercept = FALSE),
+  variance.model = rugarch::ugarchspec(variance.model = list(garchOrder = c(1, 1)),
+    mean.model = list(armaOrder = c(0, 0), include.mean = FALSE)),
+  mixture.model = list(match_moments = FALSE, abstol = 0.001, maxit = 150),
   threshold = 0.01,
   outliers_quantile = 0,
   quiet = FALSE
 )
 }
 \arguments{
-\item{clearsky.model}{list with control parameters, see \code{\link{control_clearskyModel}} for details.}
+\item{clearsky}{list with control parameters, see \code{\link{control_seasonalClearsky}} for details.}
 
-\item{mean.model}{a list of parameters. Available choices are:
+\item{seasonal.mean}{a list of parameters. Available choices are:
 \describe{
  \item{`seasonalOrder`}{An integer specifying the order of the seasonal component in the model. The default is `1`.}
- \item{`arOrder`}{An integer specifying the order of the autoregressive component in the model. The default is `2`.}
- \item{`include.intercept`}{When `TRUE` the intercept will be included in the AR model. The dafault if `FALSE`.}
+ \item{`include.intercept`}{When `TRUE` the intercept will be included in the seasonal model. The dafault if `TRUE`.}
  \item{`monthly.mean`}{When `TRUE` a set of 12 monthly means parameters will be computed from the deseasonalized time series to center it perfectly around zero.}
 }}
 
-\item{variance.model}{a list of parameters.}
+\item{seasonal.variance}{a list of parameters. Available choices are:
+\describe{
+ \item{`seasonalOrder`}{An integer specifying the order of the seasonal component in the model. The default is `1`.}
+ \item{`correction`}{When true the seasonal variance is corrected to ensure that the standardize the residuals with a unitary variance.  }
+ \item{`monthly.mean`}{When `TRUE` a set of 12 monthly variances parameters will be computed from the deseasonalized time series to center it perfectly around zero.}
+}}
+
+\item{mean.model}{a list of parameters.
+\describe{
+ \item{`arOrder`}{An integer specifying the order of the AR component in the model. The default is `2`.}
+ \item{`include.intercept`}{When `TRUE` the intercept will be included in the AR model. The dafault if `FALSE`.}
+}}
+
+\item{variance.model}{an `ugarchspec` object for GARCH variance. Default is `GARCH(1,1)`.}
+
+\item{mixture.model}{a list of parameters.}
 
 \item{threshold}{numeric, threshold for the estimation of alpha and beta.}
 
@@ -37,4 +55,7 @@ the observation above the quantile at confidence level 1-`outliers_quantile` wil
 }
 \description{
 Control function for a solarModel
+}
+\examples{
+control <- control_solarModel()
 }

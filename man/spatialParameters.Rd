@@ -2,16 +2,95 @@
 % Please edit documentation in R/spatialParameters.R
 \name{spatialParameters}
 \alias{spatialParameters}
-\title{Spatial kernel regression}
-\usage{
-spatialParameters(solarModels, quiet = FALSE)
-}
-\arguments{
-\item{solarModels}{a list containing `solarModels` objects.}
-
-\item{quiet}{logical}
-}
+\title{`spatialParameters` object}
 \description{
-Fit kernel regression on all the parameters of a list containing
-`solarModels` at different coordinates.
+`spatialParameters` object
+
+`spatialParameters` object
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-new}{\code{spatialParameters$new()}}
+\item \href{#method-fit}{\code{spatialParameters$fit()}}
+\item \href{#method-predict}{\code{spatialParameters$predict()}}
+\item \href{#method-clone}{\code{spatialParameters$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a `spatialParameters` object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialParameters$new(solarModels, models, quiet = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{solarModels}}{list of `solarModel` objects.}
+
+\item{\code{models}}{an optional list of models.}
+
+\item{\code{quiet}}{logical}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-fit}{}}}
+\subsection{Method \code{fit()}}{
+Fit a `kernelRegression` object for a parameter or a group of parameters.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialParameters$fit(params)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{params}}{list of parameters names to fit. When missing all the parameters will be fitted.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-predict"></a>}}
+\if{latex}{\out{\hypertarget{method-predict}{}}}
+\subsection{Method \code{predict()}}{
+Predict all the parameters for a specified location.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialParameters$predict(lat, lon, as_tibble = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{numeric, latitude in degrees.}
+
+\item{\code{lon}}{numeric, longitude in degrees.}
+
+\item{\code{as_tibble}}{logical, when `TRUE` will be returned a `tibble`.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialParameters$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }
