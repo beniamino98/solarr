@@ -8,6 +8,19 @@ Solar Model transformation functions
 
 Solar Model transformation functions
 }
+\examples{
+st <- solarTransform$new()
+
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{alpha}}{Return the first transformation parameters}
+
+\item{\code{beta}}{the second transformation parameters}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -18,6 +31,7 @@ Solar Model transformation functions
 \item \href{#method-Y}{\code{solarTransform$Y()}}
 \item \href{#method-iY}{\code{solarTransform$iY()}}
 \item \href{#method-parameters}{\code{solarTransform$parameters()}}
+\item \href{#method-bounds}{\code{solarTransform$bounds()}}
 \item \href{#method-update}{\code{solarTransform$update()}}
 \item \href{#method-clone}{\code{solarTransform$clone()}}
 }
@@ -179,6 +193,23 @@ Fit the best parameters from a time series
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-bounds"></a>}}
+\if{latex}{\out{\hypertarget{method-bounds}{}}}
+\subsection{Method \code{bounds()}}{
+Compute the bounds for each tranform
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$bounds(target = "Xt")}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{target}}{target variable}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-update"></a>}}
 \if{latex}{\out{\hypertarget{method-update}{}}}
 \subsection{Method \code{update()}}{
@@ -193,8 +224,6 @@ Update the parameters
 \item{\code{alpha}}{bounds parameter.}
 
 \item{\code{beta}}{bounds parameter.}
-
-\item{\code{threshold}}{for minimum}
 }
 \if{html}{\out{</div>}}
 }

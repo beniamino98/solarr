@@ -8,6 +8,17 @@ Spatial model object
 
 Spatial model object
 }
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{models}}{list of `solarModel` objects}
+
+\item{\code{locations}}{dataset with all the locations.}
+
+\item{\code{parameters}}{`spatialParameters` object}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{

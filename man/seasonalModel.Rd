@@ -2,11 +2,32 @@
 % Please edit documentation in R/seasonalModel.R
 \name{seasonalModel}
 \alias{seasonalModel}
-\title{Seasonal model object}
+\title{Seasonal Model Object}
 \description{
-Seasonal model object
+The `seasonalModel` class implements a seasonal regression model as a linear combination of sine and cosine functions.
+This model is designed to capture periodic effects in time series data, particularly for applications involving seasonal trends.
+}
+\details{
+The seasonal model is fitted using a specified formula, which allows for the inclusion of external regressors along with sine and cosine terms to model seasonal variations.
+The periodicity can be customized, and the model can be updated with new coefficients after fitting.
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{seasonal_data}}{a dataset containing external seasonal data.}
 
-Seasonal model object
+\item{\code{extra_params}}{a slot for containing extra parameters.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{coefficients}}{Extract the coefficients}
+
+\item{\code{model}}{Extract the model}
+}
+\if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -34,7 +55,7 @@ It is a symbolic description of the model to be fitted and can be used to includ
 
 \item{\code{order}}{numeric, of sine and cosine elements.}
 
-\item{\code{period}}{numeric, periodicity. The default is `2*base::pi/365`.}
+\item{\code{period}}{numeric, periodicity. The default is \eqn{\frac{2\pi}{365}}.}
 
 \item{\code{data}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
 If not found in data, the variables are taken from environment(formula), typically the environment from which `lm` is called.}

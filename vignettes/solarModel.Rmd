@@ -36,7 +36,7 @@ model <- solarModel(spec)
 # Simulation 
 
 ```{r}
-scenario <- solarModel_scenario(model, nsim = 1, by = "1 day")
+scenario <- solarScenario(model, from = "2022-01-01", to = "2023-01-01", nsim = 1, by = "1 year")
 sim <- tidyr::unnest(scenario$sim, cols = "data")
 ggplot()+
   geom_line(data = sim, aes(n, GHI), color = "red")+
@@ -59,11 +59,11 @@ purrr::map_dbl(1:12, ~solarModel_loglik(model, nmonths = .x))
 ```
 
 ```{r}
-c_moments <- solarModel_moments(model)
+c_moments <- solarModel_conditional_moments(model)
 
-c_moments$GHI_up <- model$transform$GHI(model$transform$Yt(c_moments$mu_up, inverse = TRUE), c_moments$Ct)
-c_moments$GHI_up_hi <- model$transform$GHI(model$transform$Yt(c_moments$mu_up + c_moments$sd_up, inverse = TRUE), c_moments$Ct)
-c_moments$GHI_up_lo <- model$transform$GHI(model$transform$Yt(c_moments$mu_up - c_moments$sd_up, inverse = TRUE), c_moments$Ct)
+c_moments$GHI_up <- model$transform$GHI_y(c_moments$e_Yt_up, c_moments$Ct)
+c_moments$GHI_up_hi <- model$transform$GHI_y(c_moments$e_Yt_up + c_moments$sd_Yt_up, c_moments$Ct)
+c_moments$GHI_up_lo <- model$transform$GHI_y(c_moments$e_Yt_up - c_moments$sd_Yt_dw, c_moments$Ct)
 c_moments[3:368,] %>%
   ggplot()+
   geom_line(aes(date, GHI), color = "black")+
@@ -71,20 +71,9 @@ c_moments[3:368,] %>%
   geom_line(aes(date, GHI_up_hi), color = "red")+
   geom_line(aes(date, GHI_up_lo), color = "red")
 
-c_moments[3:368,] %>%
-  ggplot()+
-  geom_line(aes(date, mu_up), color = "green")+
-  geom_line(aes(date, mu_dw), color = "red")
-
-c_moments[3:368,] %>%
-  ggplot()+
-  geom_line(aes(date, mu_up), color = "green")+
-  geom_line(aes(date, mu_up + 3*sd_up), color = "red")+
-  geom_line(aes(date, mu_up - 3*sd_up), color = "red")
-
-c_moments$GHI_dw <- model$transform$GHI(model$transform$Yt(c_moments$mu_dw, inverse = TRUE), c_moments$Ct)
-c_moments$GHI_dw_hi <- model$transform$GHI(model$transform$Yt(c_moments$mu_dw + c_moments$sd_dw, inverse = TRUE), c_moments$Ct)
-c_moments$GHI_dw_lo <- model$transform$GHI(model$transform$Yt(c_moments$mu_dw - c_moments$sd_dw, inverse = TRUE), c_moments$Ct)
+c_moments$GHI_dw <- model$transform$GHI_y(c_moments$e_Yt_dw, c_moments$Ct)
+c_moments$GHI_dw_hi <- model$transform$GHI_y(c_moments$e_Yt_dw + c_moments$sd_Yt_dw, c_moments$Ct)
+c_moments$GHI_dw_lo <- model$transform$GHI_y(c_moments$e_Yt_dw - c_moments$sd_Yt_dw, c_moments$Ct)
 
 c_moments[3:368,] %>%
   ggplot()+

@@ -2,12 +2,20 @@
 % Please edit documentation in R/seasonalClearsky.R
 \name{seasonalClearsky}
 \alias{seasonalClearsky}
-\title{Seasonal model for clear sky radiation}
+\title{Clear sky seasonal model}
 \usage{
 seasonalClearsky(x, date, lat, clearsky, control = control_seasonalClearsky())
 }
 \arguments{
-\item{spec}{an object with class `solarModelSpec`. See the function \code{\link{solarModel_spec}} for details.}
+\item{x}{time series of solar radiation}
+
+\item{date}{time series of dates}
+
+\item{lat}{reference latitude}
+
+\item{clearsky}{optional time series of observed clerasky radiation.}
+
+\item{control}{See the function \code{\link{control_seasonalClearsky}} for details.}
 }
 \description{
 Fit a seasonal model for clear sky radiation
@@ -38,4 +46,5 @@ spec$data$Ct <- model$predict(spec$data$n)
 ggplot(spec$data)+
  geom_line(aes(n, Ct), color = "blue")+
  geom_line(aes(n, clearsky))
+
 }

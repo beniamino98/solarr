@@ -13,7 +13,7 @@ spatialParameters <- R6::R6Class("spatialParameters",
                                    initialize = function(solarModels, models, quiet = FALSE){
                                      private$quiet <- quiet
                                      # Extract a dataset containing all the parameters
-                                     private$..data <- purrr::map_df(solarModels, ~solarModel_parameters(.x, as_tibble = TRUE))
+                                     private$..data <- purrr::map_df(solarModels, ~dplyr::bind_cols(.x$parameters))
                                      # Extract the names of all the parameters
                                      private$params_names <- colnames(private$..data)[-c(1,2,3,4,5)]
                                      if (missing(models)) {
@@ -30,18 +30,18 @@ spatialParameters <- R6::R6Class("spatialParameters",
                                        }
                                      }
                                      # Initialize the sample dataset to store the predictions
-                                     private$sample <- solarModel_parameters(solarModels[[1]], as_tibble = FALSE)
+                                     private$sample <- solarModels[[1]]$parameters
                                    },
                                    #' @description
                                    #' Fit a `kernelRegression` object for a parameter or a group of parameters.
                                    #' @param params list of parameters names to fit. When missing all the parameters will be fitted.
                                    fit = function(params){
-                                     if (missing(params)){
+                                     if (missing(params)) {
                                        params <- private$params_names
                                      } else {
                                        params <- match.arg(params, choices = private$params_names, several.ok = TRUE)
                                      }
-                                     if(!private$quiet) message("Fitting ", length(params), " parameters...")
+                                     if (!private$quiet) message("Fitting ", length(params), " parameters...")
                                      # Fit the kernel regressions for the parameters
                                      i <- 1
                                      for(par in params){
@@ -56,7 +56,6 @@ spatialParameters <- R6::R6Class("spatialParameters",
                                    #' @param lon numeric, longitude in degrees.
                                    #' @param as_tibble logical, when `TRUE` will be returned a `tibble`.
                                    predict = function(lat, lon, as_tibble = FALSE){
-                                     i <- 1
                                      predictions <- list()
                                      for(i in 1:length(lat)){
                                        if(!private$quiet) message("Fitting parameters for latitude: ", lat[i], " and longitude ", lon[i])
@@ -96,21 +95,18 @@ spatialParameters <- R6::R6Class("spatialParameters",
                                    sample = NA
                                  ),
                                  active = list(
+                                   #' @field models list of `kernelRegression` objects
                                    models = function(){
                                      private$..models
                                    },
+                                   #' @field data dataset with the parameters used for fitting
                                    data = function(){
                                      private$..data
                                    }
                                  ))
-
 #' Kernel regression
 #'
 #' Fit a kernel regression.
-#'
-#' @param formula formula
-#' @param data data
-#' @param ... other parameters to be passed to. See \code{np::npreg}.
 #'
 #' @rdname kernelRegression
 #' @name kernelRegression
@@ -148,6 +144,7 @@ kernelRegression <- R6::R6Class("kernelRegression",
                                   external_regressors_names = NA
                                 ),
                                 active = list(
+                                  #' @field model an object of the class `npreg`.
                                   model = function(){
                                     private$..model
                                   }

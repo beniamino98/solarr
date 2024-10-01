@@ -13,6 +13,13 @@ sf <- seasonalSolarFunctions$new()
 sf$angle_minmax("2022-01-01", 44)
 sf$H0(1:365, 44)
 }
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{G0}}{solar constant, i,e, `1367`.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{

@@ -1,13 +1,13 @@
 #' Control parameters for a `seasonalClearsky` object
 #'
-#' @param method character, method for clearsky estimate, can be `I` or `II`.
+#' @param method character, method for clear sky estimate, can be `I` or `II`.
 #' @param include.intercept logical. When `TRUE`, the default, the intercept will be included in the model.
 #' @param order numeric, of sine and cosine elements.
 #' @param period numeric, periodicity. The default is `365`.
 #' @param delta0 Value for delta init in the clear sky model.
 #' @param quiet logical. When `FALSE`, the default, the functions displays warning or messages.
 #' @inheritParams clearsky_optimizer
-#' @details The parametes `ntol`, `lower`, `upper` and `by` are used exclusively in \code{\link{clearsky_optimizer}}.
+#' @details The parameters `ntol`, `lower`, `upper` and `by` are used exclusively in \code{\link{clearsky_optimizer}}.
 #' @examples
 #' control = control_seasonalClearsky()
 #' @rdname control_seasonalClearsky
@@ -31,11 +31,16 @@ control_seasonalClearsky <- function(method = "II", include.intercept = TRUE, or
   )
 }
 
-#' Seasonal model for clear sky radiation
+#' Clear sky seasonal model
 #'
 #' Fit a seasonal model for clear sky radiation
 #'
-#' @param spec an object with class `solarModelSpec`. See the function \code{\link{solarModel_spec}} for details.
+#' @param x time series of solar radiation
+#' @param date time series of dates
+#' @param lat reference latitude
+#' @param clearsky optional time series of observed clerasky radiation.
+#' @param control See the function \code{\link{control_seasonalClearsky}} for details.
+#'
 #' @examples
 #' library(ggplot2)
 #' place <- "Palermo"
@@ -62,6 +67,7 @@ control_seasonalClearsky <- function(method = "II", include.intercept = TRUE, or
 #' ggplot(spec$data)+
 #'  geom_line(aes(n, Ct), color = "blue")+
 #'  geom_line(aes(n, clearsky))
+#'
 #' @rdname seasonalClearsky
 #' @name seasonalClearsky
 #' @export
@@ -83,8 +89,8 @@ seasonalClearsky <- function(x, date, lat, clearsky, control = control_seasonalC
   # Add extraterrestrial radiation
   data$H0 <- seasonalSolarFunctions$new("spencer")$H0(data$n, lat)$H0
   # Add clearsky
-  if (method == "II"){
-    if (missing(clearsky)){
+  if (method == "II") {
+    if (missing(clearsky)) {
       stop('`clearsky` time series must be specified when `method = "II"`')
     } else {
       data$clearsky <- clearsky
@@ -123,13 +129,27 @@ seasonalClearsky <- function(x, date, lat, clearsky, control = control_seasonalC
   delta <- clearsky_optimizer(df_fit$x, df_fit$Ct*delta0, control$lower, control$upper, control$by, control$ntol)
 
   # Store old coefficients, delta, period and control
-  clearsky_model$.__enclos_env__$private$params$coefficients_orig <- clearsky_model$coefficients
-  clearsky_model$.__enclos_env__$private$params$delta <- delta*delta0
-  clearsky_model$.__enclos_env__$private$params$lat <- lat
-  clearsky_model$.__enclos_env__$private$params$period <- control$period
-  clearsky_model$.__enclos_env__$private$params$control <- control
+  clearsky_model$extra_params$coefficients_orig <- clearsky_model$coefficients
+  clearsky_model$extra_params$delta <- delta*delta0
+  clearsky_model$extra_params$lat <- lat
+  clearsky_model$extra_params$control <- control
+
+  # Standard names for coefficients
+  coefs_names <- c()
+  params <- clearsky_model$coefficients*delta*delta0
+  if (include.intercept) {
+    coefs_names[1] <- "delta_0"
+    coefs_names[2] <- "delta_extra"
+  } else {
+    coefs_names[1] <- "delta_extra"
+  }
+  if (order > 0) {
+    base_names <- paste0("delta_", rep(c("sin_", "cos_")))
+    coefs_names <- c(coefs_names, unlist(purrr::map(1:order, ~paste0(base_names, .x))))
+  }
+  names(params) <- coefs_names
   # Update coefficients
-  clearsky_model$update(clearsky_model$coefficients*delta*delta0)
+  clearsky_model$update(params)
   # Class
   class(clearsky_model) <- c("seasonalClearsky", class(clearsky_model))
   return(clearsky_model)

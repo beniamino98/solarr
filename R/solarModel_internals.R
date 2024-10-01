@@ -1,3 +1,369 @@
+#' Control parameters for a `solarModel` object
+#'
+#' Control function for a solarModel
+#'
+#' @param clearsky list with control parameters, see \code{\link{control_seasonalClearsky}} for details.
+#' @param seasonal.mean a list of parameters. Available choices are:
+#'\describe{
+#'  \item{`seasonalOrder`}{An integer specifying the order of the seasonal component in the model. The default is `1`.}
+#'  \item{`include.intercept`}{When `TRUE` the intercept will be included in the seasonal model. The dafault if `TRUE`.}
+#'  \item{`monthly.mean`}{When `TRUE` a set of 12 monthly means parameters will be computed from the deseasonalized time series to center it perfectly around zero.}
+#'}
+#' @param seasonal.variance a list of parameters. Available choices are:
+#'\describe{
+#'  \item{`seasonalOrder`}{An integer specifying the order of the seasonal component in the model. The default is `1`.}
+#'  \item{`correction`}{When true the seasonal variance is corrected to ensure that the standardize the residuals with a unitary variance.  }
+#'  \item{`monthly.mean`}{When `TRUE` a set of 12 monthly variances parameters will be computed from the deseasonalized time series to center it perfectly around zero.}
+#'}
+#' @param mean.model a list of parameters.
+#' \describe{
+#'  \item{`arOrder`}{An integer specifying the order of the AR component in the model. The default is `2`.}
+#'  \item{`include.intercept`}{When `TRUE` the intercept will be included in the AR model. The dafault if `FALSE`.}
+#'}
+#' @param variance.model an `ugarchspec` object for GARCH variance. Default is `GARCH(1,1)`.
+#' @param mixture.model a list of parameters.
+#' @param threshold numeric, threshold for the estimation of alpha and beta.
+#' @param outliers_quantile quantile for outliers detection. If different from 0, the observations that are below the quantile at confidence levels `outliers_quantile` and
+#' the observation above the quantile at confidence level 1-`outliers_quantile` will have a weight equal to zero and will be excluded from estimations.
+#' @param quiet logical, when `TRUE` the function will not display any message.
+#' @examples
+#' control <- control_solarModel()
+#' @rdname control_solarModel
+#' @export
+control_solarModel <- function(clearsky = control_seasonalClearsky(),
+                               stochastic_clearsky = FALSE,
+                               seasonal.mean = list(seasonalOrder = 1, include.H0 = FALSE, include.intercept = TRUE, monthly.mean = TRUE),
+                               mean.model = list(arOrder = 2, include.intercept = FALSE),
+                               seasonal.variance = list(seasonalOrder = 1, correction = TRUE, monthly.mean = TRUE),
+                               variance.model = rugarch::ugarchspec(variance.model = list(garchOrder = c(1,1)),
+                                                                    mean.model = list(armaOrder = c(0, 0), include.mean = FALSE)),
+                               mixture.model = list(match_moments = FALSE, abstol = 1e-3, maxit = 150),
+                               threshold = 0.01, outliers_quantile = 0, quiet = FALSE){
+
+  # Seasonal mean model default parameters
+  seasonal_mean = list(seasonalOrder = 1, include.H0 = TRUE, include.intercept = FALSE, monthly.mean = TRUE)
+  names_seasonal_mean <- names(seasonal_mean)
+  for(name in names_seasonal_mean){
+    arg <- seasonal.mean[[name]]
+    if (!is.null(arg)) {
+      seasonal_mean[[name]] <- seasonal.mean[[name]]
+    }
+  }
+
+  # Seasonal variance model default parameters
+  seasonal_variance = list(seasonalOrder = 1, correction = TRUE,  monthly.mean = TRUE)
+  names_seasonal_variance <- names(seasonal_variance)
+  for(name in names_seasonal_variance){
+    arg <- seasonal.variance[[name]]
+    if (!is.null(arg)) {
+      seasonal_variance[[name]] <- seasonal.variance[[name]]
+    }
+  }
+
+  # Mean model default parameters
+  mean_model = list(arOrder = 2, include.intercept = FALSE)
+  names_mean_model <- names(mean_model)
+  for(name in names_mean_model){
+    arg <- mean.model[[name]]
+    if (!is.null(arg)) {
+      mean_model[[name]] <- mean.model[[name]]
+    }
+  }
+
+  # Variance model default parameters
+  mixture_model = list(match_moments = FALSE, abstol = 1e-20, maxit = 100, prior_p = NA)
+  names_mixture_model <- names(mixture_model)
+  for(name in names_mixture_model){
+    arg <- mixture.model[[name]]
+    if (!is.null(arg)) {
+      mixture_model[[name]] <- mixture.model[[name]]
+    }
+  }
+
+  structure(
+    list(
+      clearsky = clearsky,
+      stochastic_clearsky = stochastic_clearsky,
+      seasonal.mean = seasonal_mean,
+      seasonal.variance = seasonal_variance,
+      mean.model = mean_model,
+      variance.model = variance.model,
+      mixture.model = mixture_model,
+      threshold = threshold,
+      outliers_quantile = outliers_quantile,
+      quiet = quiet
+    ),
+    class = c("control", "list")
+  )
+}
+
+
+#' Specification function for a `solarModel`
+#'
+#' @param place character, name of an element in the `CAMS_data` list.
+#' @param target character, target variable to model. Can be `GHI` or `clearsky`.
+#' @param min_date character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.
+#' @param max_date character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.
+#' @param from character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
+#' If `missing` will be used the minimum data available after filtering for `min_date`.
+#' @param to character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.
+#' If `missing` will be used the maximum data available after filtering for `max_date`.
+#' @param CAMS_data named list with radiation data for different locations.
+#' @param control_model list with control parameters, see \code{\link{control_solarModel}} for details.
+#' @examples
+#' control <- control_solarModel(outliers_quantile = 0)
+#' spec <- solarModel_spec("Bologna", from="2005-01-01", to="2022-01-01", control_model = control)
+#'
+#' @rdname solarModel_spec
+#' @name solarModel_spec
+#'
+#' @export
+solarModel_spec <- function(place, target = "GHI", min_date, max_date, from, to, CAMS_data = solarr::CAMS_data, control_model = control_solarModel()){
+
+  # Match the target variable to model
+  target <- match.arg(target, choices = c("GHI", "clearsky"))
+
+  # Match a location in the dataset
+  place <- match.arg(place, choices = names(CAMS_data), several.ok = FALSE)
+  # Extract CAMS data for the selected location
+  data <- CAMS_data[[place]]
+
+  # Minimum date for the complete data
+  if (missing(min_date) || is.null(min_date) || is.na(min_date)) {
+    min_date <- min(data$date, na.rm = TRUE)
+  } else {
+    min_date <- as.Date(min_date)
+  }
+  # Maximum date for the complete data
+  if (missing(max_date) || is.null(max_date) || is.na(max_date)) {
+    max_date <- max(data$date, na.rm = TRUE)
+  } else {
+    max_date <- as.Date(max_date)
+  }
+  # Minimum date for train data
+  if (missing(from) || is.null(from) || is.na(from)) {
+    from <- min(data$date, na.rm = TRUE)
+  } else {
+    from <- as.Date(from)
+  }
+  # Maximum date for train data
+  if (missing(to) || is.null(to) || is.na(to)) {
+    to <- max(data$date, na.rm = TRUE)
+  } else {
+    to <- as.Date(to)
+  }
+  # Filter for min and max dates the complete dataset
+  data <- dplyr::filter(data, date >= min_date & date <= max_date)
+  # Label for data used for estimation
+  data <- dplyr::mutate(data,
+                        isTrain = ifelse(date >= from & date <= to, TRUE, FALSE),
+                        weights = ifelse(isTrain, 1, 0))
+  # Normalize the weights
+  data$weights <-  data$weights/sum(data$weights)
+  # Move clearsky max radiation
+  data$clearsky <- data$clearsky*1.005
+
+  # Train observations and percentage
+  nobs_train <- length(data$isTrain[data$isTrain])
+  perc_train <- nobs_train/nrow(data)
+  # Train observations and percentage
+  nobs_test <- length(data$isTrain[!data$isTrain])
+  perc_test <- nobs_test/nrow(data)
+  # Model dates
+  model_dates = list(data = list(from = min_date, to = max_date, nobs = nrow(data), perc = 1),
+                     train = list(from = from, to = to, nobs = nobs_train, perc = perc_train),
+                     test = list(from = to, to = max_date, nobs = nobs_test, perc = perc_test))
+
+  # Initialize seasonal dataset
+  # Seasonal data by month and day for an year with 366 days
+  seasonal_data <- dplyr::tibble(date = seq.Date(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "1 day"))
+  seasonal_data <- dplyr::mutate(seasonal_data,
+                                 Month = lubridate::month(date),
+                                 Day = lubridate::day(date),
+                                 n = number_of_day(date))
+  seasonal_data <- dplyr::select(seasonal_data, -date)
+  seasonal_data <- dplyr::arrange(seasonal_data, Month, Day)
+
+  structure(
+    list(
+      place = attr(data, "place"),
+      coords = attr(data, "coords"),
+      data = data,
+      dates = model_dates,
+      target = target,
+      control = control_model
+    ),
+    class = c("solarModelSpec", "list")
+  )
+}
+
+#' Monthly Gaussian mixture with two components
+#'
+#' @param x arg
+#' @param date arg
+#' @param match_moments arg
+#' @inheritParams gaussianMixture
+#'
+#' @rdname solarModel_mixture
+#' @name solarModel_mixture
+#' @export
+solarModel_mixture <- function(x, date, weights, match_moments = FALSE, maxit = 100, abstol = 10e-15){
+
+  data <- dplyr::tibble(date = date, Month = lubridate::month(date), eps = x, w = weights)
+  # Gaussian Mixture parameters
+  GM_model <- list()
+  # Monthly data
+  data_months <- list()
+  for(m in 1:12){
+    data_months[[m]] <- dplyr::filter(data, Month == m)
+    w <- data_months[[m]]$w
+    # Monthly data
+    eps <- data_months[[m]]$eps
+    # Initial parameters
+    mu_0 <- quantile(eps, c(0.2, 0.8), na.rm = TRUE)
+    sd_0 <- sd(eps, na.rm = TRUE)
+    init_means <- c(mu1 = mu_0[1], mu2 = mu_0[2])
+    init_sd <- c(sd1 = sd_0, sd2 = sd_0)
+    init_p <- c(0.5, 0.5)
+    # Fitted model
+    gm <- gaussianMixture(eps, means = init_means, components = 2, sd = init_sd, p = init_p,
+                          weights = w, maxit = maxit, abstol = abstol, na.rm = TRUE)
+    # Compute the sample mean
+    e_u_hat <- mean(eps[w!=0], na.rm = TRUE)
+    # Compute the sample variance
+    v_u_hat <- var(eps[w!=0], na.rm = TRUE)
+    # Match moments approach
+    if (match_moments) {
+      if (gm$par$p[1] > gm$par$p[2]) {
+        gm$par$mean[2] <- (e_u_hat - gm$par$mean[1]*gm$par$p[1])/gm$par$p[2]
+        gm$par$sd[2] <- sqrt((v_u_hat - gm$par$sd[1]^2)/gm$par$p[2] - gm$par$p[1]*(gm$par$mean[1]-gm$par$mean[2])^2)
+      } else {
+        gm$par$mean[1] <- (e_u_hat-gm$par$mean[2]*gm$par$p[2])/gm$par$p[1]
+        gm$par$sd[1] <- sqrt((v_u_hat - gm$par$sd[2]^2)/gm$par$p[1] - gm$par$p[2]*(gm$par$mean[1]-gm$par$mean[2])^2)
+      }
+    }
+    # Compute the theoretical expected value
+    e_u <- sum(gm$par$mean*gm$par$p)
+    # Compute the theoric variance
+    v_u <- sum((gm$par$mean^2 + gm$par$sd^2)*gm$par$p) - e_u^2
+    # Fitted parameters
+    df_par <- dplyr::bind_cols(purrr::map(gm$par, ~dplyr::bind_rows(.x)))
+    # Fitted expected value
+    data_months[[m]]$e_x <- gm$fitted$B1*gm$par$mean[1] + gm$fitted$B2*gm$par$mean[2]
+    # Add fitted Bernoulli series
+    data_months[[m]]$B <- gm$fitted$B1
+    # Reorder parameters
+    if (df_par$mu1 < df_par$mu2) {
+      data_months[[m]]$B <- gm$fitted$B2
+    }
+    # Monthly data
+    GM_model[[m]] <- dplyr::tibble(Month = m,
+                                   df_par,
+                                   loss = gm$log_lik,
+                                   nobs = length(eps[w!=0]),
+                                   e_x = e_u,
+                                   v_x = v_u,
+                                   e_x_hat = e_u_hat,
+                                   v_x_hat = v_u_hat)
+  }
+
+  # Reorder the variables
+  GM_model <- dplyr::bind_rows(GM_model)
+  GM_model <- dplyr::mutate(GM_model,
+                            mu_up = dplyr::case_when(
+                              mu1 > mu2 ~ mu1,
+                              TRUE ~ mu2),
+                            mu_dw = dplyr::case_when(
+                              mu1 > mu2 ~ mu2,
+                              TRUE ~ mu1),
+                            sd_up = dplyr::case_when(
+                              mu1 > mu2 ~ sd1,
+                              TRUE ~ sd2),
+                            sd_dw = dplyr::case_when(
+                              mu1 > mu2 ~ sd2,
+                              TRUE ~ sd1),
+                            p_up = dplyr::case_when(
+                              mu1 > mu2 ~ p1,
+                              TRUE ~ p2),
+                            p_dw = 1 - p_up)
+  # Reorder variables
+  GM_model <- dplyr::select(GM_model, Month, mu_up, mu_dw, sd_up, sd_dw, p_up, p_dw,
+                            loss, nobs, e_x, v_x, e_x_hat, v_x_hat)
+  # Fitted series
+  data_months <- dplyr::bind_rows(data_months)
+
+  structure(
+    list(
+      model = GM_model,
+      data = data_months
+    ),
+    class = c("solarModelMixture", "list")
+  )
+}
+
+
+#' Monthly multivariate Gaussian mixture with two components
+#'
+#' @param model_Ct arg
+#' @param model_GHI arg
+#'
+#' @rdname solarModel_mixture
+#' @name solarModel_mixture
+#' @export
+solarModel_mvmixture <- function(model_Ct, model_GHI){
+
+  data_GHI <- dplyr::select(model_GHI$data, date, Month, GHI = "u_tilde")
+  data_Ct <- dplyr::select(model_Ct$data, date, Month, Ct = "u_tilde")
+  data <- dplyr::inner_join(data_GHI, data_Ct, by = c("date", "Month"))
+  data <- dplyr::filter(data, !(date %in% model_Ct$outliers$date) & !(date %in% model_GHI$outliers$date))
+
+  # Gaussian Mixture parameters
+  m <- 1
+  # Monthly data
+  data_months <- list()
+  for(m in 1:12){
+    data_months[[m]] <- dplyr::filter(data, Month == m)
+    # Monthly data
+    eps <- data_months[[m]][,c(3,4)]
+    # Fitted model
+    gm <- mvgaussianMixture(eps, components = 2, na.rm = TRUE)
+
+    model_GHI$NM_model$mu_up[m] <- gm$params$means[1,2]
+    model_GHI$NM_model$mu_dw[m] <- gm$params$means[2,2]
+    model_GHI$NM_model$sd_up[m] <- sqrt(gm$params$sigma2[1,2])
+    model_GHI$NM_model$sd_dw[m] <- sqrt(gm$params$sigma2[2,2])
+
+    model_Ct$NM_model$mu_up[m] <- gm$params$means[1,1]
+    model_Ct$NM_model$mu_dw[m] <- gm$params$means[2,1]
+    model_Ct$NM_model$sd_up[m] <- sqrt(gm$params$sigma2[1,1])
+    model_Ct$NM_model$sd_dw[m] <- sqrt(gm$params$sigma2[2,1])
+    model_Ct$NM_model$p_up[m] <- model_GHI$NM_model$p_up[m] <- gm$params$p[1]
+    model_Ct$NM_model$p_dw[m] <- model_GHI$NM_model$p_dw[m] <- gm$params$p[2]
+    model_Ct$NM_model$rho_up[m] <- model_GHI$NM_model$rho_up[m] <- gm$params$rho[1]
+    model_Ct$NM_model$rho_dw[m] <- model_GHI$NM_model$rho_dw[m] <- gm$params$rho[2]
+
+    # Add fitted Bernoulli series
+    data_months[[m]]$B <- gm$B_hat$B1
+  }
+
+  # Fitted series
+  data_months <- dplyr::select(dplyr::bind_rows(data_months), date, B)
+
+  model_Ct$data <- dplyr::left_join(dplyr::select(model_Ct$data, -B), data_months, by = "date")
+  model_GHI$data <- dplyr::left_join(dplyr::select(model_GHI$data, -B), data_months, by = "date")
+  model_GHI$data$B[is.na(model_GHI$data$B)] <- 0
+  model_Ct$data$B[is.na(model_Ct$data$B)] <- 0
+
+  structure(
+    list(
+      model_Ct = model_Ct,
+      model_GHI = model_GHI
+    ),
+    class = c("solarModelMixture", "list")
+  )
+}
+
+
 #' Extract a dataset from a solarModel object
 #'
 #' @examples
@@ -396,6 +762,45 @@ solarModel_forecaster_plot <- function(model, date = "2021-05-29", ci = 0.1, typ
 }
 
 
+#' Stationarity and distribution test (Gaussian mixture) for a `solarModel`
+#'
+#' @examples
+#' model <- Bologna
+#' solarModel_test_residuals(model)
+#' @export
+solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile = 0.015, max_quantile = 0.985, seed = 1){
+
+  distribution_test <- list()
+  stationary_test <- list()
+  for(nmonth in 1:12){
+    # Residuals
+    x <- dplyr::filter(model$data, Month == nmonth)$u_tilde
+    # Gaussian mixture parameters
+    nm <- model$NM_model[nmonth,]
+    means = c(nm$mu_up,  nm$mu_dw)
+    sd = c(nm$sd_up,  nm$sd_dw)
+    p = c(nm$p_up,  nm$p_dw)
+
+    # Mixture CDF
+    cdf_GM <- function(x) pmixnorm(x, means = means, sd = sd, p = p)
+    # Distribution test
+    distribution_test[[nmonth]] <- dplyr::bind_cols(Month = nmonth,
+                                                    ks_test(x, cdf_GM, ci = ci, min_quantile = min_quantile, max_quantile = max_quantile))
+    # Stationary test
+    iid_test <- function(seed) ks_ts_test(x, ci = ci, min_quantile = min_quantile, max_quantile = max_quantile, seed = seed)
+    iid_tests <- purrr::map_df(1:nrep, ~iid_test(.x))
+    Rejected <- mean(iid_tests$H0 == "Non-Rejected")
+    stationary_test[[nmonth]] <- dplyr::bind_cols(Month = nmonth, Rejected = 1-Rejected, Non_Rej = Rejected)
+    stationary_test[[nmonth]] <- dplyr::bind_cols(stationary_test[[nmonth]], iid_test(seed))
+  }
+
+  structure(
+    list(
+      distribution = dplyr::bind_rows(distribution_test),
+      stationary = dplyr::bind_rows(stationary_test)
+    )
+  )
+}
 
 
 

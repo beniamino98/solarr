@@ -72,31 +72,38 @@ solarEsscher_calibrator <- function(model, nmonths = 1, target_price, control_es
       price_difference <- abs(model_price$payoff_year$premium - target_price)
       # Expected return in absolute value
       expected_return <- price_difference/target_price
-      if (!quiet) message("Error: ", price_difference, " Expected return: |", format(expected_return*100, digits = 4), "| Lambda: ", format(theta, digits = 5))
+      if (!quiet) message("Error: ", price_difference, " Expected return: |", format(expected_return*100, digits = 4), "| Lambda: ", format(theta, digits = 5),
+                          "\r", appendLF = FALSE)
+      flush.console()
       return(price_difference^2)
     }
   }
-
   # Calibrator function
   calibrator <- function(loss) {
     # Optimal Esscher parameter
     opt <- optim(par = init_lambda, loss, method = "Brent", lower = lower_lambda, upper = upper_lambda)
     return(opt)
   }
-
   if (length(nmonths) > 1 & length(target_price) == 1){
     # Specify the loss for a month
     loss <- loss_function(model, nmonths, target_price, control_options, quiet)
+    if (!quiet) cat(paste0("\033[1;35m---------------\033[0m", " Calibrating Yearly Esscher parameter ", "\033[1;32m", "\033[1;35m---------------\033[0m \n"))
     # Optimal Esscher parameter
     par <- calibrator(loss)$par
   }  else {
     par <- c()
     for(nmonth in nmonths) {
+      flush.console()
+      message("", appendLF = TRUE)
+
+      # Test tolerance parameter
+      if (!quiet) cat(paste0("\033[1;35m---------------\033[0m", " Calibrating Monthly Esscher parameter (", "\033[1;32m",
+                  lubridate::month(nmonth, label = TRUE, abbr = FALSE), "\033[0m", ")",  " \033[1;35m---------------\033[0m \n"))
       # Specify the loss for a month
       loss <- loss_function(model, nmonth, target_price[nmonth], control_options, quiet)
       # Optimal Esscher parameter
       opt_par <- calibrator(loss)$par
-      names(opt_par) <- nmonth
+      names(opt_par) <- lubridate::month(nmonth, label = TRUE)
       par <- c(par, opt_par)
     }
   }
@@ -119,10 +126,10 @@ solarEsscher_bounds <- function(model, control_options = control_solarOption(), 
   nsim = control_esscher$nsim
   ci = control_esscher$ci
   seed = control_esscher$seed
-  # Grid controls
   n_key_points = control_esscher$n_key_points
-  # Verbose parameter
   quiet = control_esscher$quiet
+  # Set target.Yt always on TRUE
+  target.Yt <- control_options$target.Yt
 
   # Compute payoffs
   # Fair Payoff bootstrapped (historical)
@@ -141,7 +148,7 @@ solarEsscher_bounds <- function(model, control_options = control_solarOption(), 
   benchmark_Qup <- payoff_boot$premium_up + error_boot_P
   # Optimal upper Esscher parameter (up, worse case)
   opt_theta_up <- solarEsscher_calibrator(model, nmonths = 1:12, target_price = benchmark_Qup,
-                                           control_esscher = control_esscher, control_options = control_options)
+                                          control_esscher = control_esscher, control_options = control_options)
   # Optimal up and down parameters
   esscher_theta <- solarEsscher_theta_bounds(opt_theta_up)[[1]]
   theta_up <- esscher_theta$up

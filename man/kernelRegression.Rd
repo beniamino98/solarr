@@ -11,6 +11,13 @@ Kernel regression
 \details{
 Fit a kernel regression.
 }
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{model}}{an object of the class `npreg`.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{

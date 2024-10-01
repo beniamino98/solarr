@@ -263,3 +263,21 @@ GARCH_pq_next_step <- function(omega = 1, alpha, beta){
     return(sqrt(sigma2_next))
   }
 }
+
+AR_next_step <- function(phi_0 = 0, phi){
+  # AR order
+  p <- ifelse(missing(phi), 0, length(phi))
+  function(x = 1){
+    # Initialize next step value
+    x_next_step <- phi_0
+    # AR(p) component
+    if (p > 0) {
+      x_next_step <- x_next_step + sum(phi*x)
+    }
+    return(x_next_step)
+  }
+}
+
+
+
+

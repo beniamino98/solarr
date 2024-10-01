@@ -12,6 +12,9 @@ spatialCorrelation object
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{spatialCorrelation$new()}}
+\item \href{#method-get_sigma_B}{\code{spatialCorrelation$get_sigma_B()}}
+\item \href{#method-get_margprob}{\code{spatialCorrelation$get_margprob()}}
+\item \href{#method-get_cr_X}{\code{spatialCorrelation$get_cr_X()}}
 \item \href{#method-get}{\code{spatialCorrelation$get()}}
 \item \href{#method-clone}{\code{spatialCorrelation$clone()}}
 }
@@ -22,6 +25,33 @@ spatialCorrelation object
 \subsection{Method \code{new()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$new(binprobs, mixture_cr)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_sigma_B"></a>}}
+\if{latex}{\out{\hypertarget{method-get_sigma_B}{}}}
+\subsection{Method \code{get_sigma_B()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get_sigma_B(places, nmonth = 1)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_margprob"></a>}}
+\if{latex}{\out{\hypertarget{method-get_margprob}{}}}
+\subsection{Method \code{get_margprob()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get_margprob(places, nmonth = 1)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-get_cr_X"></a>}}
+\if{latex}{\out{\hypertarget{method-get_cr_X}{}}}
+\subsection{Method \code{get_cr_X()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get_cr_X(places, nmonth = 1)}\if{html}{\out{</div>}}
 }
 
 }

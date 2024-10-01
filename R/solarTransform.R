@@ -1,5 +1,8 @@
 #' Solar Model transformation functions
 #'
+#' @examples
+#' st <- solarTransform$new()
+#'
 #' @export
 solarTransform <- R6::R6Class("solarTransform",
                               public = list(
@@ -19,6 +22,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                   private$..alpha <- alpha
                                   private$..beta <- beta
                                 },
+                                #' @method GHI solarTransform
                                 #' @description
                                 #' Solar radiation function
                                 #' @param x numeric vector in \eqn{(\alpha, \alpha+\beta)}.
@@ -28,6 +32,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 GHI = function(x, Ct) {
                                   Ct*(1-x)
                                 },
+                                #' @method GHI_y solarTransform
                                 #' @description
                                 #' Solar radiation function in terms of y
                                 #' @param y numeric vector in \eqn{(-\infty, \infty)}.
@@ -37,6 +42,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 GHI_y = function(y, Ct) {
                                   Ct*(1-self$iY(y))
                                 },
+                                #' @method iGHI solarTransform
                                 #' @description
                                 #' Compute the risk driver process for solar radiation
                                 #' @param x numeric vector in \eqn{C_t (\alpha, \alpha+\beta)}.
@@ -46,6 +52,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 iGHI = function(x, Ct) {
                                   1 - x/Ct
                                 },
+                                #' @method Y solarTransform
                                 #' @description
                                 #' Transformation function from X to Y
                                 #' @param x numeric vector in \eqn{(\alpha, \alpha+\beta)}.
@@ -55,6 +62,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 Y = function(x) {
                                   log(log(private$..beta) - log(x - private$..alpha))
                                 },
+                                #' @method iY solarTransform
                                 #' @description
                                 #' Inverse transformation from Y to X.
                                 #' @param y numeric vector in \eqn{(-\infty, \infty)}.
@@ -63,6 +71,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 iY = function(y) {
                                   private$..alpha + private$..beta*exp(-exp(y))
                                 },
+                                #' @method parameters solarTransform
                                 #' @description
                                 #' Fit the best parameters from a time series
                                 #' @param x time series of solar risk drivers in \eqn{(0, 1)}.
@@ -81,10 +90,25 @@ solarTransform <- R6::R6Class("solarTransform",
                                        Xt_min = range_Xt[1], Xt_max = range_Xt[2])
                                 },
                                 #' @description
+                                #' Compute the bounds for each tranform
+                                #' @param target target variable
+                                bounds = function(target = "Xt"){
+                                  lower <- c(Xt_min = self$alpha)
+                                  upper <- c(Xt_max = self$alpha + self$beta)
+                                  if (target == "Yt") {
+                                    lower <-  c(Yt_min = -Inf)
+                                    upper <-  c(Yt_max = Inf)
+                                  } else if (target == "Kt") {
+                                    lower <-  c(Kt_min = 1-self$alpha-self$beta)
+                                    upper <-  c(Kt_max = 1-self$alpha)
+                                  }
+                                  return(c(lower, upper))
+                                },
+                                #' @method update solarTransform
+                                #' @description
                                 #' Update the parameters
                                 #' @param alpha bounds parameter.
                                 #' @param beta bounds parameter.
-                                #' @param threshold for minimum
                                 update = function(alpha, beta) {
                                   # Old parameters
                                   if (missing(alpha)){
@@ -112,17 +136,15 @@ solarTransform <- R6::R6Class("solarTransform",
                                 ..beta = NA
                               ),
                               active = list(
-                                #' @description
-                                #' Return the first transformation parameters
+                                #' @field alpha Return the first transformation parameters
                                 alpha = function(){
                                   private$..alpha
                                 },
-                                #' @description
-                                #' Return the second transformation parameters
+                                #' @field beta the second transformation parameters
                                 beta = function(){
                                   private$..beta
                                 }
                               )
-)
+                            )
 
 

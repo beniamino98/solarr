@@ -1,0 +1,91 @@
+---
+title: "clearskySeasonal"
+author: "Beniamino Sartini"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+library(tidyverse)
+library(solarr)
+```
+
+## Inputs 
+
+```{r}
+# Control for `clearskyModel`
+spec <- solarModel_spec("Bologna", target = "clearsky")
+spec$control$clearsky <- control_seasonalClearsky(method = "II", include.intercept = TRUE, order = 1, period = 365,
+                                                  delta0 = 1.4, ntol = 30, lower = 0, upper = 2, by = 0.001, quiet = FALSE)
+```
+
+
+## Fit model 
+
+```{r}
+control <- spec$control
+data <- spec$data
+# Fit a Seasonal model for clear sky radiation
+clearsky_model <- seasonalClearsky(x = data$GHI, date = data$date, lat = spec$coords$lat, clearsky = data$clearsky, control = control$clearsky)
+data$Ct <-  clearsky_model$predict(data$n)
+data %>%
+dplyr::filter(date >= "2020-01-01" & date <= "2021-01-01")%>%
+  ggplot()+
+  geom_line(aes(n, Ct), color = "blue")+
+  geom_line(aes(n, clearsky))
+
+```
+
+
+### Test: imputed outliers 
+
+```{r}
+# Impute outliers
+data <- spec$data
+data$Ct <- clearsky_model$predict(data$n)
+outliers <- clearsky_outliers(data[[spec$target]], data$Ct, data$date, quiet = TRUE)
+data[[spec$target]] <- outliers$x
+
+# Test tolerance parameter
+cat(paste0("\033[1;35m---------------\033[0m", "\033[1;32m  Test clearskyModel_control and clearskyModel_fit \033[1;35m---------------\033[0m \n"))
+test_msg <- paste0("Check if the number of outliers imputed is below ", spec$control$clearsky$ntol, "...", "(", outliers$n, ") ",
+                   ifelse(spec$control$clearsky$ntol, "\033[1;32mPassed\033[0m!\n", "\033[1;31mNOT passed\033[0m! \n\n"))
+cat(test_msg)
+```
+```{r}
+data %>%
+  # dplyr::filter(date >= "2022-01-01" & date <= "2023-01-01")%>%
+  ggplot()+
+  geom_line(aes(n, 1-clearsky/Ct), linewidth = 0.1)
+
+```
+
+
+
+### Test: delta parameter 
+
+```{r}
+# Test delta parameter
+delta <- clearsky_model$extra_params$delta
+test_delta <- delta > spec$control$clearsky$lower & delta < spec$control$clearsky$upper
+test_msg <- paste0("Check if the parameter delta is inside lower (", spec$control$clearsky$lower, ") and upper (", spec$control$clearsky$upper,")",
+                   "...", "(", delta, ") ",
+                   ifelse(test_delta, "\033[1;32mPassed\033[0m!\n", "\033[1;31mNOT passed\033[0m! \n\n"))
+cat(test_msg)
+```
+
+### Test: order of seasonal components
+
+```{r}
+# Test the order of the seasonal components
+seasonal_order <- (length(clearsky_model$coefficients) - 2)/2
+test_order <- seasonal_order == spec$control$clearsky$order
+test_msg <- paste0("Check if the parameter order is equal to ", spec$control$clearsky$order, "...", "(", seasonal_order, ") ",
+                   ifelse(test_order, "\033[1;32mPassed\033[0m!\n", "\033[1;31mNOT passed\033[0m! \n\n"))
+cat(test_msg)
+```
+

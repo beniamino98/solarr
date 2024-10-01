@@ -1,6 +1,6 @@
 #' Print method for the class `solarModel`
 #'
-#' @param object an object of the class `\code{\link{solarModel}}.
+#' @param object an object of the class \code{\link{solarModel_spec}} or \code{\link{solarModel}}.
 #'
 #' @keywords internal
 #' @noRd
@@ -23,12 +23,13 @@ print.solarModelSpec <- function(object){
   msg_4 <- paste0("Train dates: ", train$from, " - ", train$to, " (", train$nobs, " points ~ ", train$perc, "%)", "\n")
   msg_5 <- paste0("Test  dates: ", test$from, " - ", test$to, " (", test$nobs, " points ~ ", test$perc, "%)", "\n")
   msg_6 <- paste0("---------------------------------------------------------------\n")
-  cat(paste0(msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6))
+  msg_7 <- paste0("Likelihood: ", format(object$loglik, digits = 8), "\n")
+  cat(paste0(msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7))
 }
 
 #' Print method for the class `solarModel`
 #'
-#' @param object an object of the class `\code{\link{solarModel}}.
+#' @param object an object of the class \code{\link{solarModel}}.
 #'
 #' @keywords internal
 #' @noRd
@@ -37,6 +38,16 @@ print.solarModel <- function(object){
   NextMethod(object)
 }
 
+#' Print method for the class `solarModelR6`
+#'
+#' @param object an object of the class \code{\link{solarModelR6}}.
+#'
+#' @keywords internal
+#' @noRd
+#' @export
+print.solarModelR6 <- function(object){
+  print.solarModelSpec(object)
+}
 
 #' Print method for the class `seasonalModel`
 #'
@@ -49,11 +60,11 @@ print.seasonalModel <- function(object){
   env_ <- object$.__enclos_env__$private
   cat(paste0("----------------------- ", class(object)[1], " ----------------------- \n"))
   msg_1 <- paste0(" - Order: ", env_$order, "\n - Period: ", env_$period, "\n")
-  n_external_reg <- ncol(env_$external_regressors)-1
+  n_external_reg <- ncol(object$seasonal_data)-1
   if (n_external_reg == 0) {
-    msg_2 <- paste0("- External regressors: ", ncol(env_$external_regressors)-1, "\n")
+    msg_2 <- paste0("- External regressors: ", n_external_reg, "\n")
   } else {
-    msg_2 <- paste0("- External regressors: ", ncol(env_$external_regressors)-1, " (", names(env_$external_regressors)[-1], ")\n")
+    msg_2 <- paste0("- External regressors: ", n_external_reg, " (", names(object$seasonal_data)[-1], ")\n")
   }
   cat(c(msg_1, msg_2))
   cat(paste0("--------------------------------------------------------------\n"))
@@ -126,3 +137,40 @@ print.solarTransform <- function(object){
   msg_3 <- paste0("Yt: log(log(",  beta_, ") - log(Xt-", alpha_, "))")
   cat(msg_1, msg_2, msg_3)
 }
+
+#' Print method for the class `spatialScenarioSpec`
+#'
+#' @param object an object of the class \code{\link{spatialScenario_spec}}.
+#'
+#' @keywords internal
+#' @noRd
+#' @export
+print.spatialScenarioSpec <- function(object){
+  cat("------------------------- spatialScenarioSpec -------------------------\n")
+  msg_1 <- paste0(" Number of models: ", length(object$spec), "\n")
+  msg_2 <- paste0("Dates: ", object$from, " - ", object$to, "\n")
+  msg_3 <- paste0("Number of simulations: ", object$nsim, "\n",
+                  " - Residuals: (", object$residuals, ")", "\n",
+                  " - Filter: (", object$filter, ")")
+  cat(msg_1, msg_2, msg_3)
+}
+
+#' Print method for the class `solarScenarioSpec`
+#'
+#' @param object an object of the class \code{\link{solarScenario_spec}}.
+#'
+#' @keywords internal
+#' @noRd
+#' @export
+print.solarScenarioSpec <- function(object){
+  msg_0 <- paste0("--------------------- ", "solarScenarioSpec", " (", object$place, ") ", "--------------------- \n")
+  msg_1 <- paste0("Target: ", object$target, " \n Lat: ", object$coords$lat, "\n Lon: ", object$coords$lon, "\n Alt: ", object$coords$alt, " \n")
+  msg_2 <- paste0("---------------------------------------------------------------\n")
+  msg_3 <- paste0(" Dates: ", object$from, " - ", object$to, " Observations: ", nrow(object$sim), "\n")
+  msg_4 <- paste0("Number of simulations: ", object$nsim, "\n",
+                  " - Residuals: (", !purrr::is_empty(object$residuals), ")", "\n",
+                  " - Filter: (", !purrr::is_empty(object$simulations), ")")
+  cat(paste0(msg_0, msg_1, msg_2, msg_3, msg_4))
+}
+
+

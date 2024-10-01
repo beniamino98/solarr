@@ -2,19 +2,39 @@
 % Please edit documentation in R/solarModel.R
 \name{solarModel_filter}
 \alias{solarModel_filter}
+\alias{solarModel_update}
+\alias{solarModel_parameters}
 \title{Update the time series inside a `solarModel` object}
 \usage{
 solarModel_filter(model)
+
+solarModel_parameters(model, as_tibble = FALSE)
+
+solarModel_update(model, params)
 }
 \arguments{
-\item{model}{`solarModel` object}
+\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+
+\item{as_tibble}{logical, when `TRUE` the output will be converted in a `tibble`.}
+
+\item{params}{named list of parameters. See the function \code{\link{solarModel_parameters}} to structure the list of new parameters.
+model.}
 }
 \description{
 Update the time series inside a `solarModel` object
+
+Extract the parameters of a `solarModel`
+
+Update the parameters of a `solarModel` object
 }
 \examples{
 model <- Bologna
+# Extract the parameters
 params <- solarModel_parameters(model)
+# Make some changes on the parameters
+params$AR_model_Yt$phi_1 <- params$AR_model_Yt$phi_1*0.95
+# Update the parameters inside the model
 model <- solarModel_update(model, params)
+# Filter the time series with new parameters
 model <- solarModel_filter(model)
 }

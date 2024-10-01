@@ -18,7 +18,7 @@ control_seasonalClearsky(
 )
 }
 \arguments{
-\item{method}{character, method for clearsky estimate, can be `I` or `II`.}
+\item{method}{character, method for clear sky estimate, can be `I` or `II`.}
 
 \item{include.intercept}{logical. When `TRUE`, the default, the intercept will be included in the model.}
 
@@ -42,7 +42,7 @@ control_seasonalClearsky(
 Control parameters for a `seasonalClearsky` object
 }
 \details{
-The parametes `ntol`, `lower`, `upper` and `by` are used exclusively in \code{\link{clearsky_optimizer}}.
+The parameters `ntol`, `lower`, `upper` and `by` are used exclusively in \code{\link{clearsky_optimizer}}.
 }
 \examples{
 control = control_seasonalClearsky()

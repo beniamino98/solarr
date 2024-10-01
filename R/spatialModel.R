@@ -46,7 +46,6 @@ spatialModel <- R6::R6Class("spatialModel",
                                   # Check if the point is a known point in the grid
                                   idx_known_location <- which(rowSums(c(lat, lon) == cbind(known_lat, knonw_lon)) == 2)
                                 }
-
                                 if (purrr::is_empty(idx_known_location)) {
                                   return(FALSE)
                                 } else {
@@ -103,7 +102,6 @@ spatialModel <- R6::R6Class("spatialModel",
                               interpolator = function(lat, lon, target = "GHI", n = 4, day_date){
 
                                 if (!private$quiet) message("Interpolating ", target, " (Lat: ", lat, " Lon: ", lon, ")\r", appendLF = FALSE)
-
                                 # Initialize the output dataset
                                 interp_data <- dplyr::tibble(x1 = lat, x2 = lon, x3 = lubridate::as_date(NA), x4 = NA, x5 = FALSE)
                                 colnames(interp_data) <- c("lat", "lon", "date", target, "interpolated")
@@ -156,26 +154,24 @@ spatialModel <- R6::R6Class("spatialModel",
                                 # Detect n-neighborhoods in the grid
                                 nb <- self$neighborhoods(lat, lon, n = n)
                                 # Initialize a model to be updated
-                                model_inter <- private$..models[nb$place][[1]]
+                                model_inter <- private$..models[nb$place][[1]]$clone(deep = TRUE)
                                 # Update coordinates
-                                model_inter$coords <- list(lat = lat, lon = lon, alt = NA)
+                                model_inter$.__enclos_env__$private$..coords <- list(lat = lat, lon = lon, alt = NA)
                                 # Update place label
                                 model_inter$place <- paste0(nb$place, collapse = "-")
                                 # Interpolate the realized GHI
-                                model_inter$data[["GHI"]] <- self$interpolator(lat, lon, target = "GHI", n = n)$GHI
+                                model_inter$.__enclos_env__$private$..data[["GHI"]] <- self$interpolator(lat, lon, target = "GHI", n = n)$GHI
                                 # Interpolate the realized Clearsky
-                                model_inter$data[["clearsky"]] <- self$interpolator(lat, lon, target = "clearsky", n = n)$clearsky
-                                # Update extraterrestrial radiation at the given location
-                                model_inter$seasonal_data$H0 <- seasonalSolarFunctions$new("spencer")$H0(1:nrow(model_inter$seasonal_data), lat)$H0
+                                model_inter$.__enclos_env__$private$..data[["clearsky"]] <- self$interpolator(lat, lon, target = "clearsky", n = n)$clearsky
                                 # Update H0 inside clear sky model
-                                model_inter$seasonal_model_Ct$.__enclos_env__$private$external_regressors$H0 <- model_inter$seasonal_data$H0
+                                H0 <- seasonalSolarFunctions$new("spencer")$H0(model_inter$seasonal_data$n, lat)$H0
+                                model_inter$.__enclos_env__$private$..seasonal_model_Ct$seasonal_data$H0 <- H0
                                 # Predict the best parameters for the target location
                                 params <- private$..parameters$predict(lat = lat, lon = lon, as_tibble = FALSE)[[1]]
                                 # Update the model parameters
-                                model_inter <- solarModel_update(model_inter, params)
-                                # Update model time series
-                                model_inter <- solarModel_filter(model_inter)
-                                return(model_inter)
+                                model_inter$update(params)
+                                model_inter$filter()
+                                model_inter
                               },
                               #' @description
                               #' Compute monthly moments for mixture with 16 components
@@ -206,12 +202,15 @@ spatialModel <- R6::R6Class("spatialModel",
                               quiet = FALSE
                             ),
                             active = list(
+                              #' @field models list of `solarModel` objects
                               models = function(){
                                 private$..models
                               },
+                              #' @field locations dataset with all the locations.
                               locations = function(){
                                 private$..locations
                               },
+                              #' @field parameters `spatialParameters` object
                               parameters = function(){
                                 private$..parameters
                               }

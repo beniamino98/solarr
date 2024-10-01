@@ -8,6 +8,15 @@
 
 `spatialParameters` object
 }
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{models}}{list of `kernelRegression` objects}
+
+\item{\code{data}}{dataset with the parameters used for fitting}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{

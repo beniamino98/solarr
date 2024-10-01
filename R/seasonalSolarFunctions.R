@@ -439,6 +439,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   method_ = ""
                                 ),
                                 active = list(
+                                  #' @field G0 solar constant, i,e, `1367`.
                                   G0 = function(){
                                     private$..G0
                                   }
