@@ -1,6 +1,6 @@
 Package: solarr
 Type: Package
-Title: Stochastic model for solar radiation data
+Title: Stochastic models for solar radiation
 Version: 0.2.0
 Author: Beniamino Sartini
 Maintainer: Beniamino Sartini <beniamino.sartini2@unibo.it>

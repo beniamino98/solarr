@@ -84,6 +84,7 @@ solarEsscher_calibrator <- function(model, nmonths = 1, target_price, control_es
     opt <- optim(par = init_lambda, loss, method = "Brent", lower = lower_lambda, upper = upper_lambda)
     return(opt)
   }
+
   if (length(nmonths) > 1 & length(target_price) == 1){
     # Specify the loss for a month
     loss <- loss_function(model, nmonths, target_price, control_options, quiet)
@@ -95,7 +96,6 @@ solarEsscher_calibrator <- function(model, nmonths = 1, target_price, control_es
     for(nmonth in nmonths) {
       flush.console()
       message("", appendLF = TRUE)
-
       # Test tolerance parameter
       if (!quiet) cat(paste0("\033[1;35m---------------\033[0m", " Calibrating Monthly Esscher parameter (", "\033[1;32m",
                   lubridate::month(nmonth, label = TRUE, abbr = FALSE), "\033[0m", ")",  " \033[1;35m---------------\033[0m \n"))
@@ -129,23 +129,23 @@ solarEsscher_bounds <- function(model, control_options = control_solarOption(), 
   n_key_points = control_esscher$n_key_points
   quiet = control_esscher$quiet
   # Set target.Yt always on TRUE
-  target.Yt <- control_options$target.Yt
+  control_options$target.Yt <- TRUE
 
   # Compute payoffs
   # Fair Payoff bootstrapped (historical)
-  payoff_boot <- solarOption_bootstrap(model, nsim = nsim, ci = ci, seed = seed, control_options = control_options)$payoff_year
+  payoff_boot <- solarOption_bootstrap(model, nsim = nsim, ci = ci, seed = seed, control_options = control_options)
   # Historical payoff computed on data (historical)
   payoff_hist <- solarOption_historical(model, control_options = control_options)
   # P-Payoff computed with model
-  payoff_model_P <- solarOption_model(model, theta = 0, control_options = control_options)$payoff_year
+  payoff_model_P <- solarOption_model(model, theta = 0, control_options = control_options)
   # Difference between bootstrapped and model P-price
-  error_boot_P <- payoff_boot$premium - payoff_model_P$premium
+  error_boot_P <- payoff_boot$payoff_year$premium - payoff_model_P$payoff_year$premium
   # Percentage error between bootstrapped and model P-price
-  perc_error_boot_P <- error_boot_P/payoff_boot$premium*100
+  perc_error_boot_P <- error_boot_P/payoff_boot$payoff_year$premium*100
 
   # 1) ------- Calibrate the optimal theta for the bounds -------
   # Default benchmark for worste price
-  benchmark_Qup <- payoff_boot$premium_up + error_boot_P
+  benchmark_Qup <- payoff_boot$payoff_year$premium_up + error_boot_P
   # Optimal upper Esscher parameter (up, worse case)
   opt_theta_up <- solarEsscher_calibrator(model, nmonths = 1:12, target_price = benchmark_Qup,
                                           control_esscher = control_esscher, control_options = control_options)
@@ -183,7 +183,7 @@ solarEsscher_bounds <- function(model, control_options = control_solarOption(), 
     for(i in key_points){
       if (!quiet) message(rep("-", 20), " ", i, "/", n_key_points, " ", rep("-", 20))
       df_grid$theta[i] <- solarEsscher_calibrator(model, nmonths = 1:12, target_price = df_grid$prices[i],
-                                                  control_esscher = control_esscher, control_options = control_options)$par
+                                                  control_esscher = control_esscher, control_options = control_options)
       if (!quiet) message("r: ", df_grid$rates[i], " h: ", df_grid$theta[i])
     }
   }
@@ -203,8 +203,8 @@ solarEsscher_bounds <- function(model, control_options = control_solarOption(), 
   # Fitted parameters
   esscher_params <- as.list(model_param_esscher$coefficients)
   names(esscher_params) <- c("h0","h1","h2")
-  # Add Esscher parametric model
-  model$esscher <- list(
+  # Esscher parametric model
+  esscher <- list(
     grid = df_grid,
     params = list(Qdw = theta_dw, Q = theta_bar, Qup = theta_up),
     model = model_param_esscher,
@@ -220,15 +220,20 @@ solarEsscher_bounds <- function(model, control_options = control_solarOption(), 
   #model$esscher$theta_m <- solarEsscherFunction(par = unlist(esscher_params), imp_r = implied_expected_returns)
   #model$esscher$implied_r <- implied_expected_returns
 
-  # Add payoffs to the model
-  # Bootstrapped
-  model$payoffs$boot <- payoff_boot
-  # Model
-  model$payoffs$model$P <- payoff_model_P
-  model$payoffs$model$Q <- payoff_model_Q
-  model$payoffs$model$Qdw <- payoff_model_Qdw
-  model$payoffs$model$Qup <- payoff_model_Qup
-  return(model)
+  # Structure the output
+  payoff <- list(
+    boot = payoff_boot,
+    P = payoff_model_P,
+    Q = payoff_model_Q,
+    Qdw = payoff_model_Qdw,
+    Qup = payoff_model_Qup
+  )
+  structure(
+    list(
+      payoff = payoff,
+      esscher = esscher
+    )
+  )
 }
 
 
@@ -259,6 +264,7 @@ solarEsscher_theta_bounds <- function(theta){
   }
   return(par)
 }
+
 
 #' invertEsscherTheta
 #'
@@ -292,4 +298,21 @@ solarEsscherTheta <- function(h1 = 1, h2 = 1, h3 = 1){
 }
 
 
-
+#' Change probability according to Esscher parameters
+#'
+#' @rdname solarEsscher_probability
+#' @name solarEsscher_probability
+#' @export
+solarEsscher_probability <- function(params = c(0,0,1,1,0.5), df_n, theta = 0){
+  params <- list(
+    mu_up = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[1],
+    mu_dw = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[2],
+    sd_up = params[3]*df_n$sigma_bar*df_n$sigma,
+    sd_dw = params[4]*df_n$sigma_bar*df_n$sigma,
+    p_up = params[5]
+  )
+  params <- unlist(params)
+  num <- params[5]*exp(theta*params[1] + 0.5*(theta^2*params[3])^2)
+  den <- (1-params[5])*exp(theta*params[2] + 0.5*(theta^2*params[4])^2)
+  num/(num + den)
+}

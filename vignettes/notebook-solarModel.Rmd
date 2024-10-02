@@ -1,0 +1,86 @@
+---
+title: "solarModel"
+author: "Beniamino Sartini"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(
+  message = FALSE, 
+  warning = FALSE,
+  collapse = TRUE,
+  comment = "#>"
+)
+library(solarr)
+library(ggplot2)
+```
+
+# Control 
+
+```{r}
+control_model <- control_solarModel(outliers_quantile = 0)
+```
+
+# Fit
+
+```{r}
+spec <- solarModel_spec("Ferrara", from="2005-01-01", to="2022-01-01", control_model = control_model)
+model <- solarModelR6$new(spec)
+model$fit()
+```
+
+# Simulation 
+
+```{r}
+scenario <- solarScenario(model, from = "2022-01-01", to = "2023-01-01", nsim = 1, seed = 2, by = "1 month")
+sim <- tidyr::unnest(scenario$sim, cols = "data")
+ggplot()+
+  geom_line(data = sim, aes(n, GHI), color = "red")+
+  geom_line(data = scenario$emp, aes(n, GHI))+
+  theme_bw()
+```
+
+# Parameters
+
+```{r}
+
+dplyr::bind_cols(model$parameters) %>%
+  tidyr::gather("parameter", "value")
+```
+
+# Log-likelihood
+
+```{r}
+model$loglik
+```
+
+```{r}
+c_moments <- model$moments$conditional
+c_moments$GHI <- model$data$GHI
+c_moments <- dplyr::left_join(c_moments, dplyr::select(model$seasonal_data, -n), by = c("Month", "Day"))
+c_moments$e_GHI <- model$transform$GHI_y(c_moments$e_Yt, c_moments$Ct)
+c_moments$e_GHI_up <- model$transform$GHI_y(c_moments$e_Yt + c_moments$sd_Yt , c_moments$Ct)
+c_moments$e_GHI_dw <- model$transform$GHI_y(c_moments$e_Yt - c_moments$sd_Yt, c_moments$Ct)
+
+dplyr::filter(c_moments, Year == 2020) %>%
+  dplyr::mutate(color_GHI = ifelse(GHI > e_GHI_up, "up", ifelse(GHI < e_GHI_dw, "dw", "inside")))%>% 
+  ggplot()+
+  geom_line(aes(date, GHI), color = "black", linewidth = 0.2)+
+  geom_point(aes(date, GHI, color = color_GHI), size = 1)+
+  geom_line(aes(date, e_GHI), color = "green")+
+  geom_line(aes(date, e_GHI_up), color = "red")+
+  geom_line(aes(date, e_GHI_dw), color = "red")+
+  scale_color_manual(values = c(up = "green", dw = "red", inside = "black"))+
+  theme_bw()+
+  theme(legend.position = "top")+
+  labs(color = "")
+
+mean(c_moments$GHI > c_moments$e_GHI_dw & c_moments$GHI < c_moments$e_GHI_up)
+
+```
+

@@ -8,24 +8,28 @@ The `seasonalModel` class implements a seasonal regression model as a linear com
 This model is designed to capture periodic effects in time series data, particularly for applications involving seasonal trends.
 }
 \details{
-The seasonal model is fitted using a specified formula, which allows for the inclusion of external regressors along with sine and cosine terms to model seasonal variations.
-The periodicity can be customized, and the model can be updated with new coefficients after fitting.
+The seasonal model is fitted using a specified formula, which allows for the inclusion of external regressors along with sine and cosine terms
+to model seasonal variations. The periodicity can be customized, and the model can be updated with new coefficients after fitting.
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{seasonal_data}}{a dataset containing external seasonal data.}
+\item{\code{seasonal_data}}{Slot that contains eventual externals seasonal regressors used for fitting.}
 
-\item{\code{extra_params}}{a slot for containing extra parameters.}
+\item{\code{extra_params}}{Slot used for containing eventual extra parameters.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{coefficients}}{Extract the coefficients}
+\item{\code{coefficients}}{Get a vector with the fitted coefficients.}
 
-\item{\code{model}}{Extract the model}
+\item{\code{model}}{Get the fitted `lm` object.}
+
+\item{\code{period}}{Get the seasonality in days.}
+
+\item{\code{order}}{Get the number of combinations of sines and cosines used.}
 }
 \if{html}{\out{</div>}}
 }
@@ -33,6 +37,7 @@ The periodicity can be customized, and the model can be updated with new coeffic
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{seasonalModel$new()}}
+\item \href{#method-fit}{\code{seasonalModel$fit()}}
 \item \href{#method-predict}{\code{seasonalModel$predict()}}
 \item \href{#method-update}{\code{seasonalModel$update()}}
 \item \href{#method-clone}{\code{seasonalModel$clone()}}
@@ -42,9 +47,30 @@ The periodicity can be customized, and the model can be updated with new coeffic
 \if{html}{\out{<a id="method-new"></a>}}
 \if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
-Fit a seasonal model as a linear combination of sine and cosine functions.
+Initialize an object of the class `seasonalModel`.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(formula, order = 1, period = 365, data, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(order = 1, period = 365)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{order}}{numeric, number of sine and cosine used in fitting.}
+
+\item{\code{period}}{numeric, seasonal periodicity. The default is \eqn{\frac{2\pi}{365}}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-fit}{}}}
+\subsection{Method \code{fit()}}{
+Fit a seasonal model as a linear combination of sine and cosine functions and
+eventual external regressors specified in the formula. The external regressors used should
+have the same periodicity, i.e. not stochastic regressors are allowed.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$fit(formula, data, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -52,10 +78,6 @@ Fit a seasonal model as a linear combination of sine and cosine functions.
 \describe{
 \item{\code{formula}}{formula, an object of class `formula` (or one that can be coerced to that class).
 It is a symbolic description of the model to be fitted and can be used to include or exclude the intercept or external regressors in `data`.}
-
-\item{\code{order}}{numeric, of sine and cosine elements.}
-
-\item{\code{period}}{numeric, periodicity. The default is \eqn{\frac{2\pi}{365}}.}
 
 \item{\code{data}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
 If not found in data, the variables are taken from environment(formula), typically the environment from which `lm` is called.}
@@ -69,7 +91,7 @@ If not found in data, the variables are taken from environment(formula), typical
 \if{html}{\out{<a id="method-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-predict}{}}}
 \subsection{Method \code{predict()}}{
-Predict method for a `seasonalModel`,
+Predict method for the class `seasonalModel`.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$predict(n)}\if{html}{\out{</div>}}
 }
@@ -86,7 +108,7 @@ Predict method for a `seasonalModel`,
 \if{html}{\out{<a id="method-update"></a>}}
 \if{latex}{\out{\hypertarget{method-update}{}}}
 \subsection{Method \code{update()}}{
-Update the parameters of a `seasonalModel`.
+Update the parameters inside the model.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$update(coefficients)}\if{html}{\out{</div>}}
 }

@@ -16,7 +16,7 @@ Produce a forecast from a solarModel object
 }
 \examples{
 model <- Bologna
-solarModel_forecaster(model, date = "2020-04-01")
+solarModel_forecaster(model, date = "2010-04-01")
 object <- solarModel_forecaster(model, date = "2020-04-01", unconditional = TRUE)
 object
 }

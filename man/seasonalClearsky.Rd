@@ -3,48 +3,132 @@
 \name{seasonalClearsky}
 \alias{seasonalClearsky}
 \title{Clear sky seasonal model}
-\usage{
-seasonalClearsky(x, date, lat, clearsky, control = control_seasonalClearsky())
-}
-\arguments{
-\item{x}{time series of solar radiation}
-
-\item{date}{time series of dates}
-
-\item{lat}{reference latitude}
-
-\item{clearsky}{optional time series of observed clerasky radiation.}
-
-\item{control}{See the function \code{\link{control_seasonalClearsky}} for details.}
-}
 \description{
-Fit a seasonal model for clear sky radiation
+Clear sky seasonal model
+
+Clear sky seasonal model
 }
 \examples{
 library(ggplot2)
+# Arguments
 place <- "Palermo"
-# Model for GHI
+# solarModel specification
 spec <- solarModel_spec(place, target = "GHI")
+# Extract the required elements
 x <- spec$data$GHI
 date <- spec$data$date
 lat <- spec$coords$lat
 clearsky <- spec$data$clearsky
-model <- seasonalClearsky(x, date, lat, clearsky)
-spec$data$Ct <- model$predict(spec$data$n)
-ggplot(spec$data)+
- geom_line(aes(n, Ct), color = "blue")+
- geom_line(aes(n, GHI))
 
-# Model for clear sky
-spec <- solarModel_spec(place, target = "clearsky")
-x <- spec$data$clearsky
-date <- spec$data$date
-lat <- spec$coords$lat
-clearsky <- spec$data$clearsky
-model <- seasonalClearsky(x, date, lat, clearsky)
+# Initialize the model
+model <- seasonalClearsky$new()
+# Fit the model
+model$fit(x, date, lat, clearsky)
+# Predict the seasonal values
 spec$data$Ct <- model$predict(spec$data$n)
-ggplot(spec$data)+
- geom_line(aes(n, Ct), color = "blue")+
- geom_line(aes(n, clearsky))
 
+}
+\section{Super class}{
+\code{\link[solarr:seasonalModel]{solarr::seasonalModel}} -> \code{seasonalClearsky}
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{control}}{See the function \code{\link{control_seasonalClearsky}} for details.}
+
+\item{\code{lat}}{latitude of the place considered.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-new}{\code{seasonalClearsky$new()}}
+\item \href{#method-fit}{\code{seasonalClearsky$fit()}}
+\item \href{#method-updateH0}{\code{seasonalClearsky$updateH0()}}
+\item \href{#method-clone}{\code{seasonalClearsky$clone()}}
+}
+}
+\if{html}{
+\out{<details open ><summary>Inherited methods</summary>}
+\itemize{
+\item \out{<span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="predict">}\href{../../solarr/html/seasonalModel.html#method-predict}{\code{solarr::seasonalModel$predict()}}\out{</span>}
+\item \out{<span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="update">}\href{../../solarr/html/seasonalModel.html#method-update}{\code{solarr::seasonalModel$update()}}\out{</span>}
+}
+\out{</details>}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a seasonalClearsky model
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$new(control = control_seasonalClearsky())}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{control}}{See the function \code{\link{control_seasonalClearsky}} for details.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-fit}{}}}
+\subsection{Method \code{fit()}}{
+Fit a seasonal model for clear sky radiation
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$fit(x, date, lat, clearsky)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{time series of solar radiation}
+
+\item{\code{date}}{time series of dates}
+
+\item{\code{lat}}{reference latitude}
+
+\item{\code{clearsky}}{optional time series of observed clerasky radiation.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-updateH0"></a>}}
+\if{latex}{\out{\hypertarget{method-updateH0}{}}}
+\subsection{Method \code{updateH0()}}{
+Update the time series of Extraterrestrial radiation
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$updateH0(lat)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{lat}}{reference latitude}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

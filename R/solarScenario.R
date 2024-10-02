@@ -14,7 +14,7 @@
 #'
 #' @examples
 #' model <- Bologna
-#' scen <- solarScenario(model, "2006-01-01", to = "2020-12-31", nsim = 2)
+#' scen <- solarScenario(model, "2010-01-01", to = "2020-12-31", nsim = 10)
 #' scen <- solarScenario(model, to = "2010-02-01", by = "1 day")
 #' @rdname solarScenario
 #' @name solarScenario
@@ -64,8 +64,6 @@ solarScenario <- function(model, from = "2010-01-01", to = "2010-12-31", by = "1
 #' @name solarScenario_spec
 #' @export
 solarScenario_spec <- function(model, from = "2010-01-01", to = "2010-12-31", theta = 0, exclude_known = FALSE, quiet = FALSE){
-
-
   # Extract informations
   data <- model$data
   place <- model$place
@@ -171,7 +169,6 @@ solarScenario_spec <- function(model, from = "2010-01-01", to = "2010-12-31", th
 #' @name solarScenario_residuals
 #' @export
 solarScenario_residuals <- function(simSpec, nsim = 1, seed = 1){
-
   # Random seed
   set.seed(seed)
   # Initialize the sequence of dates
@@ -192,7 +189,8 @@ solarScenario_residuals <- function(simSpec, nsim = 1, seed = 1){
     colnames(sim_x12) <- c("x1_1", "x2_1")
     sim_x12 <- dplyr::as_tibble(sim_x12)
     # 2) Bernoulli simulation
-    sim_B <- bindata::rmvbin(n*nsim, margprob = simSpec$p_up(m))
+    # sim_B <- rbinom(n*nsim, 1, prob = simSpec$p_up(m))
+    sim_B <- bindata::rmvbin(n*nsim, margprob = simSpec$p_up(df_sim$Month[m]))
     colnames(sim_B) <- simSpec$place
     sim_B <- dplyr::as_tibble(sim_B)
     # Slit the mixture simulations
@@ -243,6 +241,7 @@ solarScenario_residuals <- function(simSpec, nsim = 1, seed = 1){
   return(simSpec)
 }
 
+
 #' Simulate trajectories from a a `solarScenario_spec`
 #'
 #' @inheritParams solarScenario
@@ -269,11 +268,9 @@ solarScenario_filter <- function(simSpec){
   if (purrr::is_empty(simSpec$residuals)) {
     stop("The slot `simSpec$residuals` is empty! Consider running `simSpec <- solarScenario_residuals(simSpec)` before!")
   }
-
   # Number of lags to consider
   i_start <- simSpec$i_start
-
-  j <- 1
+  # Number of simulations
   nsim <- nrow(simSpec$residuals)
   simulations <- list()
   for(j in 1:nsim){
@@ -283,10 +280,9 @@ solarScenario_filter <- function(simSpec){
     df_sim$z <- 0
     df_sim$z[(i_start):nrow(df_sim)] <- simSpec$residuals[j,]$X[[1]][, simSpec$place][[1]]
     df_sim$B[(i_start):nrow(df_sim)] <- simSpec$residuals[j,]$B[[1]][, simSpec$place][[1]]
-
+    # Verbose message
     if (!simSpec$quiet) message("Simulation: ", j, "/", nsim, " (", round(j/nsim*100, 4), " %) \r", appendLF = FALSE)
-
-    i <- i_start
+    # Routine
     for(i in i_start:nrow(df_sim)){
       # Simulated GARCH standard deviation
       df_sim$sigma[i] <- simSpec$GARCH_next_step(df_sim$eps_tilde[(i-simSpec$archOrder):(i-1)], df_sim$sigma[(i-simSpec$garchOrder):(i-1)])
@@ -298,7 +294,7 @@ solarScenario_filter <- function(simSpec){
       if (df_sim$theta[1] != 0) {
         # Distort probability according to Esscher parameter
         params <- c(df_sim$mu_up[i], df_sim$mu_dw[i], df_sim$sd_up[i], df_sim$sd_dw[i], df_sim$p_up[i])
-        df_sim$p_up[i] <- simSpec$esscher_probability(params, df_n = df_sim[i,], df_sim$theta[i])
+        df_sim$p_up[i] <- solarEsscher_probability(params, df_n = df_sim[i,], df_sim$theta[i])
         # Simulated bernoulli jump
         df_sim$B[i] <- rbinom(1, 1, df_sim$p_up[i])
         # Simulated standardized monthly normal mixture
@@ -332,7 +328,6 @@ solarScenario_filter <- function(simSpec){
   }
   # Add simulations
   simSpec$simulations <- simulations
-
   return(simSpec)
 }
 
@@ -364,9 +359,5 @@ as_solarScenario <- function(simSpec) {
     class = c("solarScenario", "list")
   )
 }
-
-
-
-
 
 

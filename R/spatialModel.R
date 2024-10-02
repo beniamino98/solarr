@@ -156,7 +156,7 @@ spatialModel <- R6::R6Class("spatialModel",
                                 # Initialize a model to be updated
                                 model_inter <- private$..models[nb$place][[1]]$clone(deep = TRUE)
                                 # Update coordinates
-                                model_inter$.__enclos_env__$private$..coords <- list(lat = lat, lon = lon, alt = NA)
+                                model_inter$coords <- list(lat = lat, lon = lon, alt = NA)
                                 # Update place label
                                 model_inter$place <- paste0(nb$place, collapse = "-")
                                 # Interpolate the realized GHI

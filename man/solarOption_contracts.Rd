@@ -35,3 +35,4 @@ solarOption_contracts(
 \description{
 Compute the optimal number of contracts given a particular setup.
 }
+\keyword{2beRevised}

@@ -91,7 +91,7 @@ control_solarOption <- function(nyears = c(2005, 2023), K = 0, put = TRUE, targe
 #'
 #' @rdname solarOption_contracts
 #' @name solarOption_contracts
-#'
+#' @keywords 2beRevised
 #' @export
 solarOption_contracts  <- function(model, type = "model", premium = "Q", nyear = 2021, tick = 0.06, efficiency = 0.2, n_panels = 2000, pun = 0.06){
   # All the payoffs
@@ -142,11 +142,12 @@ solarOption_contracts  <- function(model, type = "model", premium = "Q", nyear =
 #' @param nmonths numeric, months of which the payoff will be computed.
 #' @param control_options control list, see \code{\link{control_solarOption}} for more details.
 #'
-#' @rdname solarOption_historical
-#' @name solarOption_historical
 #' @examples
 #' model <- Bologna
 #' solarOption_historical(model)
+#'
+#' @rdname solarOption_historical
+#' @name solarOption_historical
 #' @export
 solarOption_historical <- function(model, nmonths = 1:12, control_options = control_solarOption()){
 
@@ -384,6 +385,9 @@ solarOption_scenario <- function(scenario, nmonths = 1:12, nsim, control_options
 #' @param control_options control function, see \code{\link{control_solarOption}} for details.
 #'
 #' @return An object of the class `solarOptionPayoffBoot`.
+#' @examples
+#' model <- Bologna
+#' solarOption_bootstrap(model, nsim = 100)
 #'
 #' @rdname solarOption_bootstrap
 #' @name solarOption_bootstrap
@@ -486,8 +490,6 @@ solarOption_bootstrap <- function(model, nsim = 500, ci = 0.05, seed = 1, contro
 #' df_call <- solarOption_model(model, control_options = control_options)
 #' control_options <- control_solarOption(put = TRUE)
 #' df_put <- solarOption_model(model, control_options = control_options)
-
-
 #' @rdname solarOption_model
 #' @name solarOption_model
 #' @export
@@ -689,7 +691,6 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
 #' model_cal <- solarOption_calibrator(model, nmonths = 8, reltol=1e-3)
 #' solarModel_loglik(model)
 #' solarModel_loglik(model_cal)
-#'
 #' @export
 solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-3, reltol = 1e-2, control_options = control_solarOption()){
 
@@ -798,6 +799,7 @@ solarOption_model_test <- function(model, nmonths = 1:12, control_options = cont
 
 #' Implied expected return at maturity
 #'
+#' @keywords 2beRevised
 #' @export
 solarOption_implied_return <- function(model, target_prices = NA, nmonths = 1:12, control_options = control_solarOption()){
 
@@ -844,11 +846,12 @@ solarOption_implied_return <- function(model, target_prices = NA, nmonths = 1:12
 #'
 #' @rdname solarOption_structure
 #' @name solarOption_structure
+#' @keywords 2beRevised
 #' @export
-solarOption_structure <- function(model, type = "model", exact_daily_premium = TRUE){
+solarOption_structure <- function(payoffs, type = "mod", exact_daily_premium = TRUE){
 
-  type <- match.arg(type, choices = c("sim", "model"))
-  payoff <- model$payoffs[c("hist", type)]
+  type <- match.arg(type, choices = c("sim", "mod"))
+  payoff <- payoffs[c("hist", type)]
 
   # Yearly Premium
   df_year <- dplyr::tibble(
@@ -965,12 +968,13 @@ solarOption_structure <- function(model, type = "model", exact_daily_premium = T
       e_cum_net_payoff_Qup = mean(cum_net_payoff_Qup),
     ) %>%
     dplyr::ungroup()
-  model$payoffs[[type]]$structured <- list(payoff = df_payoff,
-                                           payoff_year = df_year,
-                                           payoff_month = df_month,
-                                           payoff_month_day = df_month_day,
-                                           payoff_cum = df_cum)
-  return(model)
+
+  payoffs[[type]]$structured <- list(payoff = df_payoff,
+                                     payoff_year = df_year,
+                                     payoff_month = df_month,
+                                     payoff_month_day = df_month_day,
+                                     payoff_cum = df_cum)
+  return(payoffs)
 }
 
 

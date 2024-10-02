@@ -14,3 +14,4 @@ solarOption_implied_return(
 \description{
 Implied expected return at maturity
 }
+\keyword{2beRevised}

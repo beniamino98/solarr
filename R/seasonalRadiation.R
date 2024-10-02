@@ -32,7 +32,9 @@ seasonalRadiation <- function(spec){
   # Custom formula
   formula_ <- ifelse(control$include.H0, paste0(target, " ~ 1 + H0"), paste0(target, " ~ 1"))
   # Seasonal model
-  seasonal_model <- seasonalModel$new(formula_, order = control$seasonalOrder, data = data)
+  seasonal_model <- seasonalModel$new(order = control$seasonalOrder)
+  # Seasonal model
+  seasonal_model$fit(formula_, data = data)
   # Check that the predictions are positive for all n's
   negative_condition <- any(seasonal_model$predict(1:366) < 0)
   if (negative_condition) {

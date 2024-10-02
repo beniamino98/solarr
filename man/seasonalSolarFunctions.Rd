@@ -49,7 +49,7 @@ sf$H0(1:365, 44)
 \subsection{Method \code{new()}}{
 Initialize a `seasonalSolarFunctions` object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$new(method = "cooper")}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$new(method = "spencer")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

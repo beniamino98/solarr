@@ -3,6 +3,10 @@
 #' @export
 spatialCorrelation <- R6::R6Class("spatialCorrelation",
                                   public = list(
+                                    #' @description
+                                    #' Initialize an object with class `spatialCorrelation`.
+                                    #' @param binprobs param
+                                    #' @param mixture_cr param
                                     initialize = function(binprobs, mixture_cr){
                                       # Store active elements
                                       private$..places = colnames(binprobs$commonprob[[1]])
@@ -21,6 +25,10 @@ spatialCorrelation <- R6::R6Class("spatialCorrelation",
                                       # Store the indexes
                                       private$idx = list(x1 = idx_x1, x2 = idx_x2)
                                     },
+                                    #' @description
+                                    #' Extract the implied covariance matrix for a given month and places.
+                                    #' @param places character, optional. Names of the places to consider.
+                                    #' @param nmonth integer, month considered from 1 to 12.
                                     get_sigma_B = function(places, nmonth = 1){
                                       # Retrieve active elements
                                       sigma_B = self$sigma_B[[nmonth]]
@@ -33,6 +41,10 @@ spatialCorrelation <- R6::R6Class("spatialCorrelation",
                                       }
                                       return(sigma_B)
                                     },
+                                    #' @description
+                                    #' Extract the marginal probabilities for a given month and places.
+                                    #' @param places character, optional. Names of the places to consider.
+                                    #' @param nmonth integer, month considered from 1 to 12.
                                     get_margprob = function(places, nmonth = 1){
                                       # Retrieve active elements
                                       margprob = self$margprob[[nmonth]]
@@ -45,6 +57,10 @@ spatialCorrelation <- R6::R6Class("spatialCorrelation",
                                       }
                                       return(margprob)
                                     },
+                                    #' @description
+                                    #' Extract the covariance matrix of the gaussian mixture for a given month and places.
+                                    #' @param places character, optional. Names of the places to consider.
+                                    #' @param nmonth integer, month considered from 1 to 12.
                                     get_cr_X = function(places, nmonth = 1){
                                       # Retrieve active elements
                                       cr_X = self$cr_X
@@ -57,6 +73,11 @@ spatialCorrelation <- R6::R6Class("spatialCorrelation",
                                       }
                                       return(cr_X)
                                     },
+                                    #' @description
+                                    #' Extract a list with `sigma_B`, `margprob` and `cr_X` for a given month.
+                                    #' @param places character, optional. Names of the places to consider.
+                                    #' @param nmonth integer, month considered from 1 to 12.
+                                    #' @param date character, optional date. The month will be extracted from the date.
                                     get = function(places, nmonth = 1, date){
                                       # Compute reference month from date
                                       if (!missing(date)) {
@@ -96,18 +117,20 @@ spatialCorrelation <- R6::R6Class("spatialCorrelation",
                                     }
                                   ),
                                   active = list(
+                                    #' @field places Get a vector with the labels of all the places in the grid.
                                     places = function(){
                                       private$..places
                                     },
+                                    #' @field sigma_B Get a list of matrices with implied covariance matrix from joint probabilities.
                                     sigma_B = function(){
                                       private$..sigma_B
                                     },
+                                    #' @field cr_X Get a matrix with multivariate gaussian mixture correlations.
                                     cr_X = function(){
                                       private$..cr_X
                                     },
+                                    #' @field margprob Get a list of vectors with marginal probabilities.
                                     margprob = function(){
                                       private$..margprob
                                     }
                                   ))
-
-

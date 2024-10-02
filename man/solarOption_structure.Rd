@@ -4,17 +4,18 @@
 \alias{solarOption_structure}
 \title{Structure payoffs}
 \usage{
-solarOption_structure(model, type = "model", exact_daily_premium = TRUE)
+solarOption_structure(payoffs, type = "mod", exact_daily_premium = TRUE)
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
-
 \item{type}{method used for computing the premium. If `model`, the default will be used the analytic model,
 otherwise with `sim` the monte carlo scenarios stored inside the `model$scenarios$P`.}
 
 \item{exact_daily_premium}{when `TRUE` the historical premium is computed as daily average among all the years.
 Otherwise the monthly premium is computed and then divided by the number of days of the month.}
+
+\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
 }
 \description{
 Structure payoffs
 }
+\keyword{2beRevised}

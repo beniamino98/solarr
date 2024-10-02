@@ -51,22 +51,5 @@ desscher <- function(pdf, theta = 0, lower = -Inf, upper = Inf){
   }
 }
 
-#' Change probability according to esscher parameters
-#' @rdname esscher_probability
-#' @name esscher_probability
-#' @export
-esscher_probability <- function(params = c(0,0,1,1,0.5), df_n, theta = 0){
-  params <- list(
-    mu_up = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[1],
-    mu_dw = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[2],
-    sd_up = params[3]*df_n$sigma_bar*df_n$sigma,
-    sd_dw = params[4]*df_n$sigma_bar*df_n$sigma,
-    p_up = params[5]
-  )
-  params <- unlist(params)
-  num <- params[5]*exp(theta*params[1] + 0.5*(theta^2*params[3])^2)
-  den <- (1-params[5])*exp(theta*params[2] + 0.5*(theta^2*params[4])^2)
-  num/(num + den)
-}
 
 

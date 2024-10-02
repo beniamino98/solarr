@@ -146,5 +146,3 @@ solarTransform <- R6::R6Class("solarTransform",
                                 }
                               )
                             )
-
-

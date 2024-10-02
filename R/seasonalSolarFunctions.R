@@ -157,9 +157,9 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   #' @description
                                   #' Initialize a `seasonalSolarFunctions` object
                                   #' @param method character, method type for computations. Can be `cooper` or `spencer`.
-                                  initialize = function(method = "cooper"){
+                                  initialize = function(method = "spencer"){
                                     # Method of computation
-                                    private$method_ <- match.arg(method, choices = c("cooper", "spencer"))
+                                    private$method_ <- match.arg(method, choices = c("spencer", "cooper"))
                                   },
                                   #' @description
                                   #' Extract or update the method used for computations.
@@ -173,7 +173,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                       # Old method
                                       old_method <- private$method_
                                       # New method
-                                      private$method_ <- match.arg(x, choices = c("cooper", "spencer"))
+                                      private$method_ <- match.arg(x, choices = c("spencer", "cooper"))
                                       return(private$method_)
                                     }
                                   },

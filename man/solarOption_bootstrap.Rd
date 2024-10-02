@@ -29,3 +29,8 @@ An object of the class `solarOptionPayoffBoot`.
 \description{
 Bootstrap a fair premium from historical data
 }
+\examples{
+model <- Bologna
+solarOption_bootstrap(model, nsim = 100)
+
+}

@@ -38,6 +38,6 @@ Simulate multiple scenarios of solar radiation with a `solarModel` object.
 }
 \examples{
 model <- Bologna
-scen <- solarScenario(model, "2006-01-01", to = "2020-12-31", nsim = 2)
+scen <- solarScenario(model, "2010-01-01", to = "2020-12-31", nsim = 10)
 scen <- solarScenario(model, to = "2010-02-01", by = "1 day")
 }

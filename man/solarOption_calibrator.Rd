@@ -20,5 +20,4 @@ model <- Bologna
 model_cal <- solarOption_calibrator(model, nmonths = 8, reltol=1e-3)
 solarModel_loglik(model)
 solarModel_loglik(model_cal)
-
 }

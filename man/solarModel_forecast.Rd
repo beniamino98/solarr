@@ -11,6 +11,6 @@ Iterate the forecast on multiple dates
 }
 \examples{
 model <- Bologna
-dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-12-31"), 1)
+dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-01-31"), 1)
 solarModel_forecast(model, date = dates)
 }

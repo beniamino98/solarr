@@ -8,6 +8,19 @@ spatialCorrelation object
 
 spatialCorrelation object
 }
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{places}}{Get a vector with the labels of all the places in the grid.}
+
+\item{\code{sigma_B}}{Get a list of matrices with implied covariance matrix from joint probabilities.}
+
+\item{\code{cr_X}}{Get a matrix with multivariate gaussian mixture correlations.}
+
+\item{\code{margprob}}{Get a list of vectors with marginal probabilities.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -23,46 +36,98 @@ spatialCorrelation object
 \if{html}{\out{<a id="method-new"></a>}}
 \if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize an object with class `spatialCorrelation`.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$new(binprobs, mixture_cr)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{binprobs}}{param}
+
+\item{\code{mixture_cr}}{param}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_sigma_B"></a>}}
 \if{latex}{\out{\hypertarget{method-get_sigma_B}{}}}
 \subsection{Method \code{get_sigma_B()}}{
+Extract the implied covariance matrix for a given month and places.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get_sigma_B(places, nmonth = 1)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{places}}{character, optional. Names of the places to consider.}
+
+\item{\code{nmonth}}{integer, month considered from 1 to 12.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_margprob"></a>}}
 \if{latex}{\out{\hypertarget{method-get_margprob}{}}}
 \subsection{Method \code{get_margprob()}}{
+Extract the marginal probabilities for a given month and places.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get_margprob(places, nmonth = 1)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{places}}{character, optional. Names of the places to consider.}
+
+\item{\code{nmonth}}{integer, month considered from 1 to 12.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get_cr_X"></a>}}
 \if{latex}{\out{\hypertarget{method-get_cr_X}{}}}
 \subsection{Method \code{get_cr_X()}}{
+Extract the covariance matrix of the gaussian mixture for a given month and places.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get_cr_X(places, nmonth = 1)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{places}}{character, optional. Names of the places to consider.}
+
+\item{\code{nmonth}}{integer, month considered from 1 to 12.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-get"></a>}}
 \if{latex}{\out{\hypertarget{method-get}{}}}
 \subsection{Method \code{get()}}{
+Extract a list with `sigma_B`, `margprob` and `cr_X` for a given month.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get(places, nmonth = 1, date)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{places}}{character, optional. Names of the places to consider.}
+
+\item{\code{nmonth}}{integer, month considered from 1 to 12.}
+
+\item{\code{date}}{character, optional date. The month will be extracted from the date.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-clone"></a>}}

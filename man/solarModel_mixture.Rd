@@ -2,7 +2,6 @@
 % Please edit documentation in R/solarModel_internals.R
 \name{solarModel_mixture}
 \alias{solarModel_mixture}
-\alias{solarModel_mvmixture}
 \title{Monthly Gaussian mixture with two components}
 \usage{
 solarModel_mixture(
@@ -13,8 +12,6 @@ solarModel_mixture(
   maxit = 100,
   abstol = 1e-14
 )
-
-solarModel_mvmixture(model_Ct, model_GHI)
 }
 \arguments{
 \item{x}{arg}
@@ -27,13 +24,7 @@ When `missing` all the available observations will be used.}
 \item{match_moments}{arg}
 
 \item{maxit}{maximum number of iterations.}
-
-\item{model_Ct}{arg}
-
-\item{model_GHI}{arg}
 }
 \description{
 Monthly Gaussian mixture with two components
-
-Monthly multivariate Gaussian mixture with two components
 }

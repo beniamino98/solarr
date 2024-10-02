@@ -38,17 +38,6 @@ print.solarModel <- function(object){
   NextMethod(object)
 }
 
-#' Print method for the class `solarModelR6`
-#'
-#' @param object an object of the class \code{\link{solarModelR6}}.
-#'
-#' @keywords internal
-#' @noRd
-#' @export
-print.solarModelR6 <- function(object){
-  print.solarModelSpec(object)
-}
-
 #' Print method for the class `seasonalModel`
 #'
 #' @param object an object of the class  \code{\link{seasonalModel}}.
@@ -57,9 +46,8 @@ print.solarModelR6 <- function(object){
 #' @noRd
 #' @export
 print.seasonalModel <- function(object){
-  env_ <- object$.__enclos_env__$private
   cat(paste0("----------------------- ", class(object)[1], " ----------------------- \n"))
-  msg_1 <- paste0(" - Order: ", env_$order, "\n - Period: ", env_$period, "\n")
+  msg_1 <- paste0(" - Order: ", object$order, "\n - Period: ", object$period, "\n")
   n_external_reg <- ncol(object$seasonal_data)-1
   if (n_external_reg == 0) {
     msg_2 <- paste0("- External regressors: ", n_external_reg, "\n")
@@ -80,7 +68,6 @@ print.seasonalModel <- function(object){
 #' @noRd
 #' @export
 print.solarOption <- function(object){
-
   msg_1 <- paste0("------------------------ Solar Option Payoff ------------------------ \n")
   msg_2 <- paste0("Yearly payoff: ", format(object$payoff_year$premium, digits = 5), "\n")
   msg_3 <- paste0("Monthly payoffs: \n ",

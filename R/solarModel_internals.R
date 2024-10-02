@@ -41,7 +41,7 @@ control_solarModel <- function(clearsky = control_seasonalClearsky(),
                                threshold = 0.01, outliers_quantile = 0, quiet = FALSE){
 
   # Seasonal mean model default parameters
-  seasonal_mean = list(seasonalOrder = 1, include.H0 = TRUE, include.intercept = FALSE, monthly.mean = TRUE)
+  seasonal_mean = list(seasonalOrder = 1, include.H0 = FALSE, include.intercept = TRUE, monthly.mean = TRUE)
   names_seasonal_mean <- names(seasonal_mean)
   for(name in names_seasonal_mean){
     arg <- seasonal.mean[[name]]
@@ -307,8 +307,8 @@ solarModel_mixture <- function(x, date, weights, match_moments = FALSE, maxit = 
 #' @param model_Ct arg
 #' @param model_GHI arg
 #'
-#' @rdname solarModel_mixture
-#' @name solarModel_mixture
+#' @rdname solarModel_mvmixture
+#' @name solarModel_mvmixture
 #' @export
 solarModel_mvmixture <- function(model_Ct, model_GHI){
 
@@ -364,66 +364,6 @@ solarModel_mvmixture <- function(model_Ct, model_GHI){
 }
 
 
-#' Extract a dataset from a solarModel object
-#'
-#' @examples
-#' model <- Bologna
-#' solarModel_data(model)
-#' # Do not add monthly data
-#' solarModel_data(model, monthly = FALSE)
-#' # Do not add seasonal data
-#' solarModel_data(model, monthly = FALSE, GM = FALSE)
-#' @export
-solarModel_data <- function(model, monthly = TRUE, GM = TRUE){
-  # Seasonal data
-  seasonal_data <- solarModel_seasonal_data(model, monthly = monthly, GM = GM)
-  # Dataset
-  data <- dplyr::left_join(model$data, seasonal_data, by = c("Month", "Day"))
-  return(data)
-}
-
-#' Extract a dataset with seasonal data from `solarModel`
-#'
-#' @examples
-#' model <- Bologna
-#' # All seasonal and monthly data
-#' solarModel_seasonal_data(model)
-#' # Do not add monthly data
-#' solarModel_seasonal_data(model, monthly = FALSE)
-#' # Do not add Gaussian mixture data
-#' solarModel_seasonal_data(model, monthly = FALSE, GM = FALSE)
-#' # Extract onlu a particular day
-#' solarModel_seasonal_data(model, date="2022-01-01")
-#' @export
-solarModel_seasonal_data <- function(model, monthly = TRUE, GM = TRUE, nmonths, ndays, date){
-  # Seasonal data
-  data <- model$seasonal_data
-  # Filter for a set of dates
-  if (missing(nmonths)){
-    nmonths <- 1:12
-  }
-  # Filter for a set of dates
-  if (missing(ndays)){
-    ndays <- 1:31
-  }
-  # Filter for a set of dates
-  if (!missing(date)){
-    nmonths <- lubridate::month(date)
-    ndays <- lubridate::day(date)
-  }
-  # Filter for a range of dates
-  data <- dplyr::filter(data, Month %in% nmonths & Day %in% ndays)
-  # Add monthly data
-  if (monthly) {
-    data <- dplyr::left_join(data, model$monthly_data, by = "Month")
-  }
-  # Add Gaussian mixture parameters
-  if (GM) {
-    data <- dplyr::left_join(data, model$NM_model[,c(1:6)], by = "Month")
-  }
-  return(data)
-}
-
 #' Compute conditional moments from a `solarModel` object
 #'
 #' @examples
@@ -434,7 +374,7 @@ solarModel_seasonal_data <- function(model, monthly = TRUE, GM = TRUE, nmonths, 
 solarModel_conditional_moments <- function(model, date){
 
   # Extract complete data
-  data <- solarModel_data(model)
+  data <- model$data
   # Filter for a set of dates
   if (!missing(date)){
     data <- data[data$date %in% as.Date(date),]
@@ -498,8 +438,23 @@ solarModel_conditional_moments <- function(model, date){
 #' @export
 solarModel_unconditional_moments <- function(model, nmonths, ndays, date){
 
-  # Extract complete data
-  data <- solarModel_seasonal_data(model, nmonths = nmonths, ndays = ndays, date = date)
+  # Seasonal data
+  data <- model$seasonal_data
+  # Filter for a set of dates
+  if (missing(nmonths)){
+    nmonths <- 1:12
+  }
+  # Filter for a set of dates
+  if (missing(ndays)){
+    ndays <- 1:31
+  }
+  # Filter for a set of dates
+  if (!missing(date)){
+    nmonths <- lubridate::month(date)
+    ndays <- lubridate::day(date)
+  }
+  # Filter for a range of dates
+  data <- dplyr::filter(data, Month %in% nmonths & Day %in% ndays)
   # Compute conditional moments
   data <- dplyr::mutate(data,
                         # Unconditional expectation Yt
@@ -547,43 +502,11 @@ solarModel_unconditional_moments <- function(model, nmonths, ndays, date){
 }
 
 
-#' Compute the log-likelihood of a `solarModel` object
-#'
-#' @param model `solarModel` object
-#' @param nmonths months to consider
-#' @examples
-#' model <- Bologna
-#' solarModel_loglik(model)
-#' @export
-solarModel_loglik <- function(model, nmonths = 1:12){
-  # Conditional moments
-  moments <- solarModel_conditional_moments(model)
-  # Add weights
-  moments$weights <- model$outliers$weights
-  # Filter for a set of months
-  moments <- dplyr::filter(moments, Month %in% nmonths)
-  # Compute log likelihood
-  moments$log_lik <- 0
-  for(i in 1:nrow(moments)){
-    df_n <- moments[i,]
-    if (df_n$weights == 0){
-      moments$log_lik[i] <- 0
-      next
-    }
-    # Conditional mixture Pdf
-    pdf_Yt <- function(x) dmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p_up, 1-df_n$p_up))
-    moments$log_lik[i] <- log(pdf_Yt(df_n$Yt))
-  }
-  # model$log_lik <- sum(moments$log_lik, na.rm = TRUE)
-  return(sum(moments$log_lik, na.rm = TRUE))
-}
-
-
 #' Produce a forecast from a solarModel object
 #'
 #' @examples
 #' model <- Bologna
-#' solarModel_forecaster(model, date = "2020-04-01")
+#' solarModel_forecaster(model, date = "2010-04-01")
 #' object <- solarModel_forecaster(model, date = "2020-04-01", unconditional = TRUE)
 #' object
 #' @export
@@ -673,7 +596,7 @@ solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, uncondit
 #' Iterate the forecast on multiple dates
 #' @examples
 #' model <- Bologna
-#' dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-12-31"), 1)
+#' dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-01-31"), 1)
 #' solarModel_forecast(model, date = dates)
 #' @export
 solarModel_forecast <- function(model, date, ci = 0.1, unconditional = FALSE){
@@ -721,8 +644,8 @@ solarModel_forecaster_plot <- function(model, date = "2021-05-29", ci = 0.1, typ
 
   if (type == "mix") {
     pdf_plot <- pdf_plot +
-      geom_segment(data = emp, aes(x = ci_mix_lo, xend = ci_mix_lo, y = 0, yend = pdf_ci_mix_lo, color = "bounds"), size = 0.5)+
-      geom_segment(data = emp, aes(x = ci_mix_hi, xend = ci_mix_hi, y = 0, yend = pdf_ci_mix_hi, color = "bounds"), size = 0.5)+
+      geom_segment(data = emp, aes(x = ci_mix_lo, xend = ci_mix_lo, y = 0, yend = pdf_ci_mix_lo, color = "bounds"), linewidth = 0.5)+
+      geom_segment(data = emp, aes(x = ci_mix_hi, xend = ci_mix_hi, y = 0, yend = pdf_ci_mix_hi, color = "bounds"), linewidth = 0.5)+
       geom_segment(data = emp, aes(x = ci_mix_lo, xend = ci_mix_hi, y = 0, yend = 0, color = "bounds"))+
       geom_point(data = emp, aes(ci_mix_lo, 0, color = "bounds"), size = 3)+
       geom_point(data = emp, aes(ci_mix_hi, 0, color = "bounds"), size = 3)+
@@ -732,8 +655,8 @@ solarModel_forecaster_plot <- function(model, date = "2021-05-29", ci = 0.1, typ
 
   } else if (type == "up") {
     pdf_plot <- pdf_plot +
-      geom_segment(data = emp, aes(x = ci_up_lo, xend = ci_up_lo, y = 0, yend = pdf_ci_up_lo, color = "bounds"), size = 0.5)+
-      geom_segment(data = emp, aes(x = ci_up_hi, xend = ci_up_hi, y = 0, yend = pdf_ci_up_hi, color = "bounds"), size = 0.5)+
+      geom_segment(data = emp, aes(x = ci_up_lo, xend = ci_up_lo, y = 0, yend = pdf_ci_up_lo, color = "bounds"), linewidth = 0.5)+
+      geom_segment(data = emp, aes(x = ci_up_hi, xend = ci_up_hi, y = 0, yend = pdf_ci_up_hi, color = "bounds"), linewidth = 0.5)+
       geom_segment(data = emp, aes(x = ci_up_lo, xend = ci_up_hi, y = 0, yend = 0, color = "bounds"))+
       geom_point(data = emp, aes(ci_up_lo, 0, color = "bounds"), size = 3)+
       geom_point(data = emp, aes(ci_up_hi, 0, color = "bounds"), size = 3)+
@@ -742,8 +665,8 @@ solarModel_forecaster_plot <- function(model, date = "2021-05-29", ci = 0.1, typ
 
   } else if (type == "dw") {
     pdf_plot <- pdf_plot +
-      geom_segment(data = emp, aes(x = ci_dw_lo, xend = ci_dw_lo, y = 0, yend = pdf_ci_dw_lo, color = "bounds"), size = 0.5)+
-      geom_segment(data = emp, aes(x = ci_dw_hi, xend = ci_dw_hi, y = 0, yend = pdf_ci_dw_hi, color = "bounds"), size = 0.5)+
+      geom_segment(data = emp, aes(x = ci_dw_lo, xend = ci_dw_lo, y = 0, yend = pdf_ci_dw_lo, color = "bounds"), linewidth = 0.5)+
+      geom_segment(data = emp, aes(x = ci_dw_hi, xend = ci_dw_hi, y = 0, yend = pdf_ci_dw_hi, color = "bounds"), linewidth = 0.5)+
       geom_segment(data = emp, aes(x = ci_dw_lo, xend = ci_dw_hi, y = 0, yend = 0, color = "bounds"))+
       geom_point(data = emp, aes(ci_dw_lo, 0, color = "bounds"), size = 3)+
       geom_point(data = emp, aes(ci_dw_hi, 0, color = "bounds"), size = 3)+
@@ -779,7 +702,7 @@ solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile 
     nm <- model$NM_model[nmonth,]
     means = c(nm$mu_up,  nm$mu_dw)
     sd = c(nm$sd_up,  nm$sd_dw)
-    p = c(nm$p_up,  nm$p_dw)
+    p = c(nm$p_up,  1-nm$p_up)
 
     # Mixture CDF
     cdf_GM <- function(x) pmixnorm(x, means = means, sd = sd, p = p)
@@ -803,4 +726,58 @@ solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile 
 }
 
 
+#' Empiric Gaussian Mixture parameters
+#'
+#' @keywords OLD
+solarModel_empiric_GM <- function(model, match_moments = FALSE){
+
+  # Select only train data
+  data <- model$data
+  data$weights <- model$outliers$weights
+  data <- dplyr::filter(data, isTrain & weights != 0)
+  data <- dplyr::select(data, Month, u_tilde, B)
+  for(m in 1:12){
+    # Monthly data
+    df_m <- dplyr::filter(data, Month == m)
+    u_up <- dplyr::filter(df_m, B == 1)$u_tilde
+    u_dw <- dplyr::filter(df_m, B == 0)$u_tilde
+    nm <- model$NM_model[m,]
+    # Up moments
+    n1 <- length(u_up)
+    nm$mu_up <- mean(u_up, na.rm = TRUE)
+    nm$sd_up <- sd(u_up, na.rm = TRUE)*sqrt(n1/(n1-1))
+    nm$p_up <- mean(df_m$B, na.rm = TRUE)
+    # Down moments
+    n2 <- length(u_dw)
+    nm$mu_dw <- mean(u_dw, na.rm = TRUE)
+    nm$sd_dw <- sd(u_dw, na.rm = TRUE)*sqrt(n2/(n2-1))
+    nm$p_dw <- 1 - nm$p_up
+    df_m
+    if (match_moments) {
+      if (n1 >= n2) {
+        nm$mu_dw <- (nm$e_x_hat - nm$mu_up*nm$p_up)/(1-nm$p_up)
+        nm$sd_dw <- sqrt((nm$v_x_hat - nm$sd_up^2*nm$p_up)/(1-nm$p_up) - nm$p_up*(nm$mu_up - nm$mu_dw)^2)
+      } else {
+        nm$mu_up <- (nm$e_x_hat - nm$mu_dw*nm$p_dw)/(1-nm$p_dw)
+        nm$sd_up <- sqrt((nm$v_x_hat - nm$sd_dw^2*nm$p_dw)/(1-nm$p_dw) - nm$p_dw*(nm$mu_up - nm$mu_dw)^2)
+      }
+    }
+    # Extract parameters
+    means = c(nm$mu_up, nm$mu_dw)
+    sd = c(nm$sd_up, nm$sd_dw)
+    p = c(nm$p_up, nm$p_dw)
+    # Update log-likelihood
+    pdf <- function(x) dmixnorm(x, means = means, sd = sd, p = p)
+    nm$loss <- sum(log(pdf(df_m$u_tilde)), na.rm = TRUE)
+    nm$nobs <- nrow(df_m)
+    # Update moments
+    nm$e_x <- sum(means*p)
+    nm$v_x <- sum((means^2 + sd^2)*p) - nm$e_x^2
+    # Update data
+    params <- unlist(nm[1,c(2:7)])
+    model <- solarModel_update_GM(model, params, m)
+  }
+  model$log_lik <- solarModel_loglik(model)
+  model
+}
 
