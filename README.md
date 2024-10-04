@@ -1,1 +1,1 @@
-<img src="solarr.png" width=30 height=30 style="display:inline;">
+<img src="solarr.png" width=300 height=300 style="display:inline;">
