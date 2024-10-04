@@ -3,14 +3,14 @@
 \name{PDF}
 \alias{PDF}
 \alias{CDF}
-\alias{numericQuantile}
+\alias{Quantile}
 \title{Density, distribution and quantile function}
 \usage{
 PDF(.f, ...)
 
 CDF(.f, lower = -Inf, ...)
 
-numericQuantile(cdf, lower = -Inf, x0 = 0)
+Quantile(cdf, lower = -Inf, x0 = 0)
 }
 \arguments{
 \item{.f}{density function}
@@ -34,5 +34,5 @@ cdf <- CDF(dnorm, mean = 0.3, sd = 1.3)
 cdf(3)
 pnorm(3, mean = 0.3, sd = 1.3)
 # Numeric quantile function
-pnorm(numericQuantile(dnorm)(0.9))
+pnorm(Quantile(dnorm)(0.9))
 }

@@ -35,7 +35,7 @@ print.solarModelSpec <- function(object){
 #' @noRd
 #' @export
 print.solarModel <- function(object){
-  NextMethod(object)
+  print.solarModelSpec(object)
 }
 
 #' Print method for the class `seasonalModel`
@@ -68,23 +68,102 @@ print.seasonalModel <- function(object){
 #' @noRd
 #' @export
 print.solarOption <- function(object){
-  msg_1 <- paste0("------------------------ Solar Option Payoff ------------------------ \n")
-  msg_2 <- paste0("Yearly payoff: ", format(object$payoff_year$premium, digits = 5), "\n")
+  msg_1 <- paste0("------------------------ \033[1;35mSolar Option\033[0m (", object$payoff_year$side, ") ------------------------ \n")
+  msg_2 <- paste0("Yearly payoff: \033[1;31m", format(object$payoff_year$premium, digits = 5), "\033[0m\n")
+
+  # Monthly premiums
+  premiums <- object$payoff_month$premium
+  # Count the number of integers on the left
+  n_integers <- purrr::map_dbl(as.integer(premiums), ~length(stringr::str_split(.x, "")[[1]]))
+  n_integers <- ifelse(n_integers == 1, 2, 1)
+  # Format the number accordingly
+  premiums <- purrr::map2_chr(premiums, n_integers, ~format(.x, digits = 3, nsmall = .y))
+
   msg_3 <- paste0("Monthly payoffs: \n ",
-                  "  Jan: ", format(object$payoff_month$premium[1], digits = 3),
-                  "  Feb: ", format(object$payoff_month$premium[2], digits = 3),
-                  "  Mar: ", format(object$payoff_month$premium[3], digits = 3), "\n",
-                  "  Apr: ", format(object$payoff_month$premium[4], digits = 3),
-                  "  May: ", format(object$payoff_month$premium[5], digits = 3),
-                  "  Jun: ", format(object$payoff_month$premium[6], digits = 3), "\n",
-                  "  Jul: ", format(object$payoff_month$premium[7], digits = 3),
-                  "  Ago: ", format(object$payoff_month$premium[8], digits = 3),
-                  "  Sep: ", format(object$payoff_month$premium[9], digits = 3), "\n",
-                  "  Oct: ", format(object$payoff_month$premium[10], digits = 3),
-                  "  Nov: ", format(object$payoff_month$premium[11], digits = 3),
-                  "  Dec: ", format(object$payoff_month$premium[12], digits = 3), "\n")
+                  " Jan: \033[1;32m", premiums[1], "\033[0m",
+                  "   Feb: \033[1;32m", premiums[2], "\033[0m",
+                  "   Mar: \033[1;32m", premiums[3], "\033[0m\n",
+                  "  Apr: \033[1;32m", premiums[4], "\033[0m",
+                  "   May: \033[1;32m", premiums[5], "\033[0m",
+                  "   Jun: \033[1;32m", premiums[6], "\033[0m\n",
+                  "  Jul: \033[1;32m", premiums[7], "\033[0m",
+                  "   Ago: \033[1;32m", premiums[8], "\033[0m",
+                  "   Sep: \033[1;32m", premiums[9], "\033[0m\n",
+                  "  Oct: \033[1;32m", premiums[10], "\033[0m",
+                  "   Nov: \033[1;32m", premiums[11], "\033[0m",
+                  "   Dec: \033[1;32m", premiums[12], "\033[0m\n")
   cat(paste0(msg_1, msg_2, msg_3))
 }
+
+#' Print method for the class `solarOptionPayoff`
+#'
+#' @param object an object of the class  \code{\link{solarOptionPayoff}}.
+#'
+#' @keywords internal
+#' @noRd
+#' @export
+print.solarOptionPayoff <- function(object){
+
+  msg_title <- paste0("-------------- Solar Option Payoffs -------------- \n")
+  idx_not_NA <- which(purrr::map_lgl(object$call$scenarios, ~!is.na(.x[1])))
+  msg_1 <- paste0("Call scenarios payoffs: (", paste0(names(object$call$scenarios)[idx_not_NA], collapse = ", "), ") \n")
+  idx_not_NA <- which(purrr::map_lgl(object$put$scenarios, ~!is.na(.x[1])))
+  msg_2 <- paste0("Put scenarios payoffs: (", paste0(names(object$put$scenarios)[idx_not_NA], collapse = ", "), ") \n")
+  msg_line <- paste0("------------------------------------------------- \n")
+  idx_not_NA <- which(purrr::map_lgl(object$call$model, ~!is.na(.x[1])))
+  msg_3 <- paste0("Call model payoffs: (", paste0(names(object$call$model)[idx_not_NA], collapse = ", "), ") \n")
+  idx_not_NA <- which(purrr::map_lgl(object$put$model, ~!is.na(.x[1])))
+  msg_4 <- paste0("Put model payoffs: (", paste0(names(object$put$model)[idx_not_NA], collapse = ", "), ") \n")
+
+  cat(c(msg_title, msg_1, msg_2, msg_line, msg_3, msg_4))
+}
+#' Print method for the class `solarOptionBoot`
+#'
+#' @param object an object of the class  \code{\link{solarOption_historical_bootstrap}}.
+#'
+#' @keywords internal
+#' @noRd
+#' @export
+print.solarOptionBoot <- function(object){
+  msg_1 <- paste0("------------------------ \033[1;35mSolar Option Bootstrap\033[0m (", object$payoff_year$side, ") ------------------------ \n")
+  msg_2 <- paste0("Yearly payoff: \033[1;31m", format(object$payoff_year$premium, digits = 5), "\033[0m\n")
+  msg_3 <- paste0("Confidence interval ", "(", names(object$payoff_year$premium_dw), ")",
+                  "\033[1;31m ", format(object$payoff_year$premium_dw, digits = 5), "\033[0m", "\n",
+                  "Confidence interval ", "(", names(object$payoff_year$premium_up), ")",
+                  "\033[1;31m ", format(object$payoff_year$premium_up, digits = 5), "\033[0m \n")
+
+  format_premiums <- function(premiums){
+    # Count the number of integers on the left
+    n_integers <- purrr::map_dbl(as.integer(premiums), ~length(stringr::str_split(.x, "")[[1]]))
+    n_integers <- ifelse(n_integers == 1, 2, 1)
+    # Format the number accordingly
+    premiums <- purrr::map2_chr(premiums, n_integers, ~format(.x, digits = 3, nsmall = .y))
+    premiums
+  }
+
+  # Monthly premiums
+  premiums <- format_premiums(object$payoff_month$premium)
+  # Monthly premiums (up)
+  premiums_up <- format_premiums(object$payoff_month$premium_up)
+  # Monthly premiums (dw)
+  premiums_dw <- format_premiums(object$payoff_month$premium_dw)
+  msg_line <- paste0(paste0(rep("-", 78), collapse = ""), "\n")
+  msg_4 <- paste0("Monthly payoffs: \n ",
+                  " Jan: \033[1;32m", premiums[1], "\033[0m", paste0(" (\033[1;31m", premiums_dw[1], "\033[0m", " - ", "\033[1;31m", premiums_up[1], "\033[0m)"),
+                  "   Feb: \033[1;32m", premiums[2], "\033[0m", paste0(" (\033[1;31m", premiums_dw[2], "\033[0m", " - ", "\033[1;31m", premiums_up[2], "\033[0m)"),
+                  "   Mar: \033[1;32m", premiums[3], "\033[0m", paste0(" (\033[1;31m", premiums_dw[3], "\033[0m", " - ", "\033[1;31m", premiums_up[3], "\033[0m) \n"),
+                  "  Apr: \033[1;32m", premiums[4], "\033[0m", paste0(" (\033[1;31m", premiums_dw[4], "\033[0m", " - ", "\033[1;31m", premiums_up[4], "\033[0m)"),
+                  "   May: \033[1;32m", premiums[5], "\033[0m", paste0(" (\033[1;31m", premiums_dw[5], "\033[0m", " - ", "\033[1;31m", premiums_up[5], "\033[0m)"),
+                  "   Jun: \033[1;32m", premiums[6], "\033[0m", paste0(" (\033[1;31m", premiums_dw[6], "\033[0m", " - ", "\033[1;31m", premiums_up[6], "\033[0m) \n"),
+                  "  Jul: \033[1;32m", premiums[7], "\033[0m", paste0(" (\033[1;31m", premiums_dw[7], "\033[0m", " - ", "\033[1;31m", premiums_up[7], "\033[0m)"),
+                  "   Ago: \033[1;32m", premiums[8], "\033[0m", paste0(" (\033[1;31m", premiums_dw[8], "\033[0m", " - ", "\033[1;31m", premiums_up[8], "\033[0m)"),
+                  "   Sep: \033[1;32m", premiums[9], "\033[0m", paste0(" (\033[1;31m", premiums_dw[9], "\033[0m", " - ", "\033[1;31m", premiums_up[9], "\033[0m) \n"),
+                  "  Oct: \033[1;32m", premiums[10], "\033[0m", paste0(" (\033[1;31m", premiums_dw[10], "\033[0m", " - ", "\033[1;31m", premiums_up[10], "\033[0m)"),
+                  "   Nov: \033[1;32m", premiums[11], "\033[0m", paste0(" (\033[1;31m", premiums_dw[11], "\033[0m", " - ", "\033[1;31m", premiums_up[11], "\033[0m)"),
+                  "   Dec: \033[1;32m", premiums[12], "\033[0m", paste0(" (\033[1;31m", premiums_dw[12], "\033[0m", " - ", "\033[1;31m", premiums_up[12], "\033[0m)"))
+  cat(paste0(msg_1, msg_2, msg_3, msg_line, msg_4))
+}
+
 
 #' Print method for the class `spatialModel`
 #'

@@ -236,7 +236,6 @@ pmvmixnorm <- function(x, means = matrix(0, 2, 2), sigma2 = matrix(1, 2, 2), p =
 #' @rdname dmvmixnorm
 #' @export
 qmvmixnorm <- function(x, means = matrix(0, 2, 2), sigma2 = matrix(1, 2, 2), p = rep(1/2, 2), rho = c(0,0), log.p = FALSE){
-
   # Log-probabilities
   probs <- x
   if (log.p) {
@@ -249,7 +248,7 @@ qmvmixnorm <- function(x, means = matrix(0, 2, 2), sigma2 = matrix(1, 2, 2), p =
   # Quantiles
   q <- matrix(0, nrow = length(probs), ncol = ncol(means))
   for(i in 1:length(probs)){
-    q[i,] <- suppressWarnings(optim(par = rep(0, ncol(means)), quantile, prob = probs[i])$par)
+    q[i,] <- suppressWarnings(optim(par = rep(0, ncol(means)), quantile_, prob = probs[i])$par)
   }
   return(q)
 }

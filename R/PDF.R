@@ -17,10 +17,12 @@
 #' cdf(3)
 #' pnorm(3, mean = 0.3, sd = 1.3)
 #' # Numeric quantile function
-#' pnorm(numericQuantile(dnorm)(0.9))
+#' pnorm(Quantile(dnorm)(0.9))
 #' @name PDF
 #' @rdname PDF
-#' @aliases  CDF
+#' @aliases PDF
+#' @aliases CDF
+#' @aliases Quantile
 #' @export
 PDF <- function(.f, ...){
   function(x, log = FALSE){
@@ -32,7 +34,6 @@ PDF <- function(.f, ...){
     return(probs)
   }
 }
-
 
 #' @rdname PDF
 #' @export
@@ -56,10 +57,9 @@ CDF <- function(.f, lower = -Inf, ...){
   }
 }
 
-
 #' @rdname PDF
 #' @export
-numericQuantile <- function(cdf, lower = -Inf, x0 = 0){
+Quantile <- function(cdf, lower = -Inf, x0 = 0){
   # Loss function
   loss_function <- function(x, p) {(cdf(x) - p)^2}
   # Quantile function
@@ -81,4 +81,5 @@ numericQuantile <- function(cdf, lower = -Inf, x0 = 0){
     return(x)
   }
 }
+
 

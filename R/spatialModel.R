@@ -7,11 +7,11 @@ spatialModel <- R6::R6Class("spatialModel",
                             public = list(
                               #' @description
                               #' Initialize the spatial model
-                              #' @param locations grid of locations, (`place`, `lat`, `lon`, `from`, `to`, `nobs`).
-                              #' @param models list of `solarModel` objects
-                              #' @param paramsModels list of `spatialParameters` objects.
-                              #' @param beta parameter used in exponential and power functions.
-                              #' @param d0 parameter used only in exponential function.
+                              #' @param locations A tibble with columns `place`, `lat`, `lon`, `from`, `to`, `nobs`.
+                              #' @param models A list of `solarModel` objects
+                              #' @param paramsModels A `spatialParameters` object.
+                              #' @param beta numeric, used in exponential and power functions.
+                              #' @param d0 numeric, used only in exponential function.
                               #' @param quiet logical
                               initialize = function(locations, models, paramsModels, beta = 2, d0, quiet = FALSE){
                                 private$..locations <- locations
@@ -84,7 +84,7 @@ spatialModel <- R6::R6Class("spatialModel",
                                 known_lat <- round(locations$lat, digits = 3)
                                 knonw_lon <- round(locations$lon, digits = 3)
                                 # Check if the point is outside the limit of the grid
-                                if (lon < min(knonw_lon) || lon > max(knonw_lon) || lat < min(known_lat) || lat > max(known_lat)){
+                                if (lon < min(knonw_lon) || lon > max(knonw_lon) || lat < min(known_lat) || lat > max(known_lat)) {
                                   msg <- paste0("Point (", lat, ", ", lon, ") outside the limits of the grid ",
                                                 "(", min(known_lat), " - ", max(known_lat), " | ", min(knonw_lon), " - ", max(knonw_lon), ")")
                                   if(!private$quiet) message(msg)
@@ -146,7 +146,7 @@ spatialModel <- R6::R6Class("spatialModel",
                                   return(invisible(NULL))
                                 }
                                 # Check if the point is a known point in the grid
-                                if (self$is_known_location(lat, lon)){
+                                if (self$is_known_location(lat, lon)) {
                                   # Get the model at the location
                                   model <- self$gridModel(lat = lat, lon = lon)
                                   return(model)

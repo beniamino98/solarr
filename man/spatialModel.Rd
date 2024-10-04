@@ -45,15 +45,15 @@ Initialize the spatial model
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{locations}}{grid of locations, (`place`, `lat`, `lon`, `from`, `to`, `nobs`).}
+\item{\code{locations}}{A tibble with columns `place`, `lat`, `lon`, `from`, `to`, `nobs`.}
 
-\item{\code{models}}{list of `solarModel` objects}
+\item{\code{models}}{A list of `solarModel` objects}
 
-\item{\code{paramsModels}}{list of `spatialParameters` objects.}
+\item{\code{paramsModels}}{A `spatialParameters` object.}
 
-\item{\code{beta}}{parameter used in exponential and power functions.}
+\item{\code{beta}}{numeric, used in exponential and power functions.}
 
-\item{\code{d0}}{parameter used only in exponential function.}
+\item{\code{d0}}{numeric, used only in exponential function.}
 
 \item{\code{quiet}}{logical}
 }

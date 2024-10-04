@@ -15,19 +15,25 @@
 #' @references Skewed Normal Distribution [\href{https://en.wikipedia.org/wiki/Skew_normal_distribution}{W}].
 #'
 #' @examples
+#' # Grid of points
 #' x <- seq(-5, 5, 0.01)
-#' # Density function (right)
+#'
+#' # Density function (right tailed)
 #' p <- dsnorm(x, shape = 4.9)
 #' plot(x, p, type = "l")
-#' # Density function (left)
+#'
+#' # Density function (left tailed)
 #' p <- dsnorm(x, shape = -4.9)
 #' plot(x, p, type = "l")
+#'
 #' # Distribution function
 #' p <- psnorm(x)
 #' plot(x, p, type = "l")
+#'
 #' # Quantile function
 #' dsnorm(0.1)
 #' psnorm(qsnorm(0.9))
+#'
 #' # Random numbers
 #' plot(rsnorm(100), type = "l")
 #'
@@ -79,7 +85,7 @@ qsnorm <- function(p, location = 0, scale = 1, shape = 0, log.p = FALSE, lower.t
   # Distribution function
   cdf <- function(x) psnorm(x, location = location, scale = scale, shape = shape)
   # Quantile function
-  qfunct <- numericQuantile(cdf, lower = -Inf)
+  qfunct <- Quantile(cdf, lower = -Inf)
   # Quantiles
   x <- qfunct(p, log.p = log.p, lower.tail = lower.tail)
   return(x)

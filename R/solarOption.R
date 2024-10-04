@@ -1,49 +1,3 @@
-#' Option payoff function
-#'
-#' Compute the payoffs of an option at maturity.
-#'
-#' @param x numeric, vector of values at maturity.
-#' @param strike numeric, option strike.
-#' @param v0 numeric, price of the option.
-#' @param put logical, when `TRUE`, the default, the payoff function is a put othewise a call.
-#'
-#' @examples
-#' optionPayoff(10, 9, 1, put = TRUE)
-#' mean(optionPayoff(seq(0, 20), 9, 1, put = TRUE))
-#'
-#' @rdname optionPayoff
-#' @name optionPayoff
-#' @export
-optionPayoff <- function(x, strike = 0, c0 = 0, put = TRUE){
-  payoff <- c()
-  put <- ifelse(put, -1, 1)
-  payoff <- (x - strike)*put
-  payoff[payoff<0] <- 0
-  payoff <- payoff - c0
-  return(payoff)
-}
-
-#' Discount factor function
-#'
-#' @param r level of yearly constant risk-free rate
-#' @param discrete logical, when `TRUE`, the default, discrete compounding will be used. Otherwise continuous compounding.
-#'
-#' @rdname discountFactor
-#' @name discountFactor
-#' @export
-discountFactor <- function(r = 0.03, discrete = TRUE) {
-  risk_free <- r
-  if (discrete) {
-    function(tau){
-      (1 + risk_free/365)^(-tau)
-    }
-  } else {
-    function(tau){
-      exp(-risk_free/365*tau)
-    }
-  }
-}
-
 #' Control parameters for a solar option
 #'
 #' @param nyears numeric vector. Interval of years considered. The first element will be the minimum and the second the maximum years used in
@@ -53,12 +7,15 @@ discountFactor <- function(r = 0.03, discrete = TRUE) {
 #' @param target.Yt logical, when `TRUE`, the default, the computations will consider the pdf of `Yt` otherwise the pdf of solar radiation.
 #' @param leap_year logical, when `FALSE`, the default, the year will be considered of 365 days, otherwise 366.
 #' @param B function. Discount factor function. Should take as input a number (in years) and return a discount factor.
+#' @param nsim integer, number of simulations used to bootstrap the premium's bounds. See \code{\link{solarOption_historical_bootstrap}}.
+#' @param ci numeric, confidence interval for bootstrapping. See \code{\link{solarOption_historical_bootstrap}}.
+#' @param seed integer, random seed for reproducibility. See \code{\link{solarOption_historical_bootstrap}}.
 #' @examples
 #' control_options <- control_solarOption()
 #' @rdname control_solarOption
 #' @name control_solarOption
 #' @export
-control_solarOption <- function(nyears = c(2005, 2023), K = 0, put = TRUE, target.Yt = FALSE, leap_year = FALSE, B = discountFactor()){
+control_solarOption <- function(nyears = c(2005, 2023), K = 0, leap_year = FALSE, nsim = 200, ci = 0.05, seed = 1, B = discountFactor()){
 
   structure(
     list(
@@ -66,9 +23,10 @@ control_solarOption <- function(nyears = c(2005, 2023), K = 0, put = TRUE, targe
       from = as.Date(paste0(nyears[1], "-01-01")),
       to = as.Date(paste0(nyears[2], "-01-01")),
       K = K,
-      put = put,
-      target.Yt = target.Yt,
       leap_year = leap_year,
+      nsim = nsim,
+      ci = ci,
+      seed = seed,
       B = B
     ),
     class = c("controlSolarOption", "list")
@@ -76,62 +34,36 @@ control_solarOption <- function(nyears = c(2005, 2023), K = 0, put = TRUE, targe
 }
 
 
-#' Optimal number of contracts
+#' solarOptionPayoff
 #'
-#' Compute the optimal number of contracts given a particular setup.
-#'
-#' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
-#' @param type character, method used for computing the premium. Can be `model` (Model with integral) or `sim` (Monte Carlo).
-#' @param premium character, premium used. Can be `P`, `Qdw`, `Qup`, or `Q`.
-#' @param nyear integer, actual year. The optimization will be performed excluding the year `nyear` and the following.
-#' @param tick numeric, conversion tick for the monetary payoff of a contract.
-#' @param efficiency numeric, mean efficiency of the solar panels.
-#' @param n_panels numeric, number of meters squared of solar panels.
-#' @param pun numeric, reference electricity price at which the energy is sold for computing the cash-flows.
-#'
-#' @rdname solarOption_contracts
-#' @name solarOption_contracts
-#' @keywords 2beRevised
+#' @param model solarModel
+#' @param control_options control list, see \code{\link{control_solarOption}} for more details.
+#' @rdname solarOptionPayoffs
+#' @name solarOptionPayoffs
 #' @export
-solarOption_contracts  <- function(model, type = "model", premium = "Q", nyear = 2021, tick = 0.06, efficiency = 0.2, n_panels = 2000, pun = 0.06){
-  # All the payoffs
-  payoffs <- model$payoffs
-  # Extract historical payoff
-  payoff_hist <- model$payoffs$hist$payoff
-  # Match the type of computation
-  type <- match.arg(type, names(payoffs))
-  payoffs <- payoffs[[type]]
-  # Match the type of premium
-  type <- match.arg(premium, names(payoffs))
-  # Extract daily premium
-  payoffs <- payoffs[[premium]]$payoff_month_day
-  # Select only relevant column
-  payoffs <- dplyr::select(payoffs, Month, Day, premium)
-  # Merge realized GHI and premium
-  df_hedged <- dplyr::left_join(payoff_hist, payoffs, by = c("Month", "Day"))
+solarOptionPayoffs <- function(model, control_options = control_solarOption()){
 
-  # Loss function depending on the number of contracts
-  loss_function <- function(n_contracts, df_hedged){
-    # Compute hedged cash-flows
-    df_ <- dplyr::mutate(df_hedged, hedged = pun*n_panels*efficiency*GHI + tick*n_contracts*(payoff - premium))
-    # Exclude nyear and the following from loss computation
-    loss <- sd(dplyr::filter(df_, Year < nyear)$hedged)
-    return(loss)
-  }
-  # Optimize the number of contracts
-  opt <- optim(par = 10, fn = loss_function, method = "Brent",
-               lower = 1, upper = n_panels*efficiency*10, df_hedged = df_hedged)
+  # Initialize a list for call options
+  payoff_call = list(
+    historical = solarOption_historical(model, put = FALSE, control_options = control_options),
+    scenarios = list(P = NA, Q = NA, Qup = NA, Qdw = NA, Qr = NA, structured = NA),
+    model = list(P = NA, Q = NA, Qup = NA, Qdw = NA, Qr = NA, boot = NA, structured = NA)
+  )
+  # Initialize a list for put options
+  payoff_put = list(
+    historical = solarOption_historical(model,  put = TRUE, control_options = control_options),
+    scenarios = list(P = NA, Q = NA, Qup = NA, Qdw = NA, Qr = NA, structured = NA),
+    model = list(P = NA, Q = NA, Qup = NA, Qdw = NA, Qr = NA, boot = NA, structured = NA)
+  )
 
-  list(
-    tick = tick,
-    efficiency = efficiency,
-    n_panels = n_panels,
-    pun = pun,
-    nyear = nyear + 1,
-    n_contracts = trunc(opt$par),
-    type = type,
-    premium = premium,
-    sd = opt$value
+  structure(
+    list(
+      call = payoff_call,
+      put = payoff_put,
+      esscher = list(),
+      control_options = control_options
+    ),
+    class = c("solarOptionPayoff", "list")
   )
 }
 
@@ -149,27 +81,22 @@ solarOption_contracts  <- function(model, type = "model", premium = "Q", nyear =
 #' @rdname solarOption_historical
 #' @name solarOption_historical
 #' @export
-solarOption_historical <- function(model, nmonths = 1:12, control_options = control_solarOption()){
+solarOption_historical <- function(model, nmonths = 1:12, put = TRUE, control_options = control_solarOption()){
 
   # Target and seasonal mean
   target <- model$target
   target_bar <- paste0(model$target, "_bar")
   # Complete data
-  data <- dplyr::select(model$data, date, n, Year, Month, Day, tidyr::any_of(target))
+  data <- dplyr::select(model$data, date, n, Year, Month, Day, tidyr::any_of(c(target, target_bar)))
   # Options control parameters
   nyears <- control_options$nyears
   K <- control_options$K
-  put <- control_options$put
   leap_year <- control_options$leap_year
 
   # Filter for control years
   data <- dplyr::filter(data, Year >= nyears[1] & Year <= nyears[2])
   # Filter for selected months
   data <- dplyr::filter(data, Month %in% nmonths)
-  # Extract seasonal data
-  seasonal_data <- dplyr::select(model$seasonal_data, Month, Day, dplyr::any_of(target_bar))
-  # Historical Daily Payoffs
-  data <- dplyr::left_join(data, seasonal_data, by = c("Month", "Day"))
   # Rename target variable
   data$Rt <- data[[target]]
   # Compute strike price
@@ -260,7 +187,113 @@ solarOption_historical <- function(model, nmonths = 1:12, control_options = cont
 }
 
 
-#' Payoff on Simulated Data
+#' Bootstrap a fair premium from historical data
+#'
+#' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
+#' @param nsim number of simulation to bootstrap.
+#' @param ci confidence interval for quantile
+#' @param seed random seed.
+#' @param control_options control function, see \code{\link{control_solarOption}} for details.
+#'
+#' @return An object of the class `solarOptionBoot`.
+#' @examples
+#' model <- Bologna
+#' solarOption_historical_bootstrap(model)
+#'
+#' @rdname solarOption_historical_bootstrap
+#' @name solarOption_historical_bootstrap
+#' @export
+solarOption_historical_bootstrap <- function(model, put = TRUE, control_options = control_solarOption()){
+
+  leap_year <- control_options$leap_year
+  ci = control_options$ci
+  nsim = control_options$nsim
+  seed = control_options$seed
+
+  # 0) Historical monthly quantiles
+  # Compute historical payoffs
+  payoff_hist <- solarOption_historical(model, nmonths = 1:12, put = put, control_options = control_options)
+  # Group by month and day and create an empirical quantile function for each group
+  df_quantiles <- payoff_hist$payoff %>%
+    dplyr::group_by(Month) %>%
+    dplyr::select(Month, Day, payoff) %>%
+    tidyr::nest() %>%
+    dplyr::mutate(quant = purrr::map(data, ~function(u) quantile(.x$payoff, probs = u)),
+                  ndays = lubridate::days_in_month(Month)) %>%
+    dplyr::select(-data)
+
+  if (leap_year){
+    df_quantiles$ndays[2] <- 29
+  }
+
+  # 1) Initialize the dataset
+  df_sim <- df_quantiles
+  # Compute the simulated daily payoffs by applying the quantile function to the simulated grades
+  df_sim <- dplyr::mutate(df_sim, u = purrr::map2(quant, ndays, ~.x(runif(.y))))
+  # Evaluate the exercise set based on the simulated payoff
+  df_sim <- dplyr::mutate(df_sim, exercise = purrr::map_dbl(u, ~mean(ifelse(.x > 0, 1, 0))))
+  # Compute the monthly payoffs
+  df_sim <- dplyr::mutate(df_sim, payoff = purrr::map_dbl(u, ~sum(.x)))
+
+  # 2) Bootstrap the payoff
+  boot <- dplyr::tibble()
+  set.seed(seed)
+  for(j in 1:nsim){
+    df_sim$j <- j
+    # Compute the simulated daily payoffs by applying the quantile function to the simulated grades
+    df_sim <- dplyr::mutate(df_sim, u = purrr::map2(quant, ndays, ~.x(runif(.y))))
+    # Evaluate the exercise set based on the simulated payoff
+    df_sim <- dplyr::mutate(df_sim, exercise = purrr::map_dbl(u, ~mean(ifelse(.x > 0, 1, 0))))
+    # Compute the monthly payoffs
+    df_sim <- dplyr::mutate(df_sim, payoff = purrr::map_dbl(u, ~sum(.x)))
+    # Store the simulation
+    boot <- dplyr::bind_rows(boot, dplyr::select(dplyr::select(df_sim, -u, -quant), j, dplyr::everything()))
+  }
+
+  # 3) Aggregate bootstraps
+  # Aggregate by Month
+  df_month <- boot %>%
+    dplyr::group_by(Month) %>%
+    dplyr::summarise(
+      side = ifelse(put, "put", "call"),
+      premium_dw = quantile(payoff, probs = ci),
+      premium = mean(payoff),
+      premium_up = quantile(payoff, probs = 1-ci),
+      exercise_dw = quantile(exercise, probs = ci),
+      exercise = mean(exercise),
+      exercise_up = quantile(exercise, probs = 1-ci),
+      ndays = mean(ndays)) %>%
+    dplyr::mutate(daily_premium = premium/ndays)
+
+  # Aggregate by a simulation of 1 Year
+  df_year <- boot %>%
+    dplyr::group_by(j) %>%
+    dplyr::summarise(ndays = sum(ndays),
+                     exercise = mean(exercise),
+                     payoff = sum(payoff)) %>%
+    dplyr::summarise(
+      side = ifelse(put, "put", "call"),
+      premium_dw = quantile(payoff, probs = ci),
+      premium = mean(payoff),
+      premium_up = quantile(payoff, probs = 1-ci),
+      exercise_dw = quantile(exercise, probs = ci),
+      exercise = mean(exercise),
+      exercise_up = quantile(exercise, probs = 1-ci),
+      ndays = mean(ndays),
+      nsim = nsim)
+
+  structure(
+    list(
+      payoff = boot,
+      payoff_month = df_month,
+      payoff_year = df_year
+    ),
+    class = c("solarOptionBoot", "list")
+  )
+}
+
+
+#' Payoff on simulated Data
 #'
 #' @param scenario object with the class `solarModelScenario`. See the function \code{\link{solarModel_scenarios}} for details.
 #' @param nmonths numeric, months of which the payoff will be computed.
@@ -270,12 +303,11 @@ solarOption_historical <- function(model, nmonths = 1:12, control_options = cont
 #' @rdname solarOption_scenario
 #' @name solarOption_scenario
 #' @export
-solarOption_scenario <- function(scenario, nmonths = 1:12, nsim, control_options = control_solarOption()){
+solarOption_scenario <- function(scenario, nmonths = 1:12, put = TRUE, nsim, control_options = control_solarOption()){
 
   # Control parameters
   nyears <- control_options$nyears
   K <- control_options$K
-  put <- control_options$put
   leap_year = control_options$leap_year
   # Target and seasonal mean
   target <- scenario$target
@@ -376,107 +408,6 @@ solarOption_scenario <- function(scenario, nmonths = 1:12, nsim, control_options
 }
 
 
-#' Bootstrap a fair premium from historical data
-#'
-#' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
-#' @param nsim number of simulation to bootstrap.
-#' @param ci confidence interval for quantile
-#' @param seed random seed.
-#' @param control_options control function, see \code{\link{control_solarOption}} for details.
-#'
-#' @return An object of the class `solarOptionPayoffBoot`.
-#' @examples
-#' model <- Bologna
-#' solarOption_bootstrap(model, nsim = 100)
-#'
-#' @rdname solarOption_bootstrap
-#' @name solarOption_bootstrap
-#' @export
-solarOption_bootstrap <- function(model, nsim = 500, ci = 0.05, seed = 1, control_options = control_solarOption()){
-
-  leap_year <- control_options$leap_year
-
-  # 0) Historical monthly quantiles
-  # Compute historical payoffs
-  payoff_hist <- solarOption_historical(model, nmonths = 1:12, control_options = control_options)
-  # Group by month and day and create an empirical quantile function for each group
-  df_quantiles <- payoff_hist$payoff %>%
-    dplyr::group_by(Month) %>%
-    dplyr::select(Month, Day, payoff) %>%
-    tidyr::nest() %>%
-    dplyr::mutate(quant = purrr::map(data, ~function(u) quantile(.x$payoff, probs = u)),
-                  ndays = lubridate::days_in_month(Month)) %>%
-    dplyr::select(-data)
-
-  if (leap_year){
-    df_quantiles$ndays[2] <- 29
-  }
-
-  # 1) Initialize the dataset
-  df_sim <- df_quantiles
-  # Compute the simulated daily payoffs by applying the quantile function to the simulated grades
-  df_sim <- dplyr::mutate(df_sim, u = purrr::map2(quant, ndays, ~.x(runif(.y))))
-  # Evaluate the exercise set based on the simulated payoff
-  df_sim <- dplyr::mutate(df_sim, exercise = purrr::map_dbl(u, ~mean(ifelse(.x > 0, 1, 0))))
-  # Compute the monthly payoffs
-  df_sim <- dplyr::mutate(df_sim, payoff = purrr::map_dbl(u, ~sum(.x)))
-
-  # 2) Bootstrap the payoff
-  boot <- dplyr::tibble()
-  set.seed(seed)
-  for(j in 1:nsim){
-    df_sim$j <- j
-    # Compute the simulated daily payoffs by applying the quantile function to the simulated grades
-    df_sim <- dplyr::mutate(df_sim, u = purrr::map2(quant, ndays, ~.x(runif(.y))))
-    # Evaluate the exercise set based on the simulated payoff
-    df_sim <- dplyr::mutate(df_sim, exercise = purrr::map_dbl(u, ~mean(ifelse(.x > 0, 1, 0))))
-    # Compute the monthly payoffs
-    df_sim <- dplyr::mutate(df_sim, payoff = purrr::map_dbl(u, ~sum(.x)))
-    # Store the simulation
-    boot <- dplyr::bind_rows(boot, dplyr::select(dplyr::select(df_sim, -u, -quant), j, dplyr::everything()))
-  }
-
-  # 3) Aggregate bootstraps
-  # Aggregate by Month
-  df_month <- boot %>%
-    dplyr::group_by(Month) %>%
-    dplyr::summarise(
-      premium_dw = quantile(payoff, probs = ci),
-      premium = mean(payoff),
-      premium_up = quantile(payoff, probs = 1-ci),
-      exercise_dw = quantile(exercise, probs = ci),
-      exercise = mean(exercise),
-      exercise_up = quantile(exercise, probs = 1-ci),
-      ndays = mean(ndays)) %>%
-    dplyr::mutate(daily_premium = premium/ndays)
-
-  # Aggregate by a simulation of 1 Year
-  df_year <- boot %>%
-    dplyr::group_by(j) %>%
-    dplyr::summarise(ndays = sum(ndays),
-                     exercise = mean(exercise),
-                     payoff = sum(payoff)) %>%
-    dplyr::summarise(
-      premium_dw = quantile(payoff, probs = ci),
-      premium = mean(payoff),
-      premium_up = quantile(payoff, probs = 1-ci),
-      exercise_dw = quantile(exercise, probs = ci),
-      exercise = mean(exercise),
-      exercise_up = quantile(exercise, probs = 1-ci),
-      ndays = mean(ndays),
-      nsim = nsim)
-
-  structure(
-    list(
-      payoff = boot,
-      payoff_month = df_month,
-      payoff_year = df_year
-    ),
-    class = c("solarOption", "list")
-  )
-}
-
-
 #' Pricing function under the solar model
 #'
 #' @inheritParams solarOption_historical
@@ -493,13 +424,11 @@ solarOption_bootstrap <- function(model, nsim = 500, ci = 0.05, seed = 1, contro
 #' @rdname solarOption_model
 #' @name solarOption_model
 #' @export
-solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = NA, implvol = 1, control_options = control_solarOption()){
+solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = NA, implvol = 1, put = TRUE, target.Yt = TRUE, control_options = control_solarOption()){
 
   # Options control
   K <- control_options$K
-  put <- control_options$put
   leap_year = control_options$leap_year
-  target.Yt = control_options$target.Yt
   # Target and seasonal mean
   target <- model$target
   target_bar <- paste0(model$target, "_bar")
@@ -684,6 +613,7 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
   )
 }
 
+
 #' Calibrator for solar Options
 #'
 #' @examples
@@ -692,7 +622,7 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
 #' solarModel_loglik(model)
 #' solarModel_loglik(model_cal)
 #' @export
-solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-3, reltol = 1e-2, control_options = control_solarOption()){
+solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-4, reltol = 1e-4, control_options = control_solarOption()){
 
   model <- model$clone(deep = TRUE)
 
@@ -717,12 +647,8 @@ solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-3, reltol 
   }
 
   # Historical monthly payoff
-  control_call <- control_options
-  control_call$put <- FALSE
-  payoff_call <- solarOption_historical(model, control_options = control_call)$payoff_month$premium
-  control_put <- control_options
-  control_put$put <- TRUE
-  payoff_put <- solarOption_historical(model, control_options = control_put)$payoff_month$premium
+  payoff_call <- solarOption_historical(model, put = FALSE, control_options = control_options)$payoff_month$premium
+  payoff_put <- solarOption_historical(model, put = TRUE, control_options = control_options)$payoff_month$premium
 
   # Put-call parity
   optionParity <- function(e_St, e_St_plus, strike, exercise, put = TRUE){
@@ -743,7 +669,7 @@ solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-3, reltol 
     # Updated model
     upd_mod <- solarModel_update_GM(model, params, nmonth)
     # Put pricing function
-    df_put <- solarOption_model(upd_mod, nmonth = nmonth, control_options = control_put)
+    df_put <- solarOption_model(upd_mod, put = TRUE, nmonth = nmonth, control_options = control_options)
     # Put price
     price_put <- df_put$payoff_year$premium
     # Call price
@@ -767,80 +693,11 @@ solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-3, reltol 
 }
 
 
-#' Test errors solar Option model
-#'
-#' @examples
-#' model <- Bologna
-#' solarOption_model_test(model)
-#' solarOption_model_test(model, nmonths = 6)
-#' @export
-solarOption_model_test <- function(model, nmonths = 1:12, control_options = control_solarOption()){
-
-  payoff_model <- solarOption_model(model, nmonths = nmonths, control_options = control_options)$payoff_month
-  payoff_hist <- solarOption_historical(model, nmonths = nmonths, control_options = control_options)$payoff_month
-
-  # Monthly payoff
-  payoff_month <- dplyr::tibble(
-    Month = payoff_model$Month,
-    Model = payoff_model$premium,
-    Hist = payoff_hist$premium,
-    Diff = Hist - Model,
-    Error = round(Diff/Hist*100, 3)
-  )
-  # Yearly payoff
-  payoff_year <- dplyr::summarise_all(payoff_month,  sum)
-  payoff_year <- dplyr::mutate(payoff_year, Month = "Total", Error = round(Diff/Hist*100, 3))
-  # Tranform months in character
-  payoff_month$Month <- as.character(lubridate::month(payoff_month$Month, label = TRUE))
-  dplyr::bind_rows(payoff_month, payoff_year)
-
-}
-
-
-#' Implied expected return at maturity
-#'
-#' @keywords 2beRevised
-#' @export
-solarOption_implied_return <- function(model, target_prices = NA, nmonths = 1:12, control_options = control_solarOption()){
-
-  # Control parameters
-  quiet <- model$control$quiet
-
-  # Default target price is the historical price
-  if (is.na(target_prices)) {
-    target_prices <- model$payoffs$hist$payoff_month$premium
-    stopifnot(!is.null(target_prices))
-  }
-
-  # Loss function
-  loss_function <- function(r, nmonth = 1, target_price = NA){
-    stopifnot(!is.na(target_price))
-    premium_model <- solarOption_model(model, nmonths = nmonth, theta = model$esscher$theta(r), control_options = control_options)
-    l <- (target_price - premium_model$payoff_month$premium[1])^2
-    if(!quiet) message("Loss: ", round(l, 10), ", r (implied): ", format(r*100, digits = 5), " %")
-    return(l)
-  }
-
-  # Compute implied returns
-  implied_r <- c()
-  for(m in nmonths){
-    if(!quiet) message("--------------------- Month: ", m, "---------------------")
-    implied_r[m] <- optim(par = 0, loss_function, lower = -0.5, upper = 0.5, method = "Brent",
-                          nmonth = nmonths[m], target_price = target_prices[m])$par
-  }
-
-  dplyr::tibble(
-    Month = nmonths,
-    implied_r = implied_r
-  )
-}
-
-
 #' Structure payoffs
 #'
 #' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
 #' @param type method used for computing the premium. If `model`, the default will be used the analytic model,
-#' otherwise with `sim` the monte carlo scenarios stored inside the `model$scenarios$P`.
+#' otherwise with `scenarios` the monte carlo scenarios stored inside the `model$scenarios$P`.
 #' @param exact_daily_premium when `TRUE` the historical premium is computed as daily average among all the years.
 #' Otherwise the monthly premium is computed and then divided by the number of days of the month.
 #'
@@ -848,74 +705,80 @@ solarOption_implied_return <- function(model, target_prices = NA, nmonths = 1:12
 #' @name solarOption_structure
 #' @keywords 2beRevised
 #' @export
-solarOption_structure <- function(payoffs, type = "mod", exact_daily_premium = TRUE){
+solarOption_structure <- function(payoffs, type = "model", put = TRUE, exact_daily_premium = TRUE){
 
-  type <- match.arg(type, choices = c("sim", "mod"))
-  payoff <- payoffs[c("hist", type)]
+  option_type <- ifelse(put, "put", "call")
+  type <- match.arg(type, choices = c("scenarios", "model"))
+  payoff <- payoffs[[option_type]][c("historical", type)]
 
   # Yearly Premium
   df_year <- dplyr::tibble(
-    side =  payoff$hist$payoff_year$side,
-    ndays =  payoff$hist$payoff_year$ndays,
+    side =  payoff$historical$payoff_year$side,
+    ndays =  payoff$historical$payoff_year$ndays,
     # Premiums for the option
-    premium = payoff$hist$payoff_year$premium,
+    premium = payoff$historical$payoff_year$premium,
     premium_P = payoff[[type]]$P$payoff_year$premium,
     premium_Q = payoff[[type]]$Q$payoff_year$premium,
     premium_Qdw = payoff[[type]]$Qdw$payoff_year$premium,
     premium_Qup = payoff[[type]]$Qup$payoff_year$premium,
+    premium_Qr = payoff[[type]]$Qr$payoff_year$premium,
     # Probabilities of exercise the option
-    exercise = payoff$hist$payoff_year$exercise,
+    exercise = payoff$historical$payoff_year$exercise,
     exercise_P = payoff[[type]]$P$payoff_year$exercise,
     exercise_Q = payoff[[type]]$Q$payoff_year$exercise,
     exercise_Qup = payoff[[type]]$Qup$payoff_year$exercise,
     exercise_Qdw = payoff[[type]]$Qdw$payoff_year$exercise,
+    exercise_Qr = payoff[[type]]$Qr$payoff_year$exercise,
   )
 
   # Monthly Premium
   df_month <- dplyr::tibble(
-    Month = payoff$hist$payoff_month$Month,
-    side = payoff$hist$payoff_month$side,
-    n = payoff$hist$payoff_month$ndays,
+    Month = payoff$historical$payoff_month$Month,
+    side = payoff$historical$payoff_month$side,
+    n = payoff$historical$payoff_month$ndays,
     # Premiums for the option
-    premium = payoff$hist$payoff_month$premium,
+    premium = payoff$historical$payoff_month$premium,
     premium_P = payoff[[type]]$P$payoff_month$premium,
     premium_Q = payoff[[type]]$Q$payoff_month$premium,
     premium_Qup = payoff[[type]]$Qup$payoff_month$premium,
     premium_Qdw = payoff[[type]]$Qdw$payoff_month$premium,
+    premium_Qr = payoff[[type]]$Qdw$payoff_month$premium,
     # Probabilities of exercise the option
-    exercise = payoff$hist$payoff_month$exercise,
+    exercise = payoff$historical$payoff_month$exercise,
     exercise_P = payoff[[type]]$P$payoff_month$exercise,
     exercise_Q = payoff[[type]]$Q$payoff_month$exercise,
     exercise_Qup = payoff[[type]]$Qup$payoff_month$exercise,
     exercise_Qdw = payoff[[type]]$Qdw$payoff_month$exercise,
+    exercise_Qdw = payoff[[type]]$Qr$payoff_month$exercise,
   )
 
   # Monthly Daily Premium
   df_month_day_mean <- dplyr::tibble(
-    Month = payoff$hist$payoff_month$Month,
-    side = payoff$hist$payoff_month$side,
-    n = payoff$hist$payoff_month$ndays,
+    Month = payoff$historical$payoff_month$Month,
+    side = payoff$historical$payoff_month$side,
+    n = payoff$historical$payoff_month$ndays,
     # Premiums for the option
-    premium = payoff$hist$payoff_month$daily_premium,
+    premium = payoff$historical$payoff_month$daily_premium,
     premium_P = payoff[[type]]$P$payoff_month$daily_premium,
     premium_Q = payoff[[type]]$Q$payoff_month$daily_premium,
     premium_Qup = payoff[[type]]$Qup$payoff_month$daily_premium,
     premium_Qdw = payoff[[type]]$Qdw$payoff_month$daily_premium,
+    premium_Qr = payoff[[type]]$Qr$payoff_month$daily_premium,
   )
 
   # Monthly-Day Premium
   df_month_day <- dplyr::tibble(
-    Month = payoff$hist$payoff_month_day$Month,
-    Day = payoff$hist$payoff_month_day$Day,
-    side = payoff$hist$payoff_month_day$side,
+    Month = payoff$historical$payoff_month_day$Month,
+    Day = payoff$historical$payoff_month_day$Day,
+    side = payoff$historical$payoff_month_day$side,
     # Premiums for the option
-    premium = payoff$hist$payoff_month_day$premium,
+    premium = payoff$historical$payoff_month_day$premium,
     premium_P = payoff[[type]]$P$payoff_month_day$premium,
     premium_Q = payoff[[type]]$Q$payoff_month_day$premium,
     premium_Qup = payoff[[type]]$Qup$payoff_month_day$premium,
     premium_Qdw = payoff[[type]]$Qdw$payoff_month_day$premium,
     # Probabilities of exercise the option
-    exercise = payoff$hist$payoff_month_day$exercise,
+    exercise = payoff$historical$payoff_month_day$exercise,
     exercise_P = payoff[[type]]$P$payoff_month_day$exercise,
     exercise_Q = payoff[[type]]$Q$payoff_month_day$exercise,
     exercise_Qup = payoff[[type]]$Qup$payoff_month_day$exercise,
@@ -924,7 +787,7 @@ solarOption_structure <- function(payoffs, type = "mod", exact_daily_premium = T
   )
 
   # Historical Daily Premiums
-  df_payoff <- dplyr::select(payoff$hist$payoff, -exercise, -GHI, -strike)
+  df_payoff <- dplyr::select(payoff$historical$payoff, -exercise, -GHI, -strike)
   if (!exact_daily_premium) {
     df_payoff <- dplyr::left_join(df_payoff, dplyr::select(df_month_day_mean, Month, premium:premium_Qdw), by = c("Month"))
   } else {
@@ -969,11 +832,12 @@ solarOption_structure <- function(payoffs, type = "mod", exact_daily_premium = T
     ) %>%
     dplyr::ungroup()
 
-  payoffs[[type]]$structured <- list(payoff = df_payoff,
-                                     payoff_year = df_year,
-                                     payoff_month = df_month,
-                                     payoff_month_day = df_month_day,
-                                     payoff_cum = df_cum)
+  payoffs[[option_type]][[type]]$structured <- list(payoff = df_payoff,
+                                                    payoff_year = df_year,
+                                                    payoff_month = df_month,
+                                                    payoff_month_day = df_month_day,
+                                                    payoff_cum = df_cum)
+
   return(payoffs)
 }
 

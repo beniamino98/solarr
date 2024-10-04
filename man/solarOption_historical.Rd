@@ -7,6 +7,7 @@
 solarOption_historical(
   model,
   nmonths = 1:12,
+  put = TRUE,
   control_options = control_solarOption()
 )
 }

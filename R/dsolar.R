@@ -37,13 +37,13 @@
 #' pdf <- function(x) dmixnorm(x, c(-0.8, 0.5), c(1.2, 0.7), c(0.3, 0.7))
 #' GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, 0.001, 0.9, pdf))
 #' plot(1:366, GHI, type="l")
-#' @rdname dsolarGHI
-#' @aliases dsolarGHI
+#' @rdname dsolar
+#' @aliases dsolar
 #' @aliases psolarGHI
 #' @aliases qsolarGHI
 #' @aliases rsolarGHI
 #' @export
-dsolarGHI  <- function(x, Ct, alpha, beta, pdf_Yt, log = FALSE){
+dsolar  <- function(x, Ct, alpha, beta, pdf_Yt, log = FALSE){
   z_x <- (1 - x/Ct - alpha)/beta
   u_x <- log(-log(z_x))
   probs <- -(pdf_Yt(u_x))/(Ct*beta*z_x*log(z_x))
@@ -54,6 +54,7 @@ dsolarGHI  <- function(x, Ct, alpha, beta, pdf_Yt, log = FALSE){
   probs[is.nan(probs)] <- 0
   return(probs)
 }
+
 
 #' Distribution function for the GHI
 #'
@@ -72,7 +73,7 @@ psolarGHI  <- function(x, Ct, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = T
     } else if (x[i] == Ct*(1-alpha-beta)) {
       probs[i] <- 0
     } else {
-     probs[i] <- integrate(pdf, lower = Ct*(1-alpha-beta), upper = x[i])$value
+      probs[i] <- integrate(pdf, lower = Ct*(1-alpha-beta), upper = x[i])$value
     }
   }
   # Lower tail
@@ -109,7 +110,7 @@ qsolarGHI  <- function(p, Ct, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = T
   # Density function
   cdf <- function(x) psolarGHI(x, Ct, alpha, beta, pdf_Yt)
   # Empirical quantile function
-  quantile_ <- numericQuantile(cdf, lower = lower_bound, x0 = init_value)
+  quantile_ <- Quantile(cdf, lower = lower_bound, x0 = init_value)
   # Quantiles
   x <- quantile_(p)
   return(x)
@@ -234,7 +235,7 @@ qsolarK  <- function(p, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE){
   # Density function
   cdf <- function(x) psolarK(x, alpha, beta, pdf_Yt)
   # Empirical quantile function
-  quantile_ <- numericQuantile(cdf, lower = lower_bound, x0 = init_value)
+  quantile_ <- Quantile(cdf, lower = lower_bound, x0 = init_value)
   # Quantiles
   x <- quantile_(p)
   return(x)
@@ -360,7 +361,7 @@ qsolarX  <- function(p, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE){
   # Density function
   cdf <- function(x) psolarX(x, alpha, beta, pdf_Yt)
   # Empirical quantile function
-  quantile_ <- numericQuantile(cdf, lower = lower_bound, x0 = init_value)
+  quantile_ <- Quantile(cdf, lower = lower_bound, x0 = init_value)
   # Quantiles
   x <- quantile_(p)
   return(x)
@@ -381,8 +382,7 @@ rsolarX  <- function(n, alpha, beta, pdf_Yt){
 #' @rdname dmvsolarGHI
 #' @export
 dmvsolarGHI <- function(x, Ct, alpha, beta, joint_pdf_Yt){
-
-  if(is.vector(x)){
+  if (is.vector(x)) {
     x <- matrix(x, nrow = 1)
   }
   z <- x
@@ -396,6 +396,5 @@ dmvsolarGHI <- function(x, Ct, alpha, beta, joint_pdf_Yt){
   # Mixture probabilities
   probs <- (1/den)*joint_pdf_Yt(u)
   probs[is.nan(probs)] <- 0
-  probs
+  return(probs)
 }
-

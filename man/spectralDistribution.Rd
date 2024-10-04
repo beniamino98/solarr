@@ -4,13 +4,13 @@
 \alias{spectralDistribution}
 \title{Compute the spectral distribution for a black body}
 \usage{
-spectralDistribution(lambda = NULL, measure = "nanometer")
+spectralDistribution(x, measure = "nanometer")
 }
 \arguments{
-\item{lambda}{numeric, wave length in micrometers.}
-
 \item{measure}{character, measure of the irradiated energy. If `nanometer` the final energy will be in W/m2 x nanometer,
 otherwise if `micrometer` the final energy will be in W/m2 x micrometer.}
+
+\item{lambda}{numeric, wave length in micrometers.}
 }
 \description{
 Compute the spectral distribution for a black body

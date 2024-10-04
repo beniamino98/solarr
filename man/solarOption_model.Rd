@@ -10,6 +10,8 @@ solarOption_model(
   theta = 0,
   combinations = NA,
   implvol = 1,
+  put = TRUE,
+  target.Yt = TRUE,
   control_options = control_solarOption()
 )
 }
@@ -24,9 +26,9 @@ solarOption_model(
 
 \item{implvol}{implied unconditional GARCH variance, the default is `1`.}
 
-\item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
-
 \item{target.Yt}{pdf to use for expectation}
+
+\item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
 }
 \description{
 Pricing function under the solar model

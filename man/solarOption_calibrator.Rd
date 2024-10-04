@@ -7,8 +7,8 @@
 solarOption_calibrator(
   model,
   nmonths = 1:12,
-  abstol = 0.001,
-  reltol = 0.01,
+  abstol = 1e-04,
+  reltol = 1e-04,
   control_options = control_solarOption()
 )
 }

@@ -1,318 +1,232 @@
-#' Control for Esscher calibration.
-#'
-#' Control parameters for calibration of Esscher parameters.
-#'
-#' @param nsim integer, number of simulations used to bootstrap the premium bounds.
-#' @param ci numeric, confidence interval for bootstrapping. See \code{\link{solarOption_bootstrap}}.
-#' @param seed integer, random seed for reproducibility.
-#' @param n_key_points integer, number of key points for interpolation.
-#' @param init_lambda numeric, initial value for the Esscher parameter.
-#' @param lower_lambda numeric, lower value for the Esscher parameter.
-#' @param upper_lambda numeric, upper value for the Esscher parameter.
-#' @param quiet logical
-#'
-#' @rdname control_solarEsscher
-#' @name control_solarEsscher
-#' @export
-control_solarEsscher <- function(nsim = 200, ci = 0.05, seed = 1, n_key_points = 15,
-                                 init_lambda = 0, lower_lambda = -1, upper_lambda = 1, quiet = FALSE){
-  stopifnot(n_key_points >= 2)
-  structure(
-    list(
-      nsim = nsim,
-      ci = ci,
-      seed = seed,
-      n_key_points = n_key_points,
-      init_lambda = init_lambda,
-      lower_lambda = lower_lambda,
-      upper_lambda = upper_lambda,
-      quiet = quiet
-    ),
-    class = c("control", "list")
-  )
-}
-
-
-#' Calibrate an Esscher parameter given a target price
-#'
-#' Calibrator function for the monthly Esscher parameter of a solarOption
-#'
-#' @param model solar model
-#' @param nmonths month or months
-#' @param target_price the `target_price` represent the model price under the target Q-measure.
-#' @param control_esscher control
-#' @param control_options control
-#'
-#' @examples
-#' model <- Bologna
-#' # Compute realized historical payoffs
-#' payoff_hist <- solarOption_historical(model, nmonths = 1:12)
-#' # Monthly calibration
-#' solarEsscher_calibrator(model, 1:3, payoff_hist$payoff_month$premium[1:3])
-#' # Yearly calibration
-#' solarEsscher_calibrator(model, 1:12, payoff_hist$payoff_year$premium)
-#'
-#' @rdname solarEsscher_calibrator
-#' @name solarEsscher_calibrator
-#' @export
-solarEsscher_calibrator <- function(model, nmonths = 1, target_price, control_esscher = control_solarEsscher(), control_options = control_solarOption()){
-
-  # Esscher control parameters
-  lower_lambda = control_esscher$lower_lambda
-  upper_lambda = control_esscher$upper_lambda
-  init_lambda = control_esscher$init_lambda
-  quiet = control_esscher$quiet
-
-  # Loss function for Esscher theta
-  loss_function <- function(model, nmonth, target_price, control_options, quiet) {
-    function(theta) {
-      # Model premium for months "nmonth"
-      model_price <- solarOption_model(model, theta = theta, nmonths = nmonth, control_options = control_options)
-      # Compute the difference from target price
-      price_difference <- abs(model_price$payoff_year$premium - target_price)
-      # Expected return in absolute value
-      expected_return <- price_difference/target_price
-      if (!quiet) message("Error: ", price_difference, " Expected return: |", format(expected_return*100, digits = 4), "| Lambda: ", format(theta, digits = 5),
-                          "\r", appendLF = FALSE)
-      flush.console()
-      return(price_difference^2)
-    }
-  }
-  # Calibrator function
-  calibrator <- function(loss) {
-    # Optimal Esscher parameter
-    opt <- optim(par = init_lambda, loss, method = "Brent", lower = lower_lambda, upper = upper_lambda)
-    return(opt)
-  }
-
-  if (length(nmonths) > 1 & length(target_price) == 1){
-    # Specify the loss for a month
-    loss <- loss_function(model, nmonths, target_price, control_options, quiet)
-    if (!quiet) cat(paste0("\033[1;35m---------------\033[0m", " Calibrating Yearly Esscher parameter ", "\033[1;32m", "\033[1;35m---------------\033[0m \n"))
-    # Optimal Esscher parameter
-    par <- calibrator(loss)$par
-  }  else {
-    par <- c()
-    for(nmonth in nmonths) {
-      flush.console()
-      message("", appendLF = TRUE)
-      # Test tolerance parameter
-      if (!quiet) cat(paste0("\033[1;35m---------------\033[0m", " Calibrating Monthly Esscher parameter (", "\033[1;32m",
-                  lubridate::month(nmonth, label = TRUE, abbr = FALSE), "\033[0m", ")",  " \033[1;35m---------------\033[0m \n"))
-      # Specify the loss for a month
-      loss <- loss_function(model, nmonth, target_price[nmonth], control_options, quiet)
-      # Optimal Esscher parameter
-      opt_par <- calibrator(loss)$par
-      names(opt_par) <- lubridate::month(nmonth, label = TRUE)
-      par <- c(par, opt_par)
-    }
-  }
-  return(par)
-}
-
-
 #' Calibrate Esscher Bounds and parameters
 #'
-#' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
-#' @param control_options control function. See \code{\link{control_solarOption}} for details.
-#' @param control_esscher control function. See \code{\link{control_solarEsscher}} for details.
-#'
-#' @rdname solarEsscher_bounds
-#' @name solarEsscher_bounds
+#' @rdname solarEsscher
+#' @name solarEsscher
 #' @export
-solarEsscher_bounds <- function(model, control_options = control_solarOption(), control_esscher = control_solarEsscher()){
+solarEsscher <- R6::R6Class("solarEsscher",
+                            public = list(
+                              #' @field control list containing the control parameters
+                              control = list(),
+                              #' @field grid list containing the grids
+                              grid = list(Yt = NA, Rt = NA),
+                              #' @description
+                              #' Initialize the settings for calibration of Esscher parameter.
+                              #'
+                              #' @param n_key_points integer, number of key points for interpolation.
+                              #' @param init_lambda numeric, initial value for the Esscher parameter.
+                              #' @param lower_lambda numeric, lower value for the Esscher parameter.
+                              #' @param upper_lambda numeric, upper value for the Esscher parameter.
+                              #' @param quiet logical
+                              #' @param put logical, when `TRUE` will be considered a put contract otherwise a call contract.
+                              #' @param target.Yt logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.
+                              #' @param control_options control function. See \code{\link{control_solarOption}} for details.
+                              initialize = function(n_key_points = 15, init_lambda = 0, lower_lambda = -1, upper_lambda = 1,
+                                                    put = TRUE, target.Yt = TRUE, quiet = FALSE, control_options = control_solarOption()) {
+                                self$control$n_key_points = n_key_points
+                                self$control$init_lambda = init_lambda
+                                self$control$lower_lambda = lower_lambda
+                                self$control$upper_lambda = upper_lambda
+                                self$control$quiet = quiet
+                                self$control$put = put
+                                self$control$target.Yt = target.Yt
+                                self$control$control_options = control_options
+                              },
+                              #' @description
+                              #' Calibrate the optimal Esscher parameter given a target price
+                              #'
+                              #' @param model solar model
+                              #' @param target_price the `target_price` represent the model price under the target Q-measure.
+                              #' @param nmonths month or months
+                              #' @param target.Yt logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.
+                              calibrator = function(model, target_price, nmonths = 1:12, target.Yt){
+                                # Esscher control parameters
+                                put = self$control$put
+                                target.Yt = ifelse(missing(target.Yt), self$control$target.Yt, target.Yt)
+                                control_options = self$control$control_options
+                                lower_lambda = self$control$lower_lambda
+                                upper_lambda = self$control$upper_lambda
+                                init_lambda = self$control$init_lambda
+                                quiet = self$control$quiet
+                                # Generator of loss functions for Esscher theta
+                                loss_generator <- function(model, nmonth, target_price, target.Yt, put, control_options, quiet){
+                                  function(theta) {
+                                    # Model premium for months "nmonth"
+                                    model_price <- solarOption_model(model, theta = theta, put = put, target.Yt = target.Yt, nmonths = nmonth, control_options = control_options)
+                                    # Compute the difference from target price
+                                    price_difference <- abs(model_price$payoff_year$premium - target_price)
+                                    # Expected return in absolute value
+                                    expected_return <- price_difference/target_price
+                                    if (!quiet) message("Price difference: ", price_difference,
+                                                        " Expected return: |", format(expected_return*100, digits = 4),
+                                                        "| Lambda: ", format(theta, digits = 5), "\r", appendLF = FALSE)
+                                    flush.console()
+                                    return(price_difference^2)
+                                  }
+                                }
+                                # Calibrator function
+                                calibrator <- function(loss){
+                                  # Optimal Esscher parameter
+                                  opt <- optim(par = init_lambda, loss, method = "Brent", lower = lower_lambda, upper = upper_lambda)
+                                  return(opt)
+                                }
 
-  # Bootstrap parameters
-  nsim = control_esscher$nsim
-  ci = control_esscher$ci
-  seed = control_esscher$seed
-  n_key_points = control_esscher$n_key_points
-  quiet = control_esscher$quiet
-  # Set target.Yt always on TRUE
-  control_options$target.Yt <- TRUE
+                                if (length(nmonths) > 1 & length(target_price) == 1) {
+                                  # Specify the loss for a month
+                                  loss <- loss_generator(model, nmonths, target_price, target.Yt, put, control_options, quiet)
+                                  if (!quiet) cat(paste0("\033[1;35m---------------\033[0m", " Calibrating Yearly Esscher parameter ", "\033[1;32m", "\033[1;35m---------------\033[0m \n"))
+                                  # Optimal Esscher parameter
+                                  par <- calibrator(loss)$par
+                                } else {
+                                  par <- c()
+                                  for(nmonth in nmonths){
+                                    flush.console()
+                                    message("", appendLF = TRUE)
+                                    # Test tolerance parameter
+                                    if (!quiet) cat(paste0("\033[1;35m---------------\033[0m", " Calibrating Monthly Esscher parameter (", "\033[1;32m",
+                                                           lubridate::month(nmonth, label = TRUE, abbr = FALSE), "\033[0m", ")",  " \033[1;35m---------------\033[0m \n"))
+                                    # Specify the loss for a month
+                                    loss <- loss_generator(model, nmonth, target_price[nmonth], target.Yt, put, control_options, quiet)
+                                    # Optimal Esscher parameter
+                                    opt_par <- calibrator(loss)$par
+                                    names(opt_par) <- lubridate::month(nmonth, label = TRUE)
+                                    par <- c(par, opt_par)
+                                  }
+                                }
+                                return(par)
+                              },
+                              #' @description
+                              #' Calibrate Esscher upper and lower bounds
+                              #'
+                              #' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
+                              #' @param payoffs object with the class `solarOptionPayoffs`. See the function \code{\link{solarOptionPayoffs}} for details.
+                              #' @param target.Yt logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.
+                              calibrate_bounds = function(model, payoffs, target.Yt){
+                                # Match the type of contract
+                                option_type <- ifelse(self$control$put, "put", "call")
+                                target.Yt <- self$control$target.Yt
+                                # Extract payoffs
+                                # Bootstrapped payoff (historical)
+                                payoff_boot <- payoffs[[option_type]]$model$boot
+                                # Historical payoff (realized)
+                                payoff_hist <- payoffs[[option_type]]$historical
+                                # Model payoff
+                                payoff_model_P <- payoffs[[option_type]]$model$P
 
-  # Compute payoffs
-  # Fair Payoff bootstrapped (historical)
-  payoff_boot <- solarOption_bootstrap(model, nsim = nsim, ci = ci, seed = seed, control_options = control_options)
-  # Historical payoff computed on data (historical)
-  payoff_hist <- solarOption_historical(model, control_options = control_options)
-  # P-Payoff computed with model
-  payoff_model_P <- solarOption_model(model, theta = 0, control_options = control_options)
-  # Difference between bootstrapped and model P-price
-  error_boot_P <- payoff_boot$payoff_year$premium - payoff_model_P$payoff_year$premium
-  # Percentage error between bootstrapped and model P-price
-  perc_error_boot_P <- error_boot_P/payoff_boot$payoff_year$premium*100
+                                # ********* Calibrate the optimal Esscher theta for the upper and lower bounds *********
+                                # Default benchmark for worst case price (buyer point of view)
+                                benchmark_Qup <- payoff_boot$payoff_year$premium_up
+                                # Optimal upper Esscher parameter (up, worse case)
+                                opt_theta_up <- self$calibrator(model, benchmark_Qup, 1:12, target.Yt)
+                                # Optimal up and down parameters
+                                theta <- solarEsscher_theta_bounds(opt_theta_up)[[1]]
+                                # Add Bounds
+                                if (target.Yt) {
+                                  private$..bounds$Yt <- list(Qdw = theta$dw, Q = 0.5*(theta$up + theta$dw), Qup = theta$up)
+                                } else {
+                                  private$..bounds$Rt <- list(Qdw = theta$dw, Q = 0.5*(theta$up + theta$dw), Qup = theta$up)
+                                }
+                              },
+                              #' @description
+                              #' Create a grid of optimal theta and expected returns with respect of the benchmark price.
+                              #'
+                              #' @param model object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
+                              #' @param benchmark_price benchmark price for an expected return equal to zero.
+                              #' @param lower_price lower price in the grid.
+                              #' @param upper_price upper price in the grid.
+                              #' @param target.Yt logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.
+                              create_grid = function(model, benchmark_price, lower_price, upper_price, target.Yt){
+                                # Esscher control parameters
+                                option_side = ifelse(self$control$put, "put", "call")
+                                n_key_points = self$control$n_key_points
+                                target.Yt = ifelse(missing(target.Yt), self$control$target.Yt, target.Yt)
 
-  # 1) ------- Calibrate the optimal theta for the bounds -------
-  # Default benchmark for worste price
-  benchmark_Qup <- payoff_boot$payoff_year$premium_up + error_boot_P
-  # Optimal upper Esscher parameter (up, worse case)
-  opt_theta_up <- solarEsscher_calibrator(model, nmonths = 1:12, target_price = benchmark_Qup,
-                                          control_esscher = control_esscher, control_options = control_options)
-  # Optimal up and down parameters
-  esscher_theta <- solarEsscher_theta_bounds(opt_theta_up)[[1]]
-  theta_up <- esscher_theta$up
-  theta_dw <- esscher_theta$dw
-  theta_bar <- 0.5*(theta_up + theta_dw)
-  # Compute payoffs
-  # Qdw-payoff: best case scenario (model)
-  payoff_model_Qdw <- solarOption_model(model, theta = theta_dw, control_options = control_options)
-  # Qup-payoff: worste case scenario (model)
-  payoff_model_Qup <- solarOption_model(model, theta = theta_up, control_options = control_options)
-  # Q-payoff as average between lambda up and down (model)
-  payoff_model_Q <- solarOption_model(model, theta = theta_bar, control_options = control_options)
+                                # Grid of prices inside the Esscher corridor (decreasing)
+                                grid_prices <- seq(upper_price, lower_price, length.out = n_key_points)
+                                # Grid of expected returns (decreasing)
+                                grid_rates <- benchmark_price/grid_prices - 1
+                                # Implied grid of Esscher lambda
+                                df_grid <- dplyr::tibble(prices = grid_prices, rates = grid_rates, theta = NA)
+                                # Add the theta correspondent to lower and upper price if specified
+                                key_points <- 1:n_key_points
+                                if (!purrr::is_empty(key_points)) {
+                                  for(i in key_points){
+                                    if (!self$control$quiet) message(rep("-", 20), " ", i, "/", n_key_points, " ", rep("-", 20))
+                                    df_grid$theta[i] <- self$calibrator(model, df_grid$prices[i], 1:12, target.Yt)
+                                    if (!self$control$quiet) message("r: ", df_grid$rates[i], " h: ", df_grid$theta[i])
+                                  }
+                                }
+                                # Add manually r = 0
+                                idx_pos <- which(grid_rates > 0)
+                                idx_neg <- which(grid_rates < 0)
+                                df_grid <- dplyr::bind_rows(df_grid[idx_neg,],
+                                                            dplyr::tibble(prices = benchmark_price, rates = 0, theta = 0),
+                                                            df_grid[idx_pos,])
+                                df_grid <- dplyr::bind_cols(side = option_side, target.Yt = target.Yt, df_grid)
+                                if (target.Yt) {
+                                  self$grid$Yt <- df_grid
+                                } else {
+                                  self$grid$Rt <- df_grid
+                                }
+                              },
+                              #' @description
+                              #' Fit the models to predict the optimal Esscher parameters given the grid.
+                              fit_theta = function(){
+                                if (is.na(self$grid[[1]]) || is.na(self$grid[[2]])){
+                                  stop("The slots `grid are currently empty`! Create a grid first!")
+                                }
+                                # Extract the grid
+                                grid <- self$grid
+                                # Create a model for both types of theta
+                                theta_esscher_Yt <- lm(theta ~ rates + I(rates^2), data = grid$Yt)
+                                theta_esscher_Rt <- lm(theta ~ rates + I(rates^2), data = grid$Rt)
+                                # Create a dataset with both theta to connect the models
+                                grid_theta <- dplyr::bind_cols(theta_Yt = grid$Yt$theta, theta_Rt = grid$Rt$theta)
+                                theta_esscher_Yt_Rt <- lm(theta_Yt ~ theta_Rt + I(theta_Rt^2), data = grid_theta)
+                                theta_esscher_Rt_Yt <- lm(theta_Rt ~ theta_Yt + I(theta_Yt^2), data = grid_theta)
+                                # Output
+                                private$..models$theta_Yt <- theta_esscher_Yt
+                                private$..models$theta_Rt <- theta_esscher_Rt
+                                private$..models$theta_Yt_Rt <- theta_esscher_Yt_Rt
+                                private$..models$theta_Rt_Yt <- theta_esscher_Rt_Yt
 
-  # 3) ------- Calibrate the Esscher parameter for different levels of r -------
-  # Benchmark price with r = 0
-  benchmark_Q <- payoff_model_Q$payoff_year$premium
-  # Benchmark for best case prices with r > 0
-  lower <- payoff_model_Qdw$payoff_year$premium
-  # Benchmark for worste case prices with r < 0
-  upper <- payoff_model_Qup$payoff_year$premium
-  # Grid of prices in the Esscher corridor (decreasing)
-  grid_prices <- seq(upper, lower, length.out = n_key_points)
-  # Implied grid of risk-free rates (decreasing)
-  grid_rates <- benchmark_Q/grid_prices - 1
-  # Implied grid of Esscher lambda
-  df_grid <- dplyr::tibble(prices = grid_prices, rates = grid_rates, theta = NA)
-  df_grid$theta[1] <- theta_up
-  df_grid$theta[n_key_points] <- theta_dw
-
-  key_points <- c(1:n_key_points)[-c(1, n_key_points)]
-  if(!purrr::is_empty(key_points)){
-    for(i in key_points){
-      if (!quiet) message(rep("-", 20), " ", i, "/", n_key_points, " ", rep("-", 20))
-      df_grid$theta[i] <- solarEsscher_calibrator(model, nmonths = 1:12, target_price = df_grid$prices[i],
-                                                  control_esscher = control_esscher, control_options = control_options)
-      if (!quiet) message("r: ", df_grid$rates[i], " h: ", df_grid$theta[i])
-    }
-  }
-
-  # Add manually r = 0
-  idx_pos <- which(grid_rates > 0)
-  idx_neg <- which(grid_rates < 0)
-  df_grid <- dplyr::bind_rows(df_grid[idx_neg,],
-                              dplyr::tibble(prices = benchmark_Q, rates = 0, theta = theta_bar),
-                              df_grid[idx_pos,])
-
-  # 4) ------- Fit a parametric model for the Esscher parameter -------
-  # theta = h0 + h1*r + h2*r^2 model in terms of risk-free rates
-  model_param_esscher <- lm(theta ~ rates + I(rates^2), data = df_grid)
-  # Fitted values
-  df_grid$lambda_fit <- predict(model_param_esscher, newdata = df_grid)
-  # Fitted parameters
-  esscher_params <- as.list(model_param_esscher$coefficients)
-  names(esscher_params) <- c("h0","h1","h2")
-  # Esscher parametric model
-  esscher <- list(
-    grid = df_grid,
-    params = list(Qdw = theta_dw, Q = theta_bar, Qup = theta_up),
-    model = model_param_esscher,
-    coefficients = esscher_params,
-    theta = solarEsscherTheta(esscher_params$h0, esscher_params$h1, esscher_params$h2),
-    control = control_esscher
-  )
-  # Add Historical payoffs to the model
-  #model$payoffs$hist <- payoff_hist
-  # Compute implied monthly returns
-  #implied_expected_returns <- solarOption_implied_return(model, nmonths = 1:12, control_options = control_options)$implied_r
-  # Function for Optimal Esscher parameters for monthly case
-  #model$esscher$theta_m <- solarEsscherFunction(par = unlist(esscher_params), imp_r = implied_expected_returns)
-  #model$esscher$implied_r <- implied_expected_returns
-
-  # Structure the output
-  payoff <- list(
-    boot = payoff_boot,
-    P = payoff_model_P,
-    Q = payoff_model_Q,
-    Qdw = payoff_model_Qdw,
-    Qup = payoff_model_Qup
-  )
-  structure(
-    list(
-      payoff = payoff,
-      esscher = esscher
-    )
-  )
-}
-
-
-#' Function to establish up and down parameters of the Esscher transform
-#' A positive theta identify a `down` parameter, a negative theta identify an `up` parameter.
-#'
-#' @param theta Esscher parameter.
-#' @return A `list` with first element named `up` with the positive parameter and second element named `dw` with the negative one.
-#'
-#' @keywords internals
-#' @noRd
-#' @export
-solarEsscher_theta_bounds <- function(theta){
-  # Identify the up and down parameters of Esscher transform
-  # dw parameter (positive): theta > 0
-  # up parameter (negative): theta < 0
-  i <- 1
-  par <- list()
-  for(i in 1:length(theta)){
-    par[[i]] <- list(up = 0, dw = 0)
-    if (theta[i] >= 0) {
-      par[[i]][["dw"]] <- theta[i]
-      par[[i]][["up"]] <- invertEsscherTheta(theta[i])
-    } else {
-      par[[i]][["dw"]] <- invertEsscherTheta(theta[i])
-      par[[i]][["up"]] <- theta[i]
-    }
-  }
-  return(par)
-}
-
-
-#' invertEsscherTheta
-#'
-#' @keywords internals
-#' @noRd
-#' @export
-invertEsscherTheta <- function(theta){
-  # dw parameter = positive theta
-  # up parameter = negative theta
-  if (theta >= 0) {
-    -theta/(1+theta)
-  } else {
-    -theta/(1-theta)
-  }
-}
+                                if (self$control$target.Yt) {
+                                  theta_Rt <- stats::predict.lm(theta_esscher_Rt_Yt, newdata = data.frame(theta_Yt = unlist(self$bounds$Yt)))
+                                  private$..bounds$Rt <- list(Qdw = theta_Rt[1], Q = theta_Rt[2], Qup = theta_Rt[3])
+                                } else {
+                                  theta_Yt <- stats::predict.lm(theta_esscher_Yt_Rt, newdata = data.frame(theta_Rt = unlist(self$bounds$Rt)))
+                                  private$..bounds$Yt <- list(Qdw = theta_Yt[1], Q = theta_Yt[2], Qup = theta_Yt[3])
+                                }
+                              },
+                              #' @description
+                              #' Predict the optimal Esscher parameters given a certain level of expected return.
+                              #' @param r expected return
+                              #' @param target.Yt logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.
+                              predict = function(r, target.Yt = FALSE){
+                                theta <- stats::predict.lm(private$..models$theta_Rt, newdata = data.frame(rates = r))
+                                if (target.Yt) {
+                                  theta <- stats::predict.lm(private$..models$theta_Yt_Rt, newdata = data.frame(theta_Rt = theta))
+                                }
+                                return(theta)
+                              }
+                            ),
+                            private = list(
+                              ..bounds = list(Rt = list(Qdw = NA, Q = NA, Qup = NA), Yt = list(Qdw = NA, Q = NA, Qup = NA)),
+                              ..models = list(theta_Yt = NA, theta_Rt = NA, theta_Yt_Rt = NA, theta_Rt_Yt = NA)
+                            ),
+                            active = list(
+                              #' @field bounds calibrated bounds with respect to bootstrapped payoff.
+                              bounds = function(){
+                                private$..bounds
+                              },
+                              #' @field models models to predict the optimal theta given the expected return.
+                              models = function(){
+                                private$..models
+                              }
+                            )
+                          )
 
 
-#' solarEsscherFunction
-#'
-#' @keywords internals
-#' @noRd
-#' @export
-solarEsscherTheta <- function(h1 = 1, h2 = 1, h3 = 1){
-  # Parametric functions for the h1 e h2
-  h1_tilde <- function(r_imp){par[1] + par[2]*r_imp + par[3]*r_imp^2}
-  h2_tilde <- function(r_imp){2*par[3]*r_imp + par[2]}
-  # Parametric function for esscher Thetta
-  function(r, r_imp = 0){
-    h1_tilde(r_imp) + h2_tilde(r_imp)*r + par[3]*r^2
-  }
-}
 
 
-#' Change probability according to Esscher parameters
-#'
-#' @rdname solarEsscher_probability
-#' @name solarEsscher_probability
-#' @export
-solarEsscher_probability <- function(params = c(0,0,1,1,0.5), df_n, theta = 0){
-  params <- list(
-    mu_up = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[1],
-    mu_dw = df_n$Yt_bar + df_n$Yt_tilde_uncond + df_n$Yt_tilde_hat + df_n$sigma*df_n$sigma_bar*params[2],
-    sd_up = params[3]*df_n$sigma_bar*df_n$sigma,
-    sd_dw = params[4]*df_n$sigma_bar*df_n$sigma,
-    p_up = params[5]
-  )
-  params <- unlist(params)
-  num <- params[5]*exp(theta*params[1] + 0.5*(theta^2*params[3])^2)
-  den <- (1-params[5])*exp(theta*params[2] + 0.5*(theta^2*params[4])^2)
-  num/(num + den)
-}
+
+

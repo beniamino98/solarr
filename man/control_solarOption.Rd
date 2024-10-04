@@ -7,9 +7,10 @@
 control_solarOption(
   nyears = c(2005, 2023),
   K = 0,
-  put = TRUE,
-  target.Yt = FALSE,
   leap_year = FALSE,
+  nsim = 200,
+  ci = 0.05,
+  seed = 1,
   B = discountFactor()
 )
 }
@@ -19,13 +20,19 @@ the computation of the fair payoff.}
 
 \item{K}{numeric, level for the strike with respect to the seasonal mean. The seasonal mean is multiplied by `exp(K)`.}
 
+\item{leap_year}{logical, when `FALSE`, the default, the year will be considered of 365 days, otherwise 366.}
+
+\item{nsim}{integer, number of simulations used to bootstrap the premium's bounds. See \code{\link{solarOption_historical_bootstrap}}.}
+
+\item{ci}{numeric, confidence interval for bootstrapping. See \code{\link{solarOption_historical_bootstrap}}.}
+
+\item{seed}{integer, random seed for reproducibility. See \code{\link{solarOption_historical_bootstrap}}.}
+
+\item{B}{function. Discount factor function. Should take as input a number (in years) and return a discount factor.}
+
 \item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
 
 \item{target.Yt}{logical, when `TRUE`, the default, the computations will consider the pdf of `Yt` otherwise the pdf of solar radiation.}
-
-\item{leap_year}{logical, when `FALSE`, the default, the year will be considered of 365 days, otherwise 366.}
-
-\item{B}{function. Discount factor function. Should take as input a number (in years) and return a discount factor.}
 }
 \description{
 Control parameters for a solar option

@@ -2,11 +2,12 @@
 % Please edit documentation in R/solarOption.R
 \name{solarOption_scenario}
 \alias{solarOption_scenario}
-\title{Payoff on Simulated Data}
+\title{Payoff on simulated Data}
 \usage{
 solarOption_scenario(
   scenario,
   nmonths = 1:12,
+  put = TRUE,
   nsim,
   control_options = control_solarOption()
 )
@@ -21,5 +22,5 @@ solarOption_scenario(
 \item{control_options}{control function, see \code{\link{control_solarOption}} for details.}
 }
 \description{
-Payoff on Simulated Data
+Payoff on simulated Data
 }

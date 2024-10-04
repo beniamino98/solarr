@@ -79,6 +79,7 @@ qtnorm <- function(p, mean = 0, sd = 1, a = -3, b = 3, log.p = FALSE, lower.tail
   if (log.p) {
     p <- exp(p)
   }
+
   loss <- function(x, p) {
     p_hat <- ptnorm(x, mean, sd, a = a, b = b, lower.tail = lower.tail)
     (p_hat - p)^2

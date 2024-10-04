@@ -38,19 +38,25 @@ rsnorm(n, location = 0, scale = 1, shape = 0)
 Skewed Normal density, distribution, quantile and random generator.
 }
 \examples{
+# Grid of points
 x <- seq(-5, 5, 0.01)
-# Density function (right)
+
+# Density function (right tailed)
 p <- dsnorm(x, shape = 4.9)
 plot(x, p, type = "l")
-# Density function (left)
+
+# Density function (left tailed)
 p <- dsnorm(x, shape = -4.9)
 plot(x, p, type = "l")
+
 # Distribution function
 p <- psnorm(x)
 plot(x, p, type = "l")
+
 # Quantile function
 dsnorm(0.1)
 psnorm(qsnorm(0.9))
+
 # Random numbers
 plot(rsnorm(100), type = "l")
 
