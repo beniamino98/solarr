@@ -1,1 +1,1 @@
-[Solarr](solarr.png)
+[!Solarr](solarr.png)
