@@ -24,5 +24,4 @@ solarModel_forecaster_plot(model, date = day_date, type = "dw")
 solarModel_forecaster_plot(model, date = day_date, type = "dw", unconditional = TRUE)
 solarModel_forecaster_plot(model, date = day_date, type = "up")
 solarModel_forecaster_plot(model, date = day_date, type = "up", unconditional = TRUE)
-
 }

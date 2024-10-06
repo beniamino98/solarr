@@ -2,7 +2,7 @@
 % Please edit documentation in R/spatialFunctions.R
 \name{IDW}
 \alias{IDW}
-\title{Inverse Distance Weighting Function}
+\title{Inverse Distance Weighting Functions}
 \usage{
 IDW(beta, d0)
 }

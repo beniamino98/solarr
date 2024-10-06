@@ -18,7 +18,7 @@ solarOption_model(
 \arguments{
 \item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
 
-\item{nmonths}{numeric, months of which the payoff will be computed.}
+\item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
 
 \item{theta}{Esscher parameter}
 
@@ -26,17 +26,21 @@ solarOption_model(
 
 \item{implvol}{implied unconditional GARCH variance, the default is `1`.}
 
-\item{target.Yt}{pdf to use for expectation}
+\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
+
+\item{target.Yt}{logical, when `TRUE`, the default, the computations will consider the pdf of `Yt` otherwise the pdf of solar radiation.}
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
+}
+\value{
+An object of the class `solarOptionPayoff`.
 }
 \description{
 Pricing function under the solar model
 }
 \examples{
 model <- Bologna
-control_options <- control_solarOption(put = FALSE)
-df_call <- solarOption_model(model, control_options = control_options)
-control_options <- control_solarOption(put = TRUE)
-df_put <- solarOption_model(model, control_options = control_options)
+solarOption_model(model, put=FALSE)
+solarOption_model(model, put=TRUE)
+
 }

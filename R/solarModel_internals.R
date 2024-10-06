@@ -174,16 +174,6 @@ solarModel_spec <- function(place, target = "GHI", min_date, max_date, from, to,
                      train = list(from = from, to = to, nobs = nobs_train, perc = perc_train),
                      test = list(from = to, to = max_date, nobs = nobs_test, perc = perc_test))
 
-  # Initialize seasonal dataset
-  # Seasonal data by month and day for an year with 366 days
-  seasonal_data <- dplyr::tibble(date = seq.Date(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "1 day"))
-  seasonal_data <- dplyr::mutate(seasonal_data,
-                                 Month = lubridate::month(date),
-                                 Day = lubridate::day(date),
-                                 n = number_of_day(date))
-  seasonal_data <- dplyr::select(seasonal_data, -date)
-  seasonal_data <- dplyr::arrange(seasonal_data, Month, Day)
-
   structure(
     list(
       place = attr(data, "place"),
@@ -312,10 +302,19 @@ solarModel_mixture <- function(x, date, weights, match_moments = FALSE, maxit = 
 #' @export
 solarModel_mvmixture <- function(model_Ct, model_GHI){
 
+  # Extract a bivariate dataset
   data_GHI <- dplyr::select(model_GHI$data, date, Month, GHI = "u_tilde")
   data_Ct <- dplyr::select(model_Ct$data, date, Month, Ct = "u_tilde")
   data <- dplyr::inner_join(data_GHI, data_Ct, by = c("date", "Month"))
-  data <- dplyr::filter(data, !(date %in% model_Ct$outliers$date) & !(date %in% model_GHI$outliers$date))
+  # Remove outliers
+  outliers_date <- c(model_Ct$.__enclos_env__$private$outliers$date, model_GHI$.__enclos_env__$private$outliers$date)
+  data <- dplyr::filter(data, !(date %in% outliers_date))
+
+  # Extract Gaussian mixture parameters
+  NM_model_GHI <- model_GHI$.__enclos_env__$private$..NM_model
+  NM_model_GHI$rho_up <- NM_model_GHI$rho_dw <- 0
+  NM_model_Ct <- model_Ct$.__enclos_env__$private$..NM_model
+  NM_model_Ct$rho_up <- NM_model_Ct$rho_dw <- 0
 
   # Gaussian Mixture parameters
   m <- 1
@@ -327,32 +326,42 @@ solarModel_mvmixture <- function(model_Ct, model_GHI){
     eps <- data_months[[m]][,c(3,4)]
     # Fitted model
     gm <- mvgaussianMixture(eps, components = 2, na.rm = TRUE)
-
-    model_GHI$NM_model$mu_up[m] <- gm$params$means[1,2]
-    model_GHI$NM_model$mu_dw[m] <- gm$params$means[2,2]
-    model_GHI$NM_model$sd_up[m] <- sqrt(gm$params$sigma2[1,2])
-    model_GHI$NM_model$sd_dw[m] <- sqrt(gm$params$sigma2[2,2])
-
-    model_Ct$NM_model$mu_up[m] <- gm$params$means[1,1]
-    model_Ct$NM_model$mu_dw[m] <- gm$params$means[2,1]
-    model_Ct$NM_model$sd_up[m] <- sqrt(gm$params$sigma2[1,1])
-    model_Ct$NM_model$sd_dw[m] <- sqrt(gm$params$sigma2[2,1])
-    model_Ct$NM_model$p_up[m] <- model_GHI$NM_model$p_up[m] <- gm$params$p[1]
-    model_Ct$NM_model$p_dw[m] <- model_GHI$NM_model$p_dw[m] <- gm$params$p[2]
-    model_Ct$NM_model$rho_up[m] <- model_GHI$NM_model$rho_up[m] <- gm$params$rho[1]
-    model_Ct$NM_model$rho_dw[m] <- model_GHI$NM_model$rho_dw[m] <- gm$params$rho[2]
-
+    # Update Gaussian mixture parameters (GHI)
+    NM_model_GHI$mu_up[m] <- gm$params$means[1,2]
+    NM_model_GHI$mu_dw[m] <- gm$params$means[2,2]
+    NM_model_GHI$sd_up[m] <- sqrt(gm$params$sigma2[1,2])
+    NM_model_GHI$sd_dw[m] <- sqrt(gm$params$sigma2[2,2])
+    NM_model_GHI$p_up[m] <- gm$params$p[1]
+    NM_model_GHI$p_dw[m] <- gm$params$p[2]
+    NM_model_GHI$rho_up[m] <- gm$params$rho[1]
+    NM_model_GHI$rho_dw[m] <- gm$params$rho[2]
+    # Update Gaussian mixture parameters (Ct)
+    NM_model_Ct$mu_up[m] <- gm$params$means[1,1]
+    NM_model_Ct$mu_dw[m] <- gm$params$means[2,1]
+    NM_model_Ct$sd_up[m] <- sqrt(gm$params$sigma2[1,1])
+    NM_model_Ct$sd_dw[m] <- sqrt(gm$params$sigma2[2,1])
+    NM_model_Ct$p_up[m] <- gm$params$p[1]
+    NM_model_Ct$p_dw[m] <- gm$params$p[2]
+    NM_model_Ct$rho_up[m] <- gm$params$rho[1]
+    NM_model_Ct$rho_dw[m] <- gm$params$rho[2]
     # Add fitted Bernoulli series
     data_months[[m]]$B <- gm$B_hat$B1
   }
-
-  # Fitted series
+  # Fitted series of bernoulli
   data_months <- dplyr::select(dplyr::bind_rows(data_months), date, B)
 
-  model_Ct$data <- dplyr::left_join(dplyr::select(model_Ct$data, -B), data_months, by = "date")
-  model_GHI$data <- dplyr::left_join(dplyr::select(model_GHI$data, -B), data_months, by = "date")
-  model_GHI$data$B[is.na(model_GHI$data$B)] <- 0
-  model_Ct$data$B[is.na(model_Ct$data$B)] <- 0
+  # Update data (Ct)
+  data_Ct <- model_Ct$.__enclos_env__$private$..data
+  data_Ct <- dplyr::left_join(dplyr::select(data_Ct, -B), data_months, by = "date")
+  data_Ct$B[is.na(data_Ct$B)] <- 0
+  model_Ct$.__enclos_env__$private$..data <- data_Ct
+  model_Ct$.__enclos_env__$private$..NM_model <- NM_model_Ct
+  # Update data (GHI)
+  data_GHI <- model_GHI$.__enclos_env__$private$..data
+  data_GHI <- dplyr::left_join(dplyr::select(data_GHI, -B), data_months, by = "date")
+  data_GHI$B[is.na(data_GHI$B)] <- 0
+  model_GHI$.__enclos_env__$private$..data <- data_GHI
+  model_GHI$.__enclos_env__$private$..NM_model <- NM_model_GHI
 
   structure(
     list(
@@ -362,7 +371,6 @@ solarModel_mvmixture <- function(model_Ct, model_GHI){
     class = c("solarModelMixture", "list")
   )
 }
-
 
 #' Compute conditional moments from a `solarModel` object
 #'
@@ -537,7 +545,7 @@ solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, uncondit
   grid[[paste0("pdf_", model$target, "_dw")]] <- pdf_Rt(grid_x, function(x) (1-df_n$p_up)*dnorm(x, df_n$e_Yt_dw, df_n$sd_Yt_dw))
 
   # Empiric variables for the day to be extracted
-  emp <- solarModel_data(model, FALSE, FALSE)
+  emp <- model$data
   emp <- emp[emp$date == date,]
   emp <- dplyr::select(emp, date, Month, Day, tidyr::any_of(model$target), B)
   # Add fitted expected values
@@ -623,7 +631,6 @@ solarModel_forecast <- function(model, date, ci = 0.1, unconditional = FALSE){
 #' solarModel_forecaster_plot(model, date = day_date, type = "dw", unconditional = TRUE)
 #' solarModel_forecaster_plot(model, date = day_date, type = "up")
 #' solarModel_forecaster_plot(model, date = day_date, type = "up", unconditional = TRUE)
-#'
 #' @export
 solarModel_forecaster_plot <- function(model, date = "2021-05-29", ci = 0.1, type = "mix", unconditional = FALSE){
 
@@ -730,10 +737,8 @@ solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile 
 #'
 #' @keywords OLD
 solarModel_empiric_GM <- function(model, match_moments = FALSE){
-
   # Select only train data
   data <- model$data
-  data$weights <- model$outliers$weights
   data <- dplyr::filter(data, isTrain & weights != 0)
   data <- dplyr::select(data, Month, u_tilde, B)
   for(m in 1:12){

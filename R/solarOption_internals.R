@@ -79,7 +79,6 @@ solarOption_contracts  <- function(payoff, type = "mod", premium = "Q", nyear = 
   payoffs <- dplyr::select(payoffs, Month, Day, premium)
   # Merge realized GHI and premium
   df_hedged <- dplyr::left_join(payoff_hist, payoffs, by = c("Month", "Day"))
-
   # Loss function depending on the number of contracts
   loss_function <- function(n_contracts, df_hedged){
     # Compute hedged cash-flows
@@ -111,12 +110,14 @@ solarOption_contracts  <- function(payoff, type = "mod", premium = "Q", nyear = 
 #' @examples
 #' model <- Bologna
 #' solarOption_model_test(model)
-#' solarOption_model_test(model, nmonths = 6)
+#' solarOption_model_test(model, put = FALSE)
+#' solarOption_model_test(model, nmonths = 6, put = FALSE)
+#' solarOption_model_test(model, nmonths = 6, put = TRUE)
 #' @export
-solarOption_model_test <- function(model, nmonths = 1:12, control_options = control_solarOption()){
+solarOption_model_test <- function(model, nmonths = 1:12, put = TRUE, control_options = control_solarOption()){
 
-  payoff_model <- solarOption_model(model, nmonths = nmonths, control_options = control_options)$payoff_month
-  payoff_hist <- solarOption_historical(model, nmonths = nmonths, control_options = control_options)$payoff_month
+  payoff_model <- solarOption_model(model, nmonths = nmonths, put = put, control_options = control_options)$payoff_month
+  payoff_hist <- solarOption_historical(model, nmonths = nmonths, put = put, control_options = control_options)$payoff_month
 
   # Monthly payoff
   payoff_month <- dplyr::tibble(
@@ -131,46 +132,8 @@ solarOption_model_test <- function(model, nmonths = 1:12, control_options = cont
   payoff_year <- dplyr::mutate(payoff_year, Month = "Total", Error = round(Diff/Hist*100, 3))
   # Tranform months in character
   payoff_month$Month <- as.character(lubridate::month(payoff_month$Month, label = TRUE))
-  dplyr::bind_rows(payoff_month, payoff_year)
-
+  dplyr::bind_cols(side = ifelse(put, "put", "call"), dplyr::bind_rows(payoff_month, payoff_year)) %>%
+    dplyr::filter(!is.na(Error))
 }
 
-
-#' Implied expected return at maturity
-#'
-#' @keywords 2beRevised
-#' @export
-solarOption_implied_return <- function(model, target_prices = NA, nmonths = 1:12, control_options = control_solarOption()){
-
-  # Control parameters
-  quiet <- model$control$quiet
-
-  # Default target price is the historical price
-  if (is.na(target_prices)) {
-    target_prices <- model$payoffs$hist$payoff_month$premium
-    stopifnot(!is.null(target_prices))
-  }
-
-  # Loss function
-  loss_function <- function(r, nmonth = 1, target_price = NA){
-    stopifnot(!is.na(target_price))
-    premium_model <- solarOption_model(model, nmonths = nmonth, theta = model$esscher$theta(r), control_options = control_options)
-    l <- (target_price - premium_model$payoff_month$premium[1])^2
-    if(!quiet) message("Loss: ", round(l, 10), ", r (implied): ", format(r*100, digits = 5), " %")
-    return(l)
-  }
-
-  # Compute implied returns
-  implied_r <- c()
-  for(m in nmonths){
-    if(!quiet) message("--------------------- Month: ", m, "---------------------")
-    implied_r[m] <- optim(par = 0, loss_function, lower = -0.5, upper = 0.5, method = "Brent",
-                          nmonth = nmonths[m], target_price = target_prices[m])$par
-  }
-
-  dplyr::tibble(
-    Month = nmonths,
-    implied_r = implied_r
-  )
-}
 

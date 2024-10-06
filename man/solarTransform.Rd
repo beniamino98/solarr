@@ -10,7 +10,8 @@ Solar Model transformation functions
 }
 \examples{
 st <- solarTransform$new()
-
+st$GHI(0.4, 3)
+st$GHI(st$iGHI(0.4, 3), 3)
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}

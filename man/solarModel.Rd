@@ -22,6 +22,7 @@ spec <- solarModel_spec("Bologna", from="2005-01-01", to="2022-01-01", control_m
 Bologna <- solarModel$new(spec)
 # Model fit
 Bologna$fit()
+# save(Bologna, file = "data/Bologna.RData")
 
 # Extract and update the parameters
 params <- sm$parameters
@@ -53,7 +54,7 @@ model$fit()
 
 \item{\code{dates}}{List, with the range of dates used in the model.}
 
-\item{\code{coords}}{A data frame with coordinates of the location considered.}
+\item{\code{coords}}{A List with the coordinates of the location considered.}
 }
 \if{html}{\out{</div>}}
 }
@@ -87,6 +88,8 @@ model$fit()
 \item{\code{NM_model}}{A model object representing the Gaussian Mixture model fitted to the standardized residuals.}
 
 \item{\code{moments}}{Get a list containing the conditional and unconditional moments.}
+
+\item{\code{combinations}}{mixture combination moments.}
 
 \item{\code{parameters}}{Get the model parameters as a named list.}
 }

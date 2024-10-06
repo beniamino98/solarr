@@ -60,15 +60,15 @@ print.seasonalModel <- function(object){
 }
 
 
-#' Print method for the class `solarOption`
+#' Print method for the class `solarOptionPayoff`
 #'
-#' @param object an object of the class  \code{\link{solarOption}}.
+#' @param object an object of the class  `solarOptionPayoff`.
 #'
 #' @keywords internal
 #' @noRd
 #' @export
-print.solarOption <- function(object){
-  msg_1 <- paste0("------------------------ \033[1;35mSolar Option\033[0m (", object$payoff_year$side, ") ------------------------ \n")
+print.solarOptionPayoff <- function(object){
+  msg_1 <- paste0("------------------------ \033[1;35mSolar Option Payoffs\033[0m (", object$payoff_year$side, ") ------------------------ \n")
   msg_2 <- paste0("Yearly payoff: \033[1;31m", format(object$payoff_year$premium, digits = 5), "\033[0m\n")
 
   # Monthly premiums
@@ -95,14 +95,14 @@ print.solarOption <- function(object){
   cat(paste0(msg_1, msg_2, msg_3))
 }
 
-#' Print method for the class `solarOptionPayoff`
+#' Print method for the class `solarOptionPayoffs`
 #'
-#' @param object an object of the class  \code{\link{solarOptionPayoff}}.
+#' @param object an object of the class  \code{\link{solarOptionPayoffs}}.
 #'
 #' @keywords internal
 #' @noRd
 #' @export
-print.solarOptionPayoff <- function(object){
+print.solarOptionPayoffs <- function(object){
 
   msg_title <- paste0("-------------- Solar Option Payoffs -------------- \n")
   idx_not_NA <- which(purrr::map_lgl(object$call$scenarios, ~!is.na(.x[1])))

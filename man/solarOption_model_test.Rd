@@ -7,6 +7,7 @@
 solarOption_model_test(
   model,
   nmonths = 1:12,
+  put = TRUE,
   control_options = control_solarOption()
 )
 }
@@ -16,5 +17,7 @@ Test errors solar Option model
 \examples{
 model <- Bologna
 solarOption_model_test(model)
-solarOption_model_test(model, nmonths = 6)
+solarOption_model_test(model, put = FALSE)
+solarOption_model_test(model, nmonths = 6, put = FALSE)
+solarOption_model_test(model, nmonths = 6, put = TRUE)
 }

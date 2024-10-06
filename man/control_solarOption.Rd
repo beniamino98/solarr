@@ -29,14 +29,11 @@ the computation of the fair payoff.}
 \item{seed}{integer, random seed for reproducibility. See \code{\link{solarOption_historical_bootstrap}}.}
 
 \item{B}{function. Discount factor function. Should take as input a number (in years) and return a discount factor.}
-
-\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
-
-\item{target.Yt}{logical, when `TRUE`, the default, the computations will consider the pdf of `Yt` otherwise the pdf of solar radiation.}
 }
 \description{
 Control parameters for a solar option
 }
 \examples{
 control_options <- control_solarOption()
+
 }

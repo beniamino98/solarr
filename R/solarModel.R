@@ -18,6 +18,7 @@
 #' Bologna <- solarModel$new(spec)
 #' # Model fit
 #' Bologna$fit()
+#' # save(Bologna, file = "data/Bologna.RData")
 #'
 #' # Extract and update the parameters
 #' params <- sm$parameters
@@ -50,8 +51,8 @@ solarModel <- R6::R6Class("solarModel",
                               target = NA,
                               #' @field dates List, with the range of dates used in the model.
                               dates = NA,
-                              #' @field coords A data frame with coordinates of the location considered.
-                              coords = NA,
+                              #' @field coords A List with the coordinates of the location considered.
+                              coords = list(lat = NA, lon = NA, alt = NA),
                               #' @description
                               #' Initialize a `solarModel`
                               #' @param spec an object with class `solarModelSpec`. See the function \code{\link{solarModel_spec}} for details.
@@ -645,7 +646,6 @@ solarModel <- R6::R6Class("solarModel",
                               ..loglik = NA,
                               ..moments = list(conditional = NA, unconditional = NA)
                             ),
-
                             active = list(
                               #' @field data Get a data frame containing the complete data with seasonal and monthly parameters.
                               data = function(){
@@ -657,7 +657,8 @@ solarModel <- R6::R6Class("solarModel",
                               },
                               #' @field monthly_data Get a data frame that contains monthly parameters.
                               monthly_data = function(){
-                                dplyr::left_join(private$..monthly_data, self$NM_model, by = "Month")
+                                NM_data <- dplyr::select(self$NM_model, -loss, -nobs, -e_x, -v_x, -e_x_hat, -v_x_hat)
+                                dplyr::left_join(private$..monthly_data, NM_data, by = "Month")
                               },
                               #' @field loglik Get the log-likelihood of the train data.
                               loglik = function(){
@@ -669,7 +670,7 @@ solarModel <- R6::R6Class("solarModel",
                               },
                               #' @field location A data frame with coordinates of the location considered.
                               location = function(){
-                                dplyr::bind_cols(place = self$place, dplyr::bind_rows(self$coords))
+                                dplyr::bind_cols(place = self$place, target = self$target, dplyr::bind_rows(self$coords))
                               },
                               #' @field transform An object representing the transformation functions applied to the data.
                               transform = function(){
@@ -697,11 +698,15 @@ solarModel <- R6::R6Class("solarModel",
                               },
                               #' @field NM_model A model object representing the Gaussian Mixture model fitted to the standardized residuals.
                               NM_model = function(){
-                                private$..NM_model[, c(1:6)]
+                                private$..NM_model
                               },
                               #' @field moments Get a list containing the conditional and unconditional moments.
                               moments = function(){
                                 private$..moments
+                              },
+                              #' @field combinations mixture combination moments.
+                              combinations = function(){
+                                private$..combinations
                               },
                               #' @field parameters Get the model parameters as a named list.
                               parameters = function(){
@@ -729,12 +734,8 @@ solarModel <- R6::R6Class("solarModel",
                                 names(NM_p_up) <- paste0("p_", 1:12)
 
                                 # Output list of parameter for each model
-                                list(
-                                  location = dplyr::tibble(place = self$place,
-                                                           target = self$target,
-                                                           lat = self$coords$lat,
-                                                           lon = self$coords$lon,
-                                                           alt = self$coords$alt),
+                                params <- list(
+                                  location = self$location,
                                   params = dplyr::bind_cols(alpha = self$transform$alpha, beta = self$transform$beta),
                                   seasonal_model_Ct = dplyr::bind_cols(seasonal_model_Ct),
                                   seasonal_model_Yt = dplyr::bind_cols(seasonal_model_Yt),
@@ -747,6 +748,21 @@ solarModel <- R6::R6Class("solarModel",
                                   NM_sd_dw = dplyr::bind_rows(NM_sd_dw),
                                   NM_p_up = dplyr::bind_rows(NM_p_up)
                                 )
+                                # Eventually add correlation (stochastic clearsky models)
+                                check_rho_up <- suppressWarnings(!is.null(self$NM_model$rho_up[1]))
+                                if (check_rho_up) {
+                                  NM_rho_up <- self$NM_model$rho_up
+                                  names(NM_rho_up) <- paste0("rho_up_", 1:12)
+                                  params <- append(params, values = list(rho_up = dplyr::bind_rows(NM_rho_up)))
+                                }
+                                # Eventually add correlation (stochastic clearsky models)
+                                check_rho_dw <- suppressWarnings(!is.null(self$NM_model$rho_dw[1]))
+                                if (check_rho_dw) {
+                                  NM_rho_dw <- self$NM_model$rho_dw
+                                  names(NM_rho_dw) <- paste0("rho_dw_", 1:12)
+                                  params <- append(params, values = list(rho_dw = dplyr::bind_rows(NM_rho_dw)))
+                                }
+                                return(params)
                               }
                             )
                           )

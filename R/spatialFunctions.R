@@ -10,7 +10,7 @@
 #' @return a tibble with two columns `lat` and `lon`.
 #' @examples
 #' spatialGrid(lat = c(43.7, 43.8), lon = c(12.5, 12.7), by = 0.1)
-#' spatialGrid(lat = c(43.7, 43.75, 43.8), lon = c(12.6, 12.6, 12.7), by = c(0.05, 0.01))
+#' spatialGrid(lat = c(43.7, 43.8), lon = c(12.6, 12.7), by = c(0.05, 0.01))
 #'
 #' @rdname spatialGrid
 #' @name spatialGrid
@@ -75,7 +75,7 @@ havDistance <- function(lat_1, lon_1, lat_2, lon_2){
 }
 
 
-#' Inverse Distance Weighting Function
+#' Inverse Distance Weighting Functions
 #'
 #' Return a distance weighting function
 #'
@@ -97,23 +97,22 @@ IDW <- function(beta, d0){
   # Power function
   IDW.pow <- function(beta) {
     function(d, normalize = FALSE){
+      w <- 1/(d^beta)
       if (normalize) {
-        w <- 1/(d^beta)
-        w/sum(w)
-      } else {
-        1/(d^beta)
+        w <- w/sum(w)
       }
+      return(w)
     }
   }
   # Exponential function
   IDW.exp <- function(beta, d0) {
     function(d, normalize = FALSE){
+
+      w <- exp(-(d/d0)^beta)
       if (normalize) {
-        w <- exp(-(d/d0)^beta)
-        w/sum(w)
-      } else {
-        exp(-(d/d0)^beta)
+        w <- w/sum(w)
       }
+      return(w)
     }
   }
   # Output function
@@ -123,3 +122,7 @@ IDW <- function(beta, d0){
     IDW.exp(beta, d0)
   }
 }
+
+
+
+

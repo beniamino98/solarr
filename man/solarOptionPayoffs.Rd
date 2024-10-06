@@ -11,6 +11,9 @@ solarOptionPayoffs(model, control_options = control_solarOption())
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
 }
+\value{
+An object of the class `solarOptionPayoffs`.
+}
 \description{
 solarOptionPayoff
 }

@@ -268,7 +268,7 @@ clearsky_outliers <- function(x, Ct, date, threshold = 0.0001, quiet = FALSE){
     }
   }
 
-  if (missing(date)){
+  if (missing(date)) {
     date <- NA
   } else {
     date <- data$date[idx_outliers]

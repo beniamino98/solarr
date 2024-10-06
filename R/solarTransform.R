@@ -2,7 +2,8 @@
 #'
 #' @examples
 #' st <- solarTransform$new()
-#'
+#' st$GHI(0.4, 3)
+#' st$GHI(st$iGHI(0.4, 3), 3)
 #' @export
 solarTransform <- R6::R6Class("solarTransform",
                               public = list(
@@ -13,9 +14,9 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' @export
                                 initialize = function(alpha = 0, beta = 1){
                                   # Control parameters
-                                  if (alpha < 0){
+                                  if (alpha < 0) {
                                     stop("Alpha cannot be lower than zero.")
-                                  } else if (alpha + beta > 1){
+                                  } else if (alpha + beta > 1) {
                                     stop("`alpha + beta` cannot be greater than one.")
                                   }
                                   # Store tranformation parameters
@@ -29,8 +30,8 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' @param Ct clear sky radiation.
                                 #' @details The function computes:
                                 #' \deqn{GHI(x) = C_t(1 - x)}
-                                GHI = function(x, Ct) {
-                                  Ct*(1-x)
+                                GHI = function(x, Ct){
+                                  Ct*(1 - x)
                                 },
                                 #' @method GHI_y solarTransform
                                 #' @description
@@ -39,8 +40,8 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' @param Ct clear sky radiation.
                                 #' @details The function computes:
                                 #' \deqn{GHI(y) = C_t(1 - \alpha-\beta \exp(-\exp(x)))}
-                                GHI_y = function(y, Ct) {
-                                  Ct*(1-self$iY(y))
+                                GHI_y = function(y, Ct){
+                                  Ct*(1 - self$iY(y))
                                 },
                                 #' @method iGHI solarTransform
                                 #' @description
@@ -49,7 +50,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' @param Ct clear sky radiation.
                                 #' @details The function computes the inverse of the `GHI`funcion
                                 #' \deqn{iGHI(x) = 1 - \frac{x}{C_t}}
-                                iGHI = function(x, Ct) {
+                                iGHI = function(x, Ct){
                                   1 - x/Ct
                                 },
                                 #' @method Y solarTransform
@@ -59,8 +60,8 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' @param inverse when `TRUE` will compute the inverse transform.
                                 #' @details The function computes the transformation:
                                 #' \deqn{Y(x) = \log(\log(\beta) - \log(x - \alpha))}
-                                Y = function(x) {
-                                  log(log(private$..beta) - log(x - private$..alpha))
+                                Y = function(x){
+                                  log(log(self$beta) - log(x - self$alpha))
                                 },
                                 #' @method iY solarTransform
                                 #' @description
@@ -68,8 +69,8 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' @param y numeric vector in \eqn{(-\infty, \infty)}.
                                 #' @details The function computes the transformation:
                                 #' \deqn{iY(y) = \alpha + \beta \exp(-\exp(y))}
-                                iY = function(y) {
-                                  private$..alpha + private$..beta*exp(-exp(y))
+                                iY = function(y){
+                                  self$alpha + self$beta*exp(-exp(y))
                                 },
                                 #' @method parameters solarTransform
                                 #' @description
@@ -93,6 +94,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' Compute the bounds for each tranform
                                 #' @param target target variable
                                 bounds = function(target = "Xt"){
+                                  target = match.arg(target, choices = c("Xt", "Yt", "Kt"))
                                   lower <- c(Xt_min = self$alpha)
                                   upper <- c(Xt_max = self$alpha + self$beta)
                                   if (target == "Yt") {
@@ -111,10 +113,10 @@ solarTransform <- R6::R6Class("solarTransform",
                                 #' @param beta bounds parameter.
                                 update = function(alpha, beta) {
                                   # Old parameters
-                                  if (missing(alpha)){
+                                  if (missing(alpha)) {
                                     alpha <- private$..alpha
                                   }
-                                  if (missing(beta)){
+                                  if (missing(beta)) {
                                     beta <- private$..beta
                                   }
                                   # Control consistency

@@ -24,7 +24,7 @@ sf$H0(1:365, 44)
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-new}{\code{seasonalSolarFunctions$new()}}
-\item \href{#method-method}{\code{seasonalSolarFunctions$method()}}
+\item \href{#method-update_method}{\code{seasonalSolarFunctions$update_method()}}
 \item \href{#method-B}{\code{seasonalSolarFunctions$B()}}
 \item \href{#method-degree}{\code{seasonalSolarFunctions$degree()}}
 \item \href{#method-radiant}{\code{seasonalSolarFunctions$radiant()}}
@@ -61,12 +61,12 @@ Initialize a `seasonalSolarFunctions` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-method"></a>}}
-\if{latex}{\out{\hypertarget{method-method}{}}}
-\subsection{Method \code{method()}}{
+\if{html}{\out{<a id="method-update_method"></a>}}
+\if{latex}{\out{\hypertarget{method-update_method}{}}}
+\subsection{Method \code{update_method()}}{
 Extract or update the method used for computations.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$method(x)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$update_method(x)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

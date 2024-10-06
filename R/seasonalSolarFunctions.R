@@ -166,7 +166,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   #' @param x character, method type. Can be `cooper` or `spencer`.
                                   #' @return When `x` is missing it return a character containing the method that
                                   #' is actually used.
-                                  method = function(x){
+                                  update_method = function(x){
                                     if (missing(x)) {
                                       return(private$method_)
                                     } else {

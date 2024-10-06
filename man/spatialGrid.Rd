@@ -22,6 +22,6 @@ Create a grid from a range of latitudes and longitudes.
 }
 \examples{
 spatialGrid(lat = c(43.7, 43.8), lon = c(12.5, 12.7), by = 0.1)
-spatialGrid(lat = c(43.7, 43.75, 43.8), lon = c(12.6, 12.6, 12.7), by = c(0.05, 0.01))
+spatialGrid(lat = c(43.7, 43.8), lon = c(12.6, 12.7), by = c(0.05, 0.01))
 
 }

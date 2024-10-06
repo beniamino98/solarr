@@ -14,15 +14,21 @@ solarOption_historical(
 \arguments{
 \item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
 
-\item{nmonths}{numeric, months of which the payoff will be computed.}
+\item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
+
+\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
+}
+\value{
+An object of the class `solarOptionPayoff`.
 }
 \description{
 Payoff on Historical Data
 }
 \examples{
 model <- Bologna
-solarOption_historical(model)
+solarOption_historical(model, put=TRUE)
+solarOption_historical(model, put=FALSE)
 
 }

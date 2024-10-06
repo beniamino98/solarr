@@ -15,12 +15,24 @@ solarOption_scenario(
 \arguments{
 \item{scenario}{object with the class `solarModelScenario`. See the function \code{\link{solarModel_scenarios}} for details.}
 
-\item{nmonths}{numeric, months of which the payoff will be computed.}
+\item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
+
+\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
 
 \item{nsim}{number of simulation to use for computation.}
 
 \item{control_options}{control function, see \code{\link{control_solarOption}} for details.}
 }
+\value{
+An object of the class `solarOptionPayoff`.
+}
 \description{
 Payoff on simulated Data
+}
+\examples{
+model <- Bologna
+scenario <- solarScenario(model, from = "2011-01-01", to = "2012-01-01", by = "1 month", nsim = 1, seed = 3)
+solarOption_scenario(scenario)
+solarOption_historical(model)
+
 }

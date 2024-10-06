@@ -13,13 +13,9 @@ solarOption_historical_bootstrap(
 \arguments{
 \item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
 
-\item{control_options}{control function, see \code{\link{control_solarOption}} for details.}
+\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
 
-\item{nsim}{number of simulation to bootstrap.}
-
-\item{ci}{confidence interval for quantile}
-
-\item{seed}{random seed.}
+\item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
 }
 \value{
 An object of the class `solarOptionBoot`.
