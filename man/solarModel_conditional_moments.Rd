@@ -13,4 +13,5 @@ Compute conditional moments from a `solarModel` object
 model <- Bologna
 solarModel_conditional_moments(model)
 solarModel_conditional_moments(model, date = "2022-01-01")
+
 }

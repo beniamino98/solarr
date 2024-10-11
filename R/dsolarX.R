@@ -6,34 +6,44 @@
 #' @param p vector of probabilities.
 #' @param alpha parameter `alpha > 0`.
 #' @param beta parameter `beta > 0` and `alpha + beta < 1`.
-#' @param pdf_Yt density of Yt.
+#' @param pdf_Y density of Y.
+#' @param cdf_Y distribution function of Y.
 #' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
 #' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
 #' @param lower.tail logical; if `TRUE`, the default, the computed probabilities are `P[X < x]`. Otherwise, `P[X > x]`.
-#' @details Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Yt`. Then
+#' @details Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Y`. Then
 #' the funtion `dsolarX` compute the density function of the following transformed random variable, i.e.
 #' \deqn{X(Y) = \alpha+\beta \exp(-\exp(Y))}
 #' where \eqn{X(Y) \in [\alpha, \alpha+\beta]}.
 #' @examples
+#' # Parameters
+#' alpha = 0.001
+#' beta = 0.9
+#' # Grid of points
+#' grid <- seq(alpha, alpha+beta, length.out = 50)[-50]
+#'
 #' # Density
-#' dsolarX(0.4, 0.001, 0.9, function(x) dnorm(x))
-#' dsolarX(0.4, 0.001, 0.9, function(x) dnorm(x, sd = 2))
+#' dsolarX(0.4, alpha, beta, function(x) dnorm(x))
+#' dsolarX(0.4, alpha, beta, function(x) dnorm(x, sd = 2))
+#' plot(grid, dsolarX(grid, alpha, beta, function(x) dnorm(x, sd = 0.2)), type="l")
 #'
 #' # Distribution
-#' psolarX(0.493, 0.001, 0.9, function(x) dnorm(x))
-#' dsolarX(0.493, 0.001, 0.9, function(x) dnorm(x, sd = 2))
+#' psolarX(0.493, alpha, beta, function(x) pnorm(x))
+#' dsolarX(0.493, alpha, beta, function(x) pnorm(x, sd = 2))
+#' plot(grid, psolarX(grid, alpha, beta, function(x) pnorm(x, sd = 0.2)), type="l")
 #'
 #' # Quantile
-#' qsolarX(c(0.05, 0.95), 0.001, 0.9, function(x) dnorm(x))
-#' qsolarX(c(0.05, 0.95), 0.001, 0.9, function(x) dnorm(x, sd = 1.3))
+#' qsolarX(c(0.05, 0.95), alpha, beta, function(x) pnorm(x))
+#' qsolarX(c(0.05, 0.95), alpha, beta, function(x) pnorm(x, sd = 1.3))
 #'
 #' # Random generator (I)
-#' Kt <- rsolarX(366, 0.001, 0.9, function(x) dnorm(x, sd = 0.8))
+#' set.seed(1)
+#' Kt <- rsolarX(366, alpha, beta, function(x) pnorm(x, sd = 0.8))
 #' plot(1:366, Kt, type="l")
 #'
 #' # Random generator (II)
-#' pdf <- function(x) dmixnorm(x, c(-1.8, 0.9), c(0.5, 0.7), c(0.6, 0.4))
-#' Kt <- rsolarX(366, 0.001, 0.9, pdf)
+#' cdf <- function(x) pmixnorm(x, c(-1.8, 0.9), c(0.5, 0.7), c(0.6, 0.4))
+#' Kt <- rsolarX(366, alpha, beta, cdf)
 #' plot(1:366, Kt, type="l")
 #' @rdname dsolarX
 #' @aliases dsolarX
@@ -41,14 +51,13 @@
 #' @aliases qsolarX
 #' @aliases rsolarX
 #' @export
-dsolarX  <- function(x, alpha, beta, pdf_Yt, log = FALSE){
+dsolarX  <- function(x, alpha, beta, pdf_Y, log = FALSE){
   z_x <- (x - alpha)/beta
   u_x <- log(-log(z_x))
-  probs <- -(pdf_Yt(u_x))/(beta*z_x*log(z_x))
+  probs <- -(pdf_Y(u_x))/(beta*log(z_x^z_x))
   if (log) {
     probs <- base::log(probs)
   }
-  probs[is.nan(probs)] <- 0
   return(probs)
 }
 
@@ -56,22 +65,13 @@ dsolarX  <- function(x, alpha, beta, pdf_Yt, log = FALSE){
 #'
 #' @rdname dsolarX
 #' @export
-psolarX  <- function(x, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE){
-  probs <- c()
-  for(i in 1:length(x)){
-    pdf <- function(x) dsolarX(x, alpha, beta, pdf_Yt)
-    if (x[i] > alpha+beta) {
-      probs[i] <- NA
-    } else if (x[i] < alpha) {
-      probs[i] <- NA
-    } else if (x[i] == alpha) {
-      probs[i] <- 0
-    } else if (x[i] == alpha+beta) {
-      probs[i] <- 1
-    } else {
-      probs[i] <- integrate(pdf, lower = alpha, upper = x[i])$value
-    }
-  }
+psolarX  <- function(x, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE){
+
+  z_x <- (x - alpha)/beta
+  u_x <- log(-log(z_x))
+  probs <- 1 - cdf_Y(u_x)
+  probs[x<=alpha] <- 0
+  probs[x>=(alpha+beta)] <- 1
   # Lower tail
   if (!lower.tail) {
     probs <- 1 - probs
@@ -87,28 +87,23 @@ psolarX  <- function(x, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE){
 #'
 #' @rdname dsolarX
 #' @export
-qsolarX  <- function(p, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE){
-  probs <- p
+qsolarX  <- function(p, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE){
   # Log-probability
   if (log.p) {
-    probs <- exp(probs)
+    p <- exp(p)
   }
   # Lower tail
-  if (!lower.tail){
-    probs <- 1 - probs
+  if (!lower.tail) {
+    p <- 1 - p
   }
-
   # Bounds for solar risk driver
-  lower_bound <- alpha
-  upper_bound <- alpha+beta
-  # Initial value for the routine
-  init_value <- (upper_bound+lower_bound)/2
+  interval <- c(alpha, alpha + beta)
   # Density function
-  cdf <- function(x) psolarX(x, alpha, beta, pdf_Yt)
+  cdf <- function(x) psolarX(x, alpha, beta, cdf_Y)
   # Empirical quantile function
-  quantile_ <- Quantile(cdf, lower = lower_bound, x0 = init_value)
+  quantile_numeric <- Quantile(cdf, interval = interval)
   # Quantiles
-  x <- quantile_(p)
+  x <- quantile_numeric(p)
   return(x)
 }
 
@@ -116,8 +111,9 @@ qsolarX  <- function(p, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE){
 #'
 #' @rdname dsolarX
 #' @export
-rsolarX  <- function(n, alpha, beta, pdf_Yt){
+rsolarX  <- function(n, alpha, beta, cdf_Y){
   # Simulated grades
   u <- runif(n, 0, 1)
-  qsolarX(u, alpha, beta, pdf_Yt)
+  # Simulated random variable
+  qsolarX(u, alpha, beta, cdf_Y)
 }

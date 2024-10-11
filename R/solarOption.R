@@ -372,22 +372,22 @@ solarOption_scenario <- function(scenario, nmonths = 1:12, put = TRUE, nsim, con
   # Include or not 29-th of February from computation
   if (leap_year) {
     df_payoff_ <- df_payoff
-    data_month_day <- dplyr::select(model$seasonal_data, Month, Day, n)
   } else {
     df_payoff_ <- dplyr::filter(df_payoff, !(Month == 2 & Day == 29))
-    data_month_day <- dplyr::select(model$seasonal_data, Month, Day, n)
-    data_month_day <- dplyr::filter(data_month_day, !(Month == 2 & Day == 29))
   }
 
   # Aggregation by Month and Day
   df_month_day <- df_payoff_ %>%
     dplyr::group_by(Month, Day, side) %>%
-    dplyr::reframe(premium = mean(payoff),
+    dplyr::reframe(n = dplyr::n(),
+                   premium = mean(payoff),
                    exercise = mean(exercise),
                    Rt = mean(Rt),
                    strike = mean(strike)) %>%
-    dplyr::right_join(data_month_day, by = c("Month", "Day")) %>%
     dplyr::filter(!is.na(premium))
+  day_date <- paste0(ifelse(leap_year, "2020-", "2019-"), df_month_day$Month, "-", df_month_day$Day)
+  df_month_day$n <- number_of_day(day_date)
+
 
   # Aggregation by Month
   df_month <- df_month_day %>%
@@ -480,7 +480,7 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
     seasonal_data <- dplyr::mutate(seasonal_data,
                                    lower = -Inf,
                                    upper = Inf,
-                                   z_x = log(-log((1 - alpha - strike/Ct)/beta)),
+                                   z_x = model$transform$Y(1-strike/Ct),
                                    f_x = list(function(x, Ct) model$transform$GHI_y(x, Ct)))
   } else {
     # Bounds for integration
@@ -499,7 +499,7 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
   }
   # Select only relevant variables
   seasonal_data <- dplyr::select(seasonal_data, Month, Day, strike, Ct, theta, z_x, e_Yt, sd_Yt, alpha, beta,
-                                 mu_up, mu_dw, sd_up, sd_dw, p_up, lower, upper, f_x)
+                                 mu1, mu2, sd1, sd2, p1, lower, upper, f_x)
 
   # Pricing function
   pricing_month_day <- function(seasonal_data, combinations = NA, nmonth = 1, nday = 1, put = TRUE){
@@ -509,12 +509,12 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
     # Mixture combinations
     if (is.na(combinations) && length(combinations) == 1) {
       df_n <- dplyr::mutate(df_n,
-                            e_Yt_up = e_Yt + sd_Yt*mu_up,
-                            e_Yt_dw = e_Yt + sd_Yt*mu_dw,
-                            sd_Yt_up = sd_Yt*sd_up,
-                            sd_Yt_dw = sd_Yt*sd_dw)
+                            e_Yt_up = e_Yt + sd_Yt*mu1,
+                            e_Yt_dw = e_Yt + sd_Yt*mu2,
+                            sd_Yt_up = sd_Yt*sd1,
+                            sd_Yt_dw = sd_Yt*sd2)
       # Create combinations table
-      comb <- dplyr::tibble(mean = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), probs = c(df_n$p_up, 1-df_n$p_up))
+      comb <- dplyr::tibble(mean = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), probs = c(df_n$p1, 1-df_n$p1))
     } else {
       comb <- dplyr::filter(combinations, Month == nmonth)
       # Update mixture parameters
@@ -634,6 +634,197 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
 }
 
 
+
+solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = NA, implvol = 1, put = TRUE, target.Yt = TRUE, control_options = control_solarOption()){
+
+  # Options control
+  K <- control_options$K
+  leap_year = control_options$leap_year
+  # Target and seasonal mean
+  target <- model$target
+  target_bar <- paste0(model$target, "_bar")
+  target_plus <- paste0(model$target, "_plus")
+  # AR(2) stationary variance
+  par <- model$AR_model_Yt$coefficients
+  ar_variance <- (1-par[2])/((1 - par[2])*(1 - par[1]^2 - par[2]^2) - 2*par[1]^2*par[2])
+
+  # Extract seasonal data
+  seasonal_data <- model$seasonal_data
+  # Filter for the selected months
+  seasonal_data <- dplyr::filter(seasonal_data, Month %in% nmonths)
+  # Remove 29 of February from computations
+  if (!leap_year) {
+    seasonal_data <- dplyr::filter(seasonal_data, !(Month == 2 & Day == 29))
+  }
+  # Option Strike
+  seasonal_data$strike <- seasonal_data[[target_bar]]*exp(K)
+  # Add upper and lower bounds and unconditional moments
+  seasonal_data <- dplyr::mutate(seasonal_data,
+                                 e_Yt = Yt_bar + Yt_tilde_uncond,
+                                 sd_Yt = implvol*sigma_bar*sigma_m*sqrt(ar_variance))
+  # Add transform parameters
+  seasonal_data$alpha <- model$transform$alpha
+  seasonal_data$beta <- model$transform$beta
+  if (target.Yt) {
+    # Bounds for integration
+    seasonal_data <- dplyr::mutate(seasonal_data,
+                                   lower = -Inf,
+                                   upper = Inf,
+                                   z_x = model$transform$Y(1-strike/Ct),
+                                   f_x = list(function(x, Ct) model$transform$GHI_y(x, Ct)))
+  } else {
+    # Bounds for integration
+    seasonal_data <- dplyr::mutate(seasonal_data,
+                                   lower = Ct*(1-alpha-beta),
+                                   upper = Ct*(1-alpha),
+                                   z_x = strike,
+                                   f_x = list(function(x, Ct) x))
+  }
+
+  # Add Esscher parameter
+  if (is.function(theta)) {
+    seasonal_data$theta <- purrr::map_dbl(seasonal_data$Month, ~theta(.x))
+  } else {
+    seasonal_data$theta <- theta
+  }
+  # Select only relevant variables
+  seasonal_data <- dplyr::select(seasonal_data, Month, Day, strike, Ct, theta, z_x, e_Yt, sd_Yt, alpha, beta,
+                                 mu1, mu2, sd1, sd2, p1, lower, upper, f_x)
+
+  # Pricing function
+  pricing_month_day <- function(seasonal_data, combinations = NA, nmonth = 1, nday = 1, put = TRUE){
+
+    # Seasonal Data
+    df_n <- dplyr::filter(seasonal_data, Month == nmonth & Day == nday)
+    # Mixture combinations
+    if (is.na(combinations) && length(combinations) == 1) {
+      df_n <- dplyr::mutate(df_n,
+                            e_Yt_up = e_Yt + sd_Yt*mu1,
+                            e_Yt_dw = e_Yt + sd_Yt*mu2,
+                            sd_Yt_up = sd_Yt*sd1,
+                            sd_Yt_dw = sd_Yt*sd2)
+      # Create combinations table
+      comb <- dplyr::tibble(mean = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), probs = c(df_n$p1, 1-df_n$p1))
+    } else {
+      comb <- dplyr::filter(combinations, Month == nmonth)
+      # Update mixture parameters
+      comb$mean <- df_n$e_Yt + df_n$sd_Yt*comb$mean
+      comb$sd <- df_n$sd_Yt*comb$sd
+    }
+
+    if (target.Yt) {
+      if (df_n$theta == 0) {
+        # Mixture Pdf
+        pdf_Yt <- function(x) dmixnorm(x, means = comb$mean, sd = comb$sd, p = comb$probs)
+        # Distribution Yt
+        cdf_Rt <- function(x) pmixnorm(x, means = comb$mean, sd = comb$sd, p = comb$probs)
+      } else {
+        # Esscher Mixture Pdf
+        pdf_Yt <- desscherMixture(means = comb$mean, sd = comb$sd, p = comb$probs, theta = df_n$theta)
+        # Esscher Distribution Yt
+        cdf_Rt <- function(x) integrate(pdf_Yt, lower = df_n$lower, upper = x)$value
+      }
+      # First moment for solar radiation
+      e_Rt <- function(lower, upper) integrate(function(x) df_n$f_x[[1]](x, df_n$Ct)*pdf_Yt(x), lower = lower, upper = upper)$value
+    } else {
+      # Mixture Pdf
+      pdf_Yt <- function(x) dmixnorm(x, means = comb$mean, sd = comb$sd, p = comb$probs)
+      # Density for solar radiation
+      pdf_Rt <- function(x) dsolarGHI(x, df_n$Ct, df_n$alpha, df_n$beta, pdf_Yt)
+
+      # Esscher transform
+      if (df_n$theta != 0) {
+        pdf_Rt <- desscher(pdf_Rt, theta = df_n$theta, lower = df_n$lower, upper = df_n$upper)
+        # Distribution for solar radiation
+        cdf_Rt <- function(x) integrate(pdf_Rt, lower = df_n$lower, upper = x)$value
+      } else {
+        # Distribution for solar radiation
+        cdf_Rt <- function(x) psolarGHI(x, df_n$Ct, model$transform$alpha, model$transform$beta, pdf_Yt)
+      }
+      # First moment for solar radiation
+      e_Rt <- function(lower, upper) integrate(function(x) x*pdf_Rt(x), lower = lower, upper = upper)$value
+    }
+
+    # Option pricing
+    if (put) {
+      # Expected value (Put)
+      df_n$Rt_plus <- e_Rt(df_n$lower, df_n$z_x)
+      # Probability of exercise
+      df_n$exercise <- cdf_Rt(df_n$z_x)
+      # Option expected value
+      df_n$premium <- df_n$strike*df_n$exercise - df_n$Rt_plus
+      # Option type
+      df_n$side <- "put"
+    } else {
+      # Expected value (Call)
+      df_n$Rt_plus <-  e_Rt(df_n$z_x, df_n$upper)
+      # Probability of exercise
+      df_n$exercise <- 1 - cdf_Rt(df_n$z_x)
+      # Option expected value
+      df_n$premium <- df_n$Rt_plus - df_n$strike*df_n$exercise
+      # Option type
+      df_n$side <- "call"
+    }
+    # Expected value (GHI)
+    df_n$Rt <- e_Rt(df_n$lower, df_n$upper)
+    # Select only relevant variables
+    df_n <- dplyr::select(df_n, Month, Day, side, premium, exercise, Rt_plus, Rt, strike)
+    return(df_n)
+  }
+
+  # Model premium for each day and month
+  df_month_day <- purrr::map2_df(seasonal_data$Month, seasonal_data$Day,
+                                 ~pricing_month_day(seasonal_data, combinations, nmonth = .x, nday = .y, put = put))
+
+  day_date <- paste0(ifelse(leap_year, "2020-", "2019-"), df_month_day$Month, "-", df_month_day$Day)
+  df_month_day$n <- number_of_day(day_date)
+  # Model premium aggregated for each Month
+  df_month <- df_month_day %>%
+    dplyr::group_by(Month, side) %>%
+    dplyr::reframe(ndays = dplyr::n(),
+                   premium = sum(premium),
+                   daily_premium = premium/ndays,
+                   exercise = mean(exercise),
+                   Rt = sum(Rt),
+                   Rt_plus = sum(Rt_plus),
+                   strike = sum(strike))
+
+  # Model premium aggregated by Year
+  df_year <- df_month %>%
+    dplyr::group_by(side) %>%
+    dplyr::reframe(ndays = sum(ndays),
+                   premium = sum(premium),
+                   exercise = mean(exercise),
+                   Rt = sum(Rt),
+                   Rt_plus = sum(Rt_plus),
+                   strike = sum(strike))
+
+  # Rename columns to match target name
+  rename_columns <- function(data, old_names, new_names){
+    col_names <- colnames(data)
+    for(i in 1:length(new_names)) {
+      idx_old_names <- which(col_names == old_names[i])
+      col_names[idx_old_names] <- new_names[i]
+    }
+    colnames(data) <- col_names
+    return(data)
+  }
+  df_month_day <- rename_columns(df_month_day, c("Rt", "Rt_plus"), c(target, target_plus))
+  df_month <- rename_columns(df_month, c("Rt", "Rt_plus"), c(target, target_plus))
+  df_year <- rename_columns(df_year, c("Rt", "Rt_plus"), c(target, target_plus))
+
+  structure(
+    list(
+      payoff_month_day = df_month_day,
+      payoff_month = df_month,
+      payoff_year = df_year
+    ),
+    class = c("solarOptionPayoff", "list")
+  )
+}
+
+
+
 #' Calibrator for solar Options
 #' @inheritParams solarOption_historical
 #' @param abstol The absolute convergence tolerance. Only useful for non-negative functions, as a tolerance for reaching zero.
@@ -642,38 +833,20 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
 #'
 #' @examples
 #' model <- Bologna
-#' model_cal <- solarOption_calibrator(model, nmonths = 8, reltol=1e-3)
-#' solarModel_loglik(model)
-#' solarModel_loglik(model_cal)
+#' model_cal <- solarOption_calibrator(model, nmonths = 7, reltol=1e-3)
+#' # Compare log-likelihoods
+#' model$loglik
+#' model_cal$loglik
+#' # Compare parameters
+#' model$NM_model$parameters[7,]
+#' model_cal$NM_model$parameters[7,]
 #' @export
 solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-4, reltol = 1e-4, control_options = control_solarOption()){
 
-  model <- model$clone(deep = TRUE)
-
-  solarModel_update_GM <- function(model, params, nmonth){
-    if (missing(params)) {
-      warning("Params are missing")
-      return(model)
-    }
-    if (missing(nmonth)) {
-      warning("nmonth is missing")
-      return(model)
-    }
-    NM <- model$NM_model
-    NM[nmonth, "mu_up"] <- params[1]
-    NM[nmonth, "mu_dw"] <- params[2]
-    NM[nmonth, "sd_up"] <- params[3]
-    NM[nmonth, "sd_dw"] <- params[4]
-    NM[nmonth, "p_up"] <- params[5]
-    NM[nmonth, "p_dw"] <- 1 - NM[nmonth, "p_up"]
-    model$.__enclos_env__$private$..NM_model <- NM
-    return(model)
-  }
-
+  model_cal <- model$clone(deep = TRUE)
   # Historical monthly payoff
-  payoff_call <- solarOption_historical(model, put = FALSE, control_options = control_options)$payoff_month$premium
-  payoff_put <- solarOption_historical(model, put = TRUE, control_options = control_options)$payoff_month$premium
-
+  payoff_call <- solarOption_historical(model_cal, put = FALSE, control_options = control_options)$payoff_month$premium
+  payoff_put <- solarOption_historical(model_cal, put = TRUE, control_options = control_options)$payoff_month$premium
   # Put-call parity
   optionParity <- function(e_St, e_St_plus, strike, exercise, put = TRUE){
     put <- ifelse(put, 1, -1)
@@ -682,18 +855,18 @@ solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-4, reltol 
     return(put*price)
   }
 
-  min_sd <- min(model$NM_model$sd_up)*0.8
-  min_p <- min(c(model$NM_model$p_up, 1-model$NM_model$p_up, 0.2))
-  max_p <- max(c(model$NM_model$p_up, 1-model$NM_model$p_up, 0.8))
+  #min_sd <- min(c(model$NM_model$parameters$sd1, model$NM_model$parameters$sd2))*0.8
+  #min_p <- min(c(model$NM_model$parameters$p1, 1-model$NM_model$parameters$p1, 0.2))
+  #max_p <- max(c(model$NM_model$parameters$p1, 1-model$NM_model$parameters$p1, 0.8))
   # Loss function
-  loss_function <- function(params, model, nmonth){
-    if(params[3] < min_sd | params[4] < min_sd | params[5] > max_p | params[5] < min_p){
-      return(NA)
-    }
-    # Updated model
-    upd_mod <- solarModel_update_GM(model, params, nmonth)
+  loss_function <- function(params, model_cal, nmonth){
+   # if(params[3] < min_sd | params[4] < min_sd | params[5] > max_p | params[5] < min_p){
+   #    return(NA)
+   # }
+    # Update the parameters
+    model_cal$NM_model$model[[nmonth]]$update(means = params[1:2], sd = params[3:4], p = c(params[5], 1-params[5]))
     # Put pricing function
-    df_put <- solarOption_model(upd_mod, put = TRUE, nmonth = nmonth, control_options = control_options)
+    df_put <- solarOption_model(model_cal, put = TRUE, nmonth = nmonth, control_options = control_options)
     # Put price
     price_put <- df_put$payoff_year$premium
     # Call price
@@ -706,13 +879,18 @@ solarOption_calibrator <- function(model, nmonths = 1:12, abstol = 1e-4, reltol 
   }
 
   # Monthly calibration
-  model_cal <- model
   for(nmonth in nmonths){
     message("------------------------------------ Month: ", nmonth, " ------------------------------------ ")
-    params <- unlist(model$NM_model[nmonth, c(2:6)])
-    opt <- optim(params, loss_function, model = model, nmonth = nmonth, control = list(abstol = abstol, reltol = reltol))
-    model_cal <- solarModel_update_GM(model_cal, opt$par, nmonth)
+    params <- unlist(model_cal$NM_model$parameters[nmonth, c(2:6)])
+    opt <- optim(params, loss_function, model_cal = model_cal, nmonth = nmonth, control = list(abstol = abstol, reltol = reltol))
+    params <- opt$par
+    # Update the parameters
+    model_cal$NM_model$model[[nmonth]]$update(means = params[1:2], sd = params[3:4], p = c(params[5], 1-params[5]))
   }
+  # Update log-likelihood and conditional moments
+  model_cal$conditional_moments()
+  model_cal$unconditional_moments()
+  model_cal$logLik()
   return(model_cal)
 }
 

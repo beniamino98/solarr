@@ -14,14 +14,19 @@
 #' @references Kumaraswamy Distribution [\href{https://en.wikipedia.org/wiki/Kumaraswamy_distribution}{W}].
 #'
 #' @examples
+#' # Grid
 #' x <- seq(0, 1, 0.01)
+#'
 #' # Density function
 #' plot(x, dkumaraswamy(x, 0.2, 0.3), type = "l")
 #' plot(x, dkumaraswamy(x, 2, 1.1), type = "l")
+#'
 #' # Distribution function
 #' plot(x, pkumaraswamy(x, 2, 1.1), type = "l")
+#'
 #' # Quantile function
 #' qkumaraswamy(0.2, 0.4, 1.4)
+#'
 #' # Random generator
 #' rkumaraswamy(20, 0.4, 1.4)
 #'
@@ -71,7 +76,7 @@ qkumaraswamy <- function(p, a = 1, b = 1, log.p = FALSE, lower.tail = TRUE){
     probs <- exp(probs)
   }
   # Lower tail
-  if (!lower.tail){
+  if (!lower.tail) {
     probs <- 1 - probs
   }
   # Ensure bounds
@@ -86,7 +91,7 @@ qkumaraswamy <- function(p, a = 1, b = 1, log.p = FALSE, lower.tail = TRUE){
 #' @rdname dkumaraswamy
 rkumaraswamy <- function(n, a = 1, b = 1){
   # Control
-  if (length(n) > 1){
+  if (length(n) > 1) {
     n <- length(n)
   }
   # Simulated grades

@@ -17,7 +17,7 @@ Plot a forecast from a solarModel object
 }
 \examples{
 model <- Bologna
-day_date <- "2024-01-01"
+day_date <- "2013-01-13"
 solarModel_forecaster_plot(model, date = day_date)
 solarModel_forecaster_plot(model, date = day_date, unconditional = TRUE)
 solarModel_forecaster_plot(model, date = day_date, type = "dw")

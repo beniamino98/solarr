@@ -18,24 +18,24 @@
 #' # Grid of points
 #' x <- seq(-5, 5, 0.01)
 #'
-#' # Density function (right tailed)
-#' p <- dsnorm(x, shape = 4.9)
-#' plot(x, p, type = "l")
-#'
-#' # Density function (left tailed)
-#' p <- dsnorm(x, shape = -4.9)
-#' plot(x, p, type = "l")
+#' # Density function
+#' # right tailed
+#' plot(x, dsnorm(x, shape = 4.9), type = "l")
+#' # left tailed
+#' plot(x, dsnorm(x, shape = -4.9), type = "l")
 #'
 #' # Distribution function
-#' p <- psnorm(x)
-#' plot(x, p, type = "l")
+#' plot(x, psnorm(x, shape = 4.9), type = "l")
+#' plot(x, psnorm(x, shape = -4.9), type = "l")
 #'
 #' # Quantile function
-#' dsnorm(0.1)
-#' psnorm(qsnorm(0.9))
+#' dsnorm(0.1, shape = 4.9)
+#' dsnorm(0.1, shape = -4.9)
+#' psnorm(qsnorm(0.9, shape = 3), shape = 3)
 #'
-#' # Random numbers
-#' plot(rsnorm(100), type = "l")
+#' # Random generator
+#' set.seet(1)
+#' plot(rsnorm(100, shape = 4), type = "l")
 #'
 #' @name dsnorm
 #' @rdname dsnorm
@@ -66,7 +66,6 @@ psnorm <- function(x, location = 0, scale = 1, shape = 0, log.p = FALSE, lower.t
   cdf <- CDF(dsnorm, location = location, scale = scale, shape = shape, lower=-Inf, log = FALSE)
   # Cumulated probabilities
   probs <- cdf(z)
-
   # Lower tail
   if (!lower.tail) {
     probs <- 1 - probs
@@ -85,9 +84,9 @@ qsnorm <- function(p, location = 0, scale = 1, shape = 0, log.p = FALSE, lower.t
   # Distribution function
   cdf <- function(x) psnorm(x, location = location, scale = scale, shape = shape)
   # Quantile function
-  qfunct <- Quantile(cdf, lower = -Inf)
+  quantile_numeric <- Quantile(cdf, interval = c(-location - scale*10, location + scale*10))
   # Quantiles
-  x <- qfunct(p, log.p = log.p, lower.tail = lower.tail)
+  x <- quantile_numeric(p, log.p = log.p, lower.tail = lower.tail)
   return(x)
 }
 

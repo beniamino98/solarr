@@ -30,7 +30,7 @@ control_model <- control_solarModel(outliers_quantile = 0)
 
 ```{r}
 spec <- solarModel_spec("Ferrara", from="2005-01-01", to="2022-01-01", control_model = control_model)
-model <- solarModelR6$new(spec)
+model <- solarModel$new(spec)
 model$fit()
 ```
 
@@ -48,7 +48,6 @@ ggplot()+
 # Parameters
 
 ```{r}
-
 dplyr::bind_cols(model$parameters) %>%
   tidyr::gather("parameter", "value")
 ```

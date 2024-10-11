@@ -3,46 +3,12 @@
 \name{gaussianMixture}
 \alias{gaussianMixture}
 \title{Gaussian mixture}
-\usage{
-gaussianMixture(
-  x,
-  means,
-  sd,
-  p,
-  components = 2,
-  weights,
-  maxit = 100,
-  abstol = 1e-14,
-  na.rm = FALSE
-)
-}
-\arguments{
-\item{x}{vector}
-
-\item{means}{vector of initial means parameters.}
-
-\item{sd}{vector of initial std. deviation parameters.}
-
-\item{p}{vector of initial probability parameters.}
-
-\item{components}{number of components.}
-
-\item{weights}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
-When `missing` all the available observations will be used.}
-
-\item{maxit}{maximum number of iterations.}
-
-\item{na.rm}{logical. When `TRUE`, the default, `NA` values will be excluded from the computations.}
-
-\item{match_moments}{logical. When `TRUE`, the parameters of the second distribution will be estimated such that
-the empirical first two moments of `x` matches the theoretical Gaussian mixture moments.}
-
-\item{absotol}{absolute level for convergence.}
-}
-\value{
-list with clustered components and the optimal parameters.
-}
 \description{
+Gaussian mixture
+
+Gaussian mixture
+}
+\details{
 Fit the parameters of a gaussian mixture with k-components.
 }
 \examples{
@@ -54,7 +20,216 @@ pdf <- dmixnorm(means, sd, p)
 # Distribution function
 cdf <- pmixnorm(means, sd, p)
 # Random numbers
-x <- rgaussianMixture(1000, means, sd, p)
-gaussianMixture(x$X, means, sd, p, components = 3)
-gaussianMixture(x$X, means, sd, prior_p = p, components = 3)
+x <- rmixnorm(5000, means, sd, p)
+gm <- gaussianMixture$new(components=3)
+gm$fit(x$X)
+gm$parameters
+gm$EM(x$X)
+gm$parameters
+gm$fitted
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{maxit}}{Integer, maximum number of iterations.}
+
+\item{\code{abstol}}{Numeric, absolute level for convergence.}
+
+\item{\code{components}}{Integer, number of components.}
+
+\item{\code{means}}{Numeric vector of means parameters.}
+
+\item{\code{sd}}{Numeric vector of std. deviation parameters.}
+
+\item{\code{p}}{Numeric vector of probability parameters.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{parameters}}{named list with mixture parameters.}
+
+\item{\code{model}}{Tibble with mixture parameters, in order means, sd, p.}
+
+\item{\code{loglik}}{log-likelihood of the fitted series.}
+
+\item{\code{fitted}}{fitted series}
+
+\item{\code{moments}}{Tibble with the theoric moments and the number of observations used for fit.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-new}{\code{gaussianMixture$new()}}
+\item \href{#method-logLik}{\code{gaussianMixture$logLik()}}
+\item \href{#method-E_step}{\code{gaussianMixture$E_step()}}
+\item \href{#method-classify}{\code{gaussianMixture$classify()}}
+\item \href{#method-fit}{\code{gaussianMixture$fit()}}
+\item \href{#method-EM}{\code{gaussianMixture$EM()}}
+\item \href{#method-update}{\code{gaussianMixture$update()}}
+\item \href{#method-clone}{\code{gaussianMixture$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-new"></a>}}
+\if{latex}{\out{\hypertarget{method-new}{}}}
+\subsection{Method \code{new()}}{
+Initialize a gaussianMixture object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$new(components = 2, maxit = 500, abstol = 1e-09)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{components}}{Integer, number of components.}
+
+\item{\code{maxit}}{Numeric, maximum number of iterations.}
+
+\item{\code{abstol}}{Numeric, absolute level for convergence.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-logLik"></a>}}
+\if{latex}{\out{\hypertarget{method-logLik}{}}}
+\subsection{Method \code{logLik()}}{
+Compute the log-likelihood
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$logLik(x, params)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+
+\item{\code{params}}{Named list of mixture parameters.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-E_step"></a>}}
+\if{latex}{\out{\hypertarget{method-E_step}{}}}
+\subsection{Method \code{E_step()}}{
+Compute the posterior probabilities (E-step)
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$E_step(x, params)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+
+\item{\code{params}}{a list of mixture parameters}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-classify"></a>}}
+\if{latex}{\out{\hypertarget{method-classify}{}}}
+\subsection{Method \code{classify()}}{
+Classify the time series in its components
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$classify(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-fit}{}}}
+\subsection{Method \code{fit()}}{
+Fit the parameters with mclust package
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$fit(x, weights)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+
+\item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
+When `missing` all the available observations will be used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-EM"></a>}}
+\if{latex}{\out{\hypertarget{method-EM}{}}}
+\subsection{Method \code{EM()}}{
+Fit the parameters with EM-algorithm
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$EM(x, weights)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+
+\item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
+When `missing` all the available observations will be used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-update"></a>}}
+\if{latex}{\out{\hypertarget{method-update}{}}}
+\subsection{Method \code{update()}}{
+Update the responsabilities, means, sd, p and recompute log-likelihood and fitted data.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update(x, weights, means, sd, p)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+
+\item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
+When `missing` all the available observations will be used.}
+
+\item{\code{means}}{Numeric vector of means parameters.}
+
+\item{\code{sd}}{Numeric vector of std. deviation parameters.}
+
+\item{\code{p}}{Numeric vector of probability parameters.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

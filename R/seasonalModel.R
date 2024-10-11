@@ -102,7 +102,7 @@ seasonalModel <- R6::R6Class("seasonalModel",
                                #' @field coefficients Get a vector with the fitted coefficients.
                                coefficients = function(){
                                   private$..model$coefficients
-                                  },
+                               },
                                #' @field model Get the fitted `lm` object.
                                model = function(){
                                   private$..model

@@ -7,13 +7,13 @@
 \alias{rsolarX}
 \title{Solar risk driver random variable}
 \usage{
-dsolarX(x, alpha, beta, pdf_Yt, log = FALSE)
+dsolarX(x, alpha, beta, pdf_Y, log = FALSE)
 
-psolarX(x, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE)
+psolarX(x, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE)
 
-qsolarX(p, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE)
+qsolarX(p, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE)
 
-rsolarX(n, alpha, beta, pdf_Yt)
+rsolarX(n, alpha, beta, cdf_Y)
 }
 \arguments{
 \item{x}{vector of quantiles.}
@@ -22,9 +22,11 @@ rsolarX(n, alpha, beta, pdf_Yt)
 
 \item{beta}{parameter `beta > 0` and `alpha + beta < 1`.}
 
-\item{pdf_Yt}{density of Yt.}
+\item{pdf_Y}{density of Y.}
 
 \item{log}{logical; if `TRUE`, probabilities are returned as `log(p)`.}
+
+\item{cdf_Y}{distribution function of Y.}
 
 \item{log.p}{logical; if `TRUE`, probabilities p are given as `log(p)`.}
 
@@ -36,30 +38,39 @@ rsolarX(n, alpha, beta, pdf_Yt)
 Solar risk driver density, distribution, quantile and random generator.
 }
 \details{
-Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Yt`. Then
+Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Y`. Then
 the funtion `dsolarX` compute the density function of the following transformed random variable, i.e.
 \deqn{X(Y) = \alpha+\beta \exp(-\exp(Y))}
 where \eqn{X(Y) \in [\alpha, \alpha+\beta]}.
 }
 \examples{
+# Parameters
+alpha = 0.001
+beta = 0.9
+# Grid of points
+grid <- seq(alpha, alpha+beta, length.out = 50)[-50]
+
 # Density
-dsolarX(0.4, 0.001, 0.9, function(x) dnorm(x))
-dsolarX(0.4, 0.001, 0.9, function(x) dnorm(x, sd = 2))
+dsolarX(0.4, alpha, beta, function(x) dnorm(x))
+dsolarX(0.4, alpha, beta, function(x) dnorm(x, sd = 2))
+plot(grid, dsolarX(grid, alpha, beta, function(x) dnorm(x, sd = 0.2)), type="l")
 
 # Distribution
-psolarX(0.493, 0.001, 0.9, function(x) dnorm(x))
-dsolarX(0.493, 0.001, 0.9, function(x) dnorm(x, sd = 2))
+psolarX(0.493, alpha, beta, function(x) pnorm(x))
+dsolarX(0.493, alpha, beta, function(x) pnorm(x, sd = 2))
+plot(grid, psolarX(grid, alpha, beta, function(x) pnorm(x, sd = 0.2)), type="l")
 
 # Quantile
-qsolarX(c(0.05, 0.95), 0.001, 0.9, function(x) dnorm(x))
-qsolarX(c(0.05, 0.95), 0.001, 0.9, function(x) dnorm(x, sd = 1.3))
+qsolarX(c(0.05, 0.95), alpha, beta, function(x) pnorm(x))
+qsolarX(c(0.05, 0.95), alpha, beta, function(x) pnorm(x, sd = 1.3))
 
 # Random generator (I)
-Kt <- rsolarX(366, 0.001, 0.9, function(x) dnorm(x, sd = 0.8))
+set.seed(1)
+Kt <- rsolarX(366, alpha, beta, function(x) pnorm(x, sd = 0.8))
 plot(1:366, Kt, type="l")
 
 # Random generator (II)
-pdf <- function(x) dmixnorm(x, c(-1.8, 0.9), c(0.5, 0.7), c(0.6, 0.4))
-Kt <- rsolarX(366, 0.001, 0.9, pdf)
+cdf <- function(x) pmixnorm(x, c(-1.8, 0.9), c(0.5, 0.7), c(0.6, 0.4))
+Kt <- rsolarX(366, alpha, beta, cdf)
 plot(1:366, Kt, type="l")
 }

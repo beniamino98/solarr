@@ -94,7 +94,7 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                     # Add target variable
                                     data$x <- x
                                     # Add extraterrestrial radiation
-                                    data$H0 <- seasonalSolarFunctions$new("spencer")$H0(data$n, lat)$H0
+                                    data$H0 <- seasonalSolarFunctions$new("spencer")$H0(data$n, lat)
                                     # Add clearsky
                                     if (method == "II") {
                                       if (missing(clearsky)) {
@@ -165,7 +165,7 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                   #' @param lat reference latitude
                                   updateH0 = function(lat){
                                     self$lat <- lat
-                                    self$seasonal_data$H0 <- seasonalSolarFunctions$new("spencer")$H0(self$seasonal_data$n, self$lat)$H0
+                                    self$seasonal_data$H0 <- seasonalSolarFunctions$new("spencer")$H0(self$seasonal_data$n, self$lat)
                                   }
                                 ),
                                 private = list(

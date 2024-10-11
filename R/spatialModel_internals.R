@@ -45,15 +45,15 @@ spatialModel_combinations = function(nb_models, nmonths = 1:12, weights = rep(1/
     Location_D = c(1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0)
   )
   # Add observations weights
-  data_A <- dplyr::bind_cols(nb_models[[1]]$data, w = nb_models[[1]]$outliers$weights)
-  data_B <- dplyr::bind_cols(nb_models[[2]]$data, w = nb_models[[2]]$outliers$weights)
-  data_C <- dplyr::bind_cols(nb_models[[3]]$data, w = nb_models[[3]]$outliers$weights)
-  data_D <- dplyr::bind_cols(nb_models[[4]]$data, w = nb_models[[4]]$outliers$weights)
+  data_A <- dplyr::bind_cols(nb_models[[1]]$data)
+  data_B <- dplyr::bind_cols(nb_models[[2]]$data)
+  data_C <- dplyr::bind_cols(nb_models[[3]]$data)
+  data_D <- dplyr::bind_cols(nb_models[[4]]$data)
   # Filter only for train data with non-zero weight
-  df_A <- dplyr::filter(data_A, isTrain & w != 0)
-  df_B <- dplyr::filter(data_B, isTrain & w != 0)
-  df_C <- dplyr::filter(data_C, isTrain & w != 0)
-  df_D <- dplyr::filter(data_D, isTrain & w != 0)
+  df_A <- dplyr::filter(data_A, isTrain & weights != 0)
+  df_B <- dplyr::filter(data_B, isTrain & weights != 0)
+  df_C <- dplyr::filter(data_C, isTrain & weights != 0)
+  df_D <- dplyr::filter(data_D, isTrain & weights != 0)
   # Select only relevant variables
   df_A <- dplyr::select(df_A, date, B_A = "B", u_A = "u_tilde")
   df_B <- dplyr::select(df_B, date, B_B = "B", u_B = "u_tilde")

@@ -36,14 +36,19 @@ rkumaraswamy(n, a = 1, b = 1)
 Kumaraswamy density, distribution, quantile and random generator.
 }
 \examples{
+# Grid
 x <- seq(0, 1, 0.01)
+
 # Density function
 plot(x, dkumaraswamy(x, 0.2, 0.3), type = "l")
 plot(x, dkumaraswamy(x, 2, 1.1), type = "l")
+
 # Distribution function
 plot(x, pkumaraswamy(x, 2, 1.1), type = "l")
+
 # Quantile function
 qkumaraswamy(0.2, 0.4, 1.4)
+
 # Random generator
 rkumaraswamy(20, 0.4, 1.4)
 

@@ -6,8 +6,9 @@
 \usage{
 solarOption_contracts(
   payoff,
-  type = "mod",
+  type = "model",
   premium = "Q",
+  put = TRUE,
   nyear = 2021,
   tick = 0.06,
   efficiency = 0.2,

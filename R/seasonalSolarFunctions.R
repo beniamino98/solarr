@@ -139,27 +139,58 @@ number_of_day <- function(x){
       n_of_day[i] <- which(seq_date_year == day)
     }
   }
-  names(n_of_day) <- x
+  names(n_of_day) <- day_date
   return(n_of_day)
 }
 
 #' Solar seasonal functions
 #'
+#' @examples
+#' dates <- seq.Date(as.Date("2022-01-01"), as.Date("2022-12-31"), 1)
+#' # Seasonal functions object
+#' sf <- seasonalSolarFunctions$new()
+#'
+#' # Adjustment parameter
+#' sf$B(number_of_day(dates))
+#'
+#' # Time adjustment in minutes
+#' sf$E(dates)
+#'
+#' # Declination
+#' sf$declination(dates)
+#'
+#' # Solar constant
+#' sf$G0
+#'
+#' # Solar constant adjusted
+#' sf$G0n(dates)
+#'
+#' # Extraterrestrial radiation
+#' sf$H0(dates, 43)
+#'
+#' # Number of hours of sun
+#' sf$sun_hours(dates, 43)
+#'
+#' # Sunset hour angle
+#' sf$sunset_hour_angle(dates, 43)
+#'
 #' @name seasonalSolarFunctions
 #' @rdname seasonalSolarFunctions
-#' @examples
-#' sf <- seasonalSolarFunctions$new()
-#' sf$angle_minmax("2022-01-01", 44)
-#' sf$H0(1:365, 44)
+#'
+#' @references Duffie, Solar Engineering of Thermal Processes Fourth Edition.
 #' @export
 seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                 public = list(
+                                  #' @field legal_hour Logical, when `TRUE` the clock time will be corrected for the legal hour.
+                                  legal_hour = TRUE,
                                   #' @description
                                   #' Initialize a `seasonalSolarFunctions` object
                                   #' @param method character, method type for computations. Can be `cooper` or `spencer`.
-                                  initialize = function(method = "spencer"){
+                                  #' @param legal_hour Logical, when `TRUE` the clock time will be corrected for the legal hour.
+                                  initialize = function(method = "spencer", legal_hour = TRUE){
                                     # Method of computation
                                     private$method_ <- match.arg(method, choices = c("spencer", "cooper"))
+                                    self$legal_hour <- legal_hour
                                   },
                                   #' @description
                                   #' Extract or update the method used for computations.
@@ -202,50 +233,139 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     x*base::pi/180
                                   },
                                   #' @description
-                                  #' Compute solar time adjustment in seconds
+                                  #' Compute the time adjustment in minutes.
                                   #' @param n number of the day of the year
-                                  #' @details The function computes
-                                  #' \deqn{229.2(0.000075 + 0.001868 \cos(B) - 0.032077\sin(B) - 0.014615\cos(2B) - 0.04089\sin(2B))}
-                                  time_adjustment = function(n){
+                                  #' @details The function implement Eq. 1.5.3 from Duffie (4th edition), i.e.
+                                  #' \deqn{E = 229.2(0.000075 + 0.001868 \cos(B) - 0.032077\sin(B) - 0.014615\cos(2B) - 0.04089\sin(2B))}
+                                  #' @return The time adjustment in minutes.
+                                  E = function(n){
                                     n <- number_of_day(n)
                                     B <- self$B(n-1)
                                     # Time adjustment in minutes
-                                    time_adj <- 229.2*(0.000075 + 0.001868*cos(B) - 0.032077*sin(B) - 0.014615*cos(2*B) - 0.04089*sin(2*B))
+                                    E <- 229.2*(0.000075 + 0.001868*cos(B) - 0.032077*sin(B) - 0.014615*cos(2*B) - 0.04089*sin(2*B))
                                     # Time adjustment in seconds
-                                    time_adj <- lubridate::seconds(time_adj*60)
-                                    return(time_adj)
+                                    return(lubridate::dminutes(E))
                                   },
                                   #' @description
-                                  #' Compute solar constant
+                                  #' Compute the solar time from a clock time.
+                                  #' @param x datetime, clock hour.
+                                  #' @param lon longitude of interest in degrees.
+                                  #' @param lon_sd longitude of the Local standard meridian in degrees.
+                                  #' @details The function implement Eq. 1.5.2 from Duffie (4th edition), i.e.
+                                  #' \deqn{solartime = clocktime + 4 (lon_s - lon) + E(n)}
+                                  #' @return A datetime object
+                                  solar_time = function(x, lon, lon_sd = 15){
+                                    # Convert in a datetime
+                                    date_h <- as.POSIXlt(x)
+                                    # Adjust the date for legal hour
+                                    if (self$legal_hour) {
+                                      start_legal_hour <- as.Date(paste0(lubridate::year(date_h[1]), "-03-10"))
+                                      end_legal_hour <- as.Date(paste0(lubridate::year(date_h[1]), "-10-30"))
+                                      #   - from 27 Mar - 30 Oct (TRUE)
+                                      #   - from 30 Oct - 27 Mar (FALSE)
+                                      is_legal_hour <- (as.Date(date_h) >= start_legal_hour) & (as.Date(date_h) <= end_legal_hour)
+                                      date_h <- dplyr::if_else(is_legal_hour, date_h - lubridate::dhours(1), date_h)
+                                    }
+                                    # Solar hour for the selected day-time
+                                    date_h - lubridate::dminutes(4*(lon_sd-lon)) + self$E(date_h)
+                                  },
+                                  #' @description
+                                  #' Compute the solar angle for a specific hour of the day.
+                                  #' @param x datetime, clock hour.
+                                  #' @param lon longitude of interest in degrees.
+                                  #' @param lon_sd longitude of the Local standard meridian in degrees.
+                                  #' @return An angle in degrees
+                                  hour_angle = function(x, lon, lon_sd = 15){
+                                    # Solar hour
+                                    LST <- self$solar_time(x, lon, lon_sd)
+                                    # Local solar time
+                                    solar_hour <- lubridate::hour(LST) + lubridate::minute(LST)/60
+                                    # Solar angle in degrees
+                                    15*(solar_hour - 12)
+                                  },
+                                  #' @description
+                                  #' Compute the incidence angle
+                                  #' @param x datetime, clock hour.
+                                  #' @param lat latitude of interest in degrees.
+                                  #' @param lon longitude of interest in degrees.
+                                  #' @param lon_sd longitude of the Local standard meridian in degrees.
+                                  #' @param beta altitude
+                                  #' @param gamma orientation
+                                  #' @return An angle in degrees
+                                  incidence_angle = function(x, lat, lon, lon_sd = 15, beta = 0, gamma = 0){
+                                    # Altitude of the surface in radiant
+                                    beta = self$radiant(beta)
+                                    # Orientation of the surface in radiant
+                                    gamma = self$radiant(gamma)
+                                    # Latitude in radiant
+                                    phi = self$radiant(lat)
+                                    # Solar hour angle
+                                    omega = self$radiant(self$hour_angle(x, lon, lon_sd))
+                                    # Declination in radiant
+                                    delta = self$radiant(self$declination(x))
+                                    # Components
+                                    T_ = sin(delta)*(sin(phi)*cos(beta) - cos(phi)*sin(beta)*cos(gamma))
+                                    U_ = cos(delta)*(cos(phi)*cos(beta) + sin(phi)*sin(beta)*cos(gamma))
+                                    V_ = cos(delta)*sin(beta)*sin(gamma)
+                                    # Cosine of the angle of incidence
+                                    cos_theta_z = T_ + U_*cos(omega) + V_*sin(omega)
+                                    # Angle of incidence
+                                    self$degree(acos(cos_theta_z))
+                                  },
+                                  #' @description
+                                  #' Compute the solar azimuth angle for a specific time of the day.
+                                  #' @param x datetime, clock hour.
+                                  #' @param lat latitude of interest in degrees.
+                                  #' @param lon longitude of interest in degrees.
+                                  #' @param lon_sd longitude of the Local standard meridian in degrees.
+                                  #' @details The function implement Eq. 1.6.6 from Duffie (4th edition), i.e.
+                                  #' \deqn{\gamma_s = sign(\omega) \left|\cos^{-1}\left( \frac{\cos \theta_z \sin \phi - \sin \delta}{\sin \theta_z \cos \phi} \right) \right|}
+                                  #' @return The solar azimut angle in degrees
+                                  azimut_angle = function(x, lat, lon, lon_sd = 15){
+                                    # Declination in radiant
+                                    delta <- self$radiant(self$declination(x))
+                                    # Latitude in radiant
+                                    phi = self$radiant(lat)
+                                    # Solar hour angle
+                                    omega = self$radiant(self$hour_angle(x, lon, lon_sd))
+                                    # The angle of incidence is the zenith angle of the sun
+                                    theta_z = self$radiant(self$incidence_angle(x, lat, lon, lon_sd, beta = 0, gamma = 0))
+                                    # Azimut angle
+                                    gamma_s <- sign(omega)*abs(acos((cos(theta_z)*cos(phi) - sin(delta))/(sin(theta_z)*cos(phi))))
+                                    self$degree(gamma_s)
+                                  },
+                                  #' @description
+                                  #' Compute the solar constant adjusted for the day of the year.
                                   #' @param n number of the day of the year
-                                  #' @details If the selected method is `cooper`, the function computes:
+                                  #' @details When method is `cooper` the function implement Eq. 1.4.1a from Duffie (4th edition), i.e.
                                   #' \deqn{G_{0,n} = G_0 (1 + 0.033\cos(B))}
-                                  #' otherwise when it is `spencer` it computes:
+                                  #' otherwise when it is `spencer` it implement Eq. 1.4.1b from Duffie (4th edition):
                                   #' \deqn{G_{0,n} = G_0 (1.000110 + 0.034221\cos(B) + 0.001280\sin(B) + 0.000719\cos(2B) + 0.000077\sin(2B))}
+                                  #' @return The solar constant in \eqn{W/m^2} for the day n.
                                   G0n = function(n){
                                     n <- number_of_day(n)
-                                    # Method cooper
                                     if (private$method_ == "cooper") {
+                                      # Method cooper
                                       G0n <- private$..G0*(1 + 0.033 * cos(self$B(n)))
-                                      # Method spencer
                                     } else if (private$method_ == "spencer") {
+                                      # Method spencer
                                       B <- self$B(n-1)
                                       G0n <- private$..G0*(1.000110 + 0.034221*cos(B) + 0.001280*sin(B) + 0.000719*cos(2*B) + 0.000077*sin(2*B))
                                     }
                                     return(G0n)
                                   },
                                   #' @description
-                                  #' Compute solar declination
+                                  #' Compute solar declination in degrees.
                                   #' @param n number of the day of the year
-                                  #' @details If the selected method was `cooper`, the function computes:
+                                  #' @details When method is `cooper` the function implement Eq. 1.6.1a from Duffie (4th edition), i.e.
                                   #' \deqn{\delta(n) = 23.45 \sin \left(\frac{2 \pi (284 + n)}{365}\right)}
-                                  #' otherwise when it is `spencer` it computes:
+                                  #' otherwise when it is `spencer` it implement Eq. 1.6.1b from Duffie (4th edition):
                                   #' \deqn{\delta(n) = \frac{180}{\pi}(0.006918 - 0.399912\cos(B) + 0.070257\sin(B) - 0.006758\cos(2B))}
-                                  declination = function(n) {
+                                  #' @return The solar declination in degrees.
+                                  declination = function(n){
                                     n <- number_of_day(n)
                                     if (private$method_ == "cooper") {
                                       declination <- sin(2*base::pi*(284 + n)/365)*23.45
-                                      declination <- self$degree(declination)
                                     } else if (private$method_ == "spencer") {
                                       B <- self$B(n-1)
                                       declination <- (180/base::pi)*(0.006918 - 0.399912*cos(B) + 0.070257*sin(B) - 0.006758*cos(2*B))
@@ -253,21 +373,53 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     return(declination)
                                   },
                                   #' @description
+                                  #' Compute the solar extraterrestrial radiation
+                                  #' @param n number of the day of the year
+                                  #' @param lat latitude of interest in degrees.
+                                  #' @return Extraterrestrial radiation on an horizontal surface in kilowatt hour for metres squared for day.
+                                  H0 = function(n, lat){
+                                    # Latitude in radiant
+                                    phi <- self$radiant(lat)
+                                    # Declination in radiant
+                                    delta <- self$radiant(self$declination(n))
+                                    # Sunset hour angle in degrees
+                                    omega_s <- self$sunset_hour_angle(n, lat)
+                                    # Extraterrestrial radiation in daily joules/m^2 per day
+                                    Gn <- (self$G0n(n)*(24*3600))/base::pi
+                                    H0 <- Gn*(cos(phi)*cos(delta)*sin(self$radiant(omega_s)) + ((base::pi*omega_s)/180)*sin(phi)*sin(delta))
+                                    # Convert in (kilowatt hour)/m^2 per day
+                                    H0/3600000
+                                  },
+                                  #' @description
                                   #' Compute solar angle at sunset in degrees
                                   #' @param n number of the day of the year
-                                  #' @param lat latitude in degrees.
-                                  #' @details The function computes
-                                  #' \deqn{\cos^{-1}(-\tan(\delta(n))\tan(\phi))}
-                                  solar_angle = function(n, lat){
+                                  #' @param lat Numeric, latitude of interest in degrees.
+                                  #' @details The function implement Eq. 1.6.10 from Duffie (4th edition), i.e.
+                                  #' \deqn{\omega_s = \cos^{-1}(-\tan(\delta(n))\tan(\phi))}
+                                  #' @return The sunset hour angle in degrees.
+                                  sunset_hour_angle = function(n, lat){
                                     # Latitude from degrees to radiant
                                     phi <- self$radiant(lat)
+                                    # Declination from degrees to radiant
                                     declination <- self$radiant(self$declination(n))
+                                    # Sunset hour angle in degrees
                                     self$degree(acos(-tan(declination)*tan(phi)))
+                                  },
+                                  #' @description
+                                  #' Compute number of sun hours for a day n.
+                                  #' @param n number of the day of the year.
+                                  #' @param lat Numeric, latitude of interest in degrees.
+                                  #' @details The function implement Eq. 1.6.11 from Duffie (4th edition), i.e.
+                                  #' \deqn{\frac{2}{15} \omega_s}
+                                  sun_hours = function(n, lat){
+                                    # Number of sun hours
+                                    sun_hours <- self$sunset_hour_angle(n, lat)*(2/15)
+                                    return(lubridate::dhours(sun_hours))
                                   },
                                   #' @description
                                   #' Compute solar altitude in degrees
                                   #' @param n number of the day of the year
-                                  #' @param lat latitude in degrees.
+                                  #' @param lat Numeric, latitude of interest in degrees.
                                   #' @details The function computes
                                   #' \deqn{\sin^{-1}(-\sin(\delta(n))\sin(\phi) + \cos(\delta(n))\cos(\phi))}
                                   solar_altitude = function(n, lat){
@@ -278,115 +430,49 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     self$degree(alpha_max)
                                   },
                                   #' @description
-                                  #' Compute number of sun hours
-                                  #' @param n number of the day of the year
-                                  #' @param lat latitude in degrees.
-                                  #' @details The function computes
-                                  sun_hours = function(n, lat){
-                                    # Solar angle at sunset
-                                    omega <- self$solar_angle(n, lat)
-                                    # Number of sun hours
-                                    sun_hours <- lubridate::dhours(omega*2/15)
-                                    return(sun_hours)
-                                  },
-                                  #' @description
                                   #' Compute the solar angle for a latitude in different dates.
-                                  #' @param n number of the day of the year
-                                  #' @param lat latitude in degrees.
-                                  angle_minmax = function(n, lat) {
+                                  #' @param x datetime, clock hour.
+                                  #' @param lat Numeric, latitude of interest in degrees.
+                                  #' @param lon Numeric, longitude of interest in degrees.
+                                  #' @param lon_sd Numeric, longitude of the Local standard meridian in degrees.
+                                  #' @param by Character, time step. Default is `1 min`.
+                                  solar_angles = function(x, lat, lon, lon_sd, by = "1 min"){
+                                    day_date <- as.Date(x[1])
+                                    start_date <- as.POSIXct(paste0(day_date, " 00:00:00"))
+                                    end_date <- as.POSIXct(paste0(day_date+1, " 00:00:00"))
+                                    day_date_seq <- seq.POSIXt(start_date, end_date, by = by)
                                     # Latitude from degrees to radiant
                                     phi <- self$radiant(lat)
                                     # Solar declination
-                                    declination <- self$declination(n)
+                                    declination <- self$declination(day_date)
                                     # Solar angle at sunset
-                                    omega_max <-  self$solar_angle(n, lat)
+                                    omega_max <-  self$sunset_hour_angle(day_date, lat)
                                     # Solar angle at sunrise
                                     omega_min <- -omega_max
-                                    # Solar altitude
-                                    alpha_max <- self$solar_altitude(n, lat)
-                                    # Solar zenit angle
-                                    zenit_angle <- 90 - alpha_max
                                     # Number of sun hours
-                                    sun_hours <- self$sun_hours(n, lat)
+                                    sun_hours <- self$sun_hours(day_date, lat)
                                     # Time adjustment in seconds
-                                    time_adjustment <- self$time_adjustment(n)
-                                    dplyr::tibble(n = n,
+                                    E <- self$E(day_date)
+                                    # Solar angle
+                                    omega <- self$hour_angle(day_date_seq, lon, lon_sd)
+                                    # Solar time
+                                    solartime <- self$solar_time(day_date_seq, lon, lon_sd)
+                                    # Incidence angle
+                                    theta_z <- self$incidence_angle(day_date_seq, lat, lon, lon_sd = lon_sd, beta = 0, gamma = 0)
+
+                                    dplyr::tibble(date = day_date,
+                                                  clocktime = day_date_seq,
+                                                  solartime = solartime,
                                                   lat = lat,
+                                                  lon = lon,
+                                                  omega = omega,
                                                   declination = declination,
                                                   omega_min = omega_min,
                                                   omega_max = omega_max,
-                                                  alpha_max = alpha_max,
-                                                  zenit_angle = zenit_angle,
                                                   sun_hours = sun_hours,
-                                                  time_adjustment = time_adjustment)
-
-                                  },
-                                  #' @description
-                                  #' Compute the incidence angle
-                                  #' @param n number of the day of the year
-                                  #' @param lat latitude in degrees.
-                                  cosZ = function(n, lat){
-                                    # Solar constants
-                                    phi <- self$radiant(lat)
-                                    delta <- self$radiant(self$declination(n))
-                                    omega_max <- self$radiant(self$solar_angle(n, lat))
-                                    # H0: daily irradiantce J/m^2/day
-                                    cosZ <- cos(phi)*cos(delta)*sin(omega_max) + (base::pi*self$degree(omega_max)/180)*sin(phi)*sin(delta)
-                                    return(cosZ)
-                                  },
-                                  #' @description
-                                  #' Compute the solar extraterrestrial radiation
-                                  #' @param n number of the day of the year
-                                  #' @param lat latitude in degrees.
-                                  H0 = function(n, lat){
-                                    dplyr::tibble(
-                                      lat = lat,
-                                      n = n,
-                                      G0n = self$G0n(n),
-                                      cosZ = self$cosZ(n, lat),
-                                      G0 = G0n*cosZ*(24*3600)/base::pi,
-                                      H0 = G0/(3600000)
-                                    )
-                                  },
-                                  #' @description
-                                  #' Compute the solar hour
-                                  #' @param x datehour
-                                  #'
-                                  solar_hour = function(x){
-                                    # Convert in a datetime
-                                    date_h <- as.POSIXlt(x)
-                                    # Convert in date
-                                    date_d <- as.Date(date_h)
-                                    # Detect if it is Legal Hour
-                                    #   - from 27 Mar - 30 Oct (TRUE)
-                                    #   - from 30 Oct - 27 Mar (FALSE)
-                                    day_ <- lubridate::day(date_d)
-                                    mon_ <- lubridate::month(date_d)
-                                    is_legal_hour <- (day_ >= 27 & mon_ >= 3) & (day_ <= 30 & mon_ <= 10)
-                                    if (is_legal_hour) {
-                                      solar_hour <- date_h - lubridate::dhours(1)
-                                    }  else {
-                                      solar_hour <- date_h
-                                    }
-                                    # Solar hour for the selected day-time
-                                    solar_hour <- solar_hour + (4*(lon-15) + as.numeric(self$time_adjustment(date_d))/(60*60))
-                                    return(solar_hour)
-                                  },
-                                  #' @description
-                                  #' Compute the solar angle
-                                  #' @param x datehour
-                                  #'
-                                  omega = function(x){
-                                    # Convert in date
-                                    date_d <- as.Date(x)
-                                    solar_hour <- self$solar_hour(x)
-                                    # Solar angle for the selected day-time
-                                    # Middle date
-                                    middle_date <- as.POSIXlt(paste0(date_d, " 12:00:00 CET"))
-                                    # Difference in minutes from middledate
-                                    min_difference <- as.numeric(difftime(solar_hour, middle_date, units = "mins"))
-                                    # Solar angle
-                                    (15*min_difference)/(60*60)
+                                                  theta_z = theta_z,
+                                                  E = E) %>%
+                                      dplyr::filter(omega > omega_min & omega < omega_max)
                                   },
                                   #' @description
                                   #' Hottel clearsky
@@ -419,7 +505,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     } else if (clime == "Subartic Summer"){
                                       correction_factor <- c(0.99, 0.99, 1.01)
                                       a <- a*correction_factor
-                                    } else if (clime == "Tropical"){
+                                    } else if (clime == "Tropical") {
                                       correction_factor <- c(0.95, 0.98, 1.02)
                                       a <- a*correction_factor
                                     }

@@ -29,7 +29,11 @@ Calibrator for solar Options
 }
 \examples{
 model <- Bologna
-model_cal <- solarOption_calibrator(model, nmonths = 8, reltol=1e-3)
-solarModel_loglik(model)
-solarModel_loglik(model_cal)
+model_cal <- solarOption_calibrator(model, nmonths = 7, reltol=1e-3)
+# Compare log-likelihoods
+model$loglik
+model_cal$loglik
+# Compare parameters
+model$NM_model$parameters[7,]
+model_cal$NM_model$parameters[7,]
 }

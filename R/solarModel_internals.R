@@ -2,33 +2,43 @@
 #'
 #' Control function for a solarModel
 #'
-#' @param clearsky list with control parameters, see \code{\link{control_seasonalClearsky}} for details.
+#' @param clearsky list with control parameters for the clear sky seasonal model. See \code{\link{control_seasonalClearsky}} for details.
 #' @param seasonal.mean a list of parameters. Available choices are:
 #'\describe{
-#'  \item{`seasonalOrder`}{An integer specifying the order of the seasonal component in the model. The default is `1`.}
-#'  \item{`include.intercept`}{When `TRUE` the intercept will be included in the seasonal model. The dafault if `TRUE`.}
-#'  \item{`monthly.mean`}{When `TRUE` a set of 12 monthly means parameters will be computed from the deseasonalized time series to center it perfectly around zero.}
+#'  \item{`seasonalOrder`}{An integer specifying the order of the seasonal component. The default is `1`.}
+#'  \item{`include.intercept`}{Logical, when `TRUE` the intercept will be included in the seasonal model, otherwise will be omitted. The dafault if `TRUE`.}
+#'  \item{`include.H0`}{Logical, when `TRUE` the extraterrestrial radiation will be included in the seasonal model, otherwise will be omitted. The dafault if `FALSE`.}
+#'  \item{`monthly.mean`}{Logical, when `TRUE` a vector of 12 monthly means is computed on the deseasonalized series and it is subtracted to ensure that it is perfectly centered around zero.}
 #'}
-#' @param seasonal.variance a list of parameters. Available choices are:
-#'\describe{
-#'  \item{`seasonalOrder`}{An integer specifying the order of the seasonal component in the model. The default is `1`.}
-#'  \item{`correction`}{When true the seasonal variance is corrected to ensure that the standardize the residuals with a unitary variance.  }
-#'  \item{`monthly.mean`}{When `TRUE` a set of 12 monthly variances parameters will be computed from the deseasonalized time series to center it perfectly around zero.}
-#'}
-#' @param mean.model a list of parameters.
+#' @param mean.model a list of parameters for the AR model.
 #' \describe{
-#'  \item{`arOrder`}{An integer specifying the order of the AR component in the model. The default is `2`.}
-#'  \item{`include.intercept`}{When `TRUE` the intercept will be included in the AR model. The dafault if `FALSE`.}
+#'  \item{`arOrder`}{An integer specifying the order of the AR component. The default is `2`.}
+#'  \item{`include.intercept`}{When `TRUE` an intercept will be included in the AR equation, otherwise is omitted. The dafault if `FALSE`.}
 #'}
-#' @param variance.model an `ugarchspec` object for GARCH variance. Default is `GARCH(1,1)`.
-#' @param mixture.model a list of parameters.
-#' @param threshold numeric, threshold for the estimation of alpha and beta.
+#' @param seasonal.variance a list of parameters for the seasonal variance. Available choices are:
+#'\describe{
+#'  \item{`seasonalOrder`}{Integer, it specify the order of the seasonal component in the model. The default is `1`.}
+#'  \item{`correction`}{Logical, when `TRUE` the parameters of seasonal variance are corrected to ensure that the standardize the residuals have exactly a unitary variance.}
+#'  \item{`monthly.mean`}{Logical, when `TRUE` a vector of 12 monthly std. deviations is computed on the GARCH residuals. Then, they are divided by this quantity to ensure that the monthly variance is one.}
+#'}
+#' @param variance.model an `ugarchspec` object for GARCH variance. Default is `GARCH(1,1)` specification.
+#' @param mixture.model a list of parameters for the monthly Gaussian mixture model. Available choices are:
+#'\describe{
+#'  \item{`abstol`}{Numeric, absolute level for convergence. The default is `1e-3`.}
+#'  \item{`maxit`}{Integer, maximum number of iterations. The default is `200`.}
+#'  \item{`EM`}{Logical, when `TRUE` the estimated parameters from `mclust` function will be used to initialize the EM-routine. The default is `TRUE`.}
+#'}
+#' @param threshold numeric, threshold used to estimate the transformation parameters alpha and beta. See \code{\link{solarTransform}} for details.
 #' @param outliers_quantile quantile for outliers detection. If different from 0, the observations that are below the quantile at confidence levels `outliers_quantile` and
 #' the observation above the quantile at confidence level 1-`outliers_quantile` will have a weight equal to zero and will be excluded from estimations.
 #' @param quiet logical, when `TRUE` the function will not display any message.
+#'
 #' @examples
 #' control <- control_solarModel()
+#'
 #' @rdname control_solarModel
+#' @name control_solarModel
+#'
 #' @export
 control_solarModel <- function(clearsky = control_seasonalClearsky(),
                                stochastic_clearsky = FALSE,
@@ -37,7 +47,7 @@ control_solarModel <- function(clearsky = control_seasonalClearsky(),
                                seasonal.variance = list(seasonalOrder = 1, correction = TRUE, monthly.mean = TRUE),
                                variance.model = rugarch::ugarchspec(variance.model = list(garchOrder = c(1,1)),
                                                                     mean.model = list(armaOrder = c(0, 0), include.mean = FALSE)),
-                               mixture.model = list(match_moments = FALSE, abstol = 1e-3, maxit = 150),
+                               mixture.model = list(abstol = 1e-3, maxit = 150, EM = TRUE),
                                threshold = 0.01, outliers_quantile = 0, quiet = FALSE){
 
   # Seasonal mean model default parameters
@@ -71,7 +81,7 @@ control_solarModel <- function(clearsky = control_seasonalClearsky(),
   }
 
   # Variance model default parameters
-  mixture_model = list(match_moments = FALSE, abstol = 1e-20, maxit = 100, prior_p = NA)
+  mixture_model = list(abstol = 1e-20, maxit = 100, EM = TRUE)
   names_mixture_model <- names(mixture_model)
   for(name in names_mixture_model){
     arg <- mixture.model[[name]]
@@ -100,16 +110,17 @@ control_solarModel <- function(clearsky = control_seasonalClearsky(),
 
 #' Specification function for a `solarModel`
 #'
-#' @param place character, name of an element in the `CAMS_data` list.
-#' @param target character, target variable to model. Can be `GHI` or `clearsky`.
-#' @param min_date character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.
-#' @param max_date character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.
-#' @param from character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
+#' @param place Character, name of an element in the `CAMS_data` list.
+#' @param target Character, target variable to model. Can be `GHI` or `clearsky`.
+#' @param min_date Character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.
+#' @param max_date Character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.
+#' @param from Character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
 #' If `missing` will be used the minimum data available after filtering for `min_date`.
 #' @param to character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.
 #' If `missing` will be used the maximum data available after filtering for `max_date`.
 #' @param CAMS_data named list with radiation data for different locations.
 #' @param control_model list with control parameters, see \code{\link{control_solarModel}} for details.
+#'
 #' @examples
 #' control <- control_solarModel(outliers_quantile = 0)
 #' spec <- solarModel_spec("Bologna", from="2005-01-01", to="2022-01-01", control_model = control)
@@ -187,204 +198,23 @@ solarModel_spec <- function(place, target = "GHI", min_date, max_date, from, to,
   )
 }
 
-#' Monthly Gaussian mixture with two components
-#'
-#' @param x arg
-#' @param date arg
-#' @param match_moments arg
-#' @inheritParams gaussianMixture
-#'
-#' @rdname solarModel_mixture
-#' @name solarModel_mixture
-#' @export
-solarModel_mixture <- function(x, date, weights, match_moments = FALSE, maxit = 100, abstol = 10e-15){
-
-  data <- dplyr::tibble(date = date, Month = lubridate::month(date), eps = x, w = weights)
-  # Gaussian Mixture parameters
-  GM_model <- list()
-  # Monthly data
-  data_months <- list()
-  for(m in 1:12){
-    data_months[[m]] <- dplyr::filter(data, Month == m)
-    w <- data_months[[m]]$w
-    # Monthly data
-    eps <- data_months[[m]]$eps
-    # Initial parameters
-    mu_0 <- quantile(eps, c(0.2, 0.8), na.rm = TRUE)
-    sd_0 <- sd(eps, na.rm = TRUE)
-    init_means <- c(mu1 = mu_0[1], mu2 = mu_0[2])
-    init_sd <- c(sd1 = sd_0, sd2 = sd_0)
-    init_p <- c(0.5, 0.5)
-    # Fitted model
-    gm <- gaussianMixture(eps, means = init_means, components = 2, sd = init_sd, p = init_p,
-                          weights = w, maxit = maxit, abstol = abstol, na.rm = TRUE)
-    # Compute the sample mean
-    e_u_hat <- mean(eps[w!=0], na.rm = TRUE)
-    # Compute the sample variance
-    v_u_hat <- var(eps[w!=0], na.rm = TRUE)
-    # Match moments approach
-    if (match_moments) {
-      if (gm$par$p[1] > gm$par$p[2]) {
-        gm$par$mean[2] <- (e_u_hat - gm$par$mean[1]*gm$par$p[1])/gm$par$p[2]
-        gm$par$sd[2] <- sqrt((v_u_hat - gm$par$sd[1]^2)/gm$par$p[2] - gm$par$p[1]*(gm$par$mean[1]-gm$par$mean[2])^2)
-      } else {
-        gm$par$mean[1] <- (e_u_hat-gm$par$mean[2]*gm$par$p[2])/gm$par$p[1]
-        gm$par$sd[1] <- sqrt((v_u_hat - gm$par$sd[2]^2)/gm$par$p[1] - gm$par$p[2]*(gm$par$mean[1]-gm$par$mean[2])^2)
-      }
-    }
-    # Compute the theoretical expected value
-    e_u <- sum(gm$par$mean*gm$par$p)
-    # Compute the theoric variance
-    v_u <- sum((gm$par$mean^2 + gm$par$sd^2)*gm$par$p) - e_u^2
-    # Fitted parameters
-    df_par <- dplyr::bind_cols(purrr::map(gm$par, ~dplyr::bind_rows(.x)))
-    # Fitted expected value
-    data_months[[m]]$e_x <- gm$fitted$B1*gm$par$mean[1] + gm$fitted$B2*gm$par$mean[2]
-    # Add fitted Bernoulli series
-    data_months[[m]]$B <- gm$fitted$B1
-    # Reorder parameters
-    if (df_par$mu1 < df_par$mu2) {
-      data_months[[m]]$B <- gm$fitted$B2
-    }
-    # Monthly data
-    GM_model[[m]] <- dplyr::tibble(Month = m,
-                                   df_par,
-                                   loss = gm$log_lik,
-                                   nobs = length(eps[w!=0]),
-                                   e_x = e_u,
-                                   v_x = v_u,
-                                   e_x_hat = e_u_hat,
-                                   v_x_hat = v_u_hat)
-  }
-
-  # Reorder the variables
-  GM_model <- dplyr::bind_rows(GM_model)
-  GM_model <- dplyr::mutate(GM_model,
-                            mu_up = dplyr::case_when(
-                              mu1 > mu2 ~ mu1,
-                              TRUE ~ mu2),
-                            mu_dw = dplyr::case_when(
-                              mu1 > mu2 ~ mu2,
-                              TRUE ~ mu1),
-                            sd_up = dplyr::case_when(
-                              mu1 > mu2 ~ sd1,
-                              TRUE ~ sd2),
-                            sd_dw = dplyr::case_when(
-                              mu1 > mu2 ~ sd2,
-                              TRUE ~ sd1),
-                            p_up = dplyr::case_when(
-                              mu1 > mu2 ~ p1,
-                              TRUE ~ p2),
-                            p_dw = 1 - p_up)
-  # Reorder variables
-  GM_model <- dplyr::select(GM_model, Month, mu_up, mu_dw, sd_up, sd_dw, p_up, p_dw,
-                            loss, nobs, e_x, v_x, e_x_hat, v_x_hat)
-  # Fitted series
-  data_months <- dplyr::bind_rows(data_months)
-
-  structure(
-    list(
-      model = GM_model,
-      data = data_months
-    ),
-    class = c("solarModelMixture", "list")
-  )
-}
-
-
-#' Monthly multivariate Gaussian mixture with two components
-#'
-#' @param model_Ct arg
-#' @param model_GHI arg
-#'
-#' @rdname solarModel_mvmixture
-#' @name solarModel_mvmixture
-#' @export
-solarModel_mvmixture <- function(model_Ct, model_GHI){
-
-  # Extract a bivariate dataset
-  data_GHI <- dplyr::select(model_GHI$data, date, Month, GHI = "u_tilde")
-  data_Ct <- dplyr::select(model_Ct$data, date, Month, Ct = "u_tilde")
-  data <- dplyr::inner_join(data_GHI, data_Ct, by = c("date", "Month"))
-  # Remove outliers
-  outliers_date <- c(model_Ct$.__enclos_env__$private$outliers$date, model_GHI$.__enclos_env__$private$outliers$date)
-  data <- dplyr::filter(data, !(date %in% outliers_date))
-
-  # Extract Gaussian mixture parameters
-  NM_model_GHI <- model_GHI$.__enclos_env__$private$..NM_model
-  NM_model_GHI$rho_up <- NM_model_GHI$rho_dw <- 0
-  NM_model_Ct <- model_Ct$.__enclos_env__$private$..NM_model
-  NM_model_Ct$rho_up <- NM_model_Ct$rho_dw <- 0
-
-  # Gaussian Mixture parameters
-  m <- 1
-  # Monthly data
-  data_months <- list()
-  for(m in 1:12){
-    data_months[[m]] <- dplyr::filter(data, Month == m)
-    # Monthly data
-    eps <- data_months[[m]][,c(3,4)]
-    # Fitted model
-    gm <- mvgaussianMixture(eps, components = 2, na.rm = TRUE)
-    # Update Gaussian mixture parameters (GHI)
-    NM_model_GHI$mu_up[m] <- gm$params$means[1,2]
-    NM_model_GHI$mu_dw[m] <- gm$params$means[2,2]
-    NM_model_GHI$sd_up[m] <- sqrt(gm$params$sigma2[1,2])
-    NM_model_GHI$sd_dw[m] <- sqrt(gm$params$sigma2[2,2])
-    NM_model_GHI$p_up[m] <- gm$params$p[1]
-    NM_model_GHI$p_dw[m] <- gm$params$p[2]
-    NM_model_GHI$rho_up[m] <- gm$params$rho[1]
-    NM_model_GHI$rho_dw[m] <- gm$params$rho[2]
-    # Update Gaussian mixture parameters (Ct)
-    NM_model_Ct$mu_up[m] <- gm$params$means[1,1]
-    NM_model_Ct$mu_dw[m] <- gm$params$means[2,1]
-    NM_model_Ct$sd_up[m] <- sqrt(gm$params$sigma2[1,1])
-    NM_model_Ct$sd_dw[m] <- sqrt(gm$params$sigma2[2,1])
-    NM_model_Ct$p_up[m] <- gm$params$p[1]
-    NM_model_Ct$p_dw[m] <- gm$params$p[2]
-    NM_model_Ct$rho_up[m] <- gm$params$rho[1]
-    NM_model_Ct$rho_dw[m] <- gm$params$rho[2]
-    # Add fitted Bernoulli series
-    data_months[[m]]$B <- gm$B_hat$B1
-  }
-  # Fitted series of bernoulli
-  data_months <- dplyr::select(dplyr::bind_rows(data_months), date, B)
-
-  # Update data (Ct)
-  data_Ct <- model_Ct$.__enclos_env__$private$..data
-  data_Ct <- dplyr::left_join(dplyr::select(data_Ct, -B), data_months, by = "date")
-  data_Ct$B[is.na(data_Ct$B)] <- 0
-  model_Ct$.__enclos_env__$private$..data <- data_Ct
-  model_Ct$.__enclos_env__$private$..NM_model <- NM_model_Ct
-  # Update data (GHI)
-  data_GHI <- model_GHI$.__enclos_env__$private$..data
-  data_GHI <- dplyr::left_join(dplyr::select(data_GHI, -B), data_months, by = "date")
-  data_GHI$B[is.na(data_GHI$B)] <- 0
-  model_GHI$.__enclos_env__$private$..data <- data_GHI
-  model_GHI$.__enclos_env__$private$..NM_model <- NM_model_GHI
-
-  structure(
-    list(
-      model_Ct = model_Ct,
-      model_GHI = model_GHI
-    ),
-    class = c("solarModelMixture", "list")
-  )
-}
-
 #' Compute conditional moments from a `solarModel` object
 #'
 #' @examples
 #' model <- Bologna
 #' solarModel_conditional_moments(model)
 #' solarModel_conditional_moments(model, date = "2022-01-01")
+#'
+#' @rdname solarModel_conditional_moments
+#' @name solarModel_conditional_moments
+#'
 #' @export
 solarModel_conditional_moments <- function(model, date){
 
   # Extract complete data
   data <- model$data
   # Filter for a set of dates
-  if (!missing(date)){
+  if (!missing(date)) {
     data <- data[data$date %in% as.Date(date),]
   }
   # Compute conditional moments
@@ -394,11 +224,11 @@ solarModel_conditional_moments <- function(model, date){
                         # Conditional std. deviation Yt
                         sd_Yt = sigma*sigma_bar*sigma_m,
                         # Conditional moments Yt (state up)
-                        e_Yt_up = e_Yt + sd_Yt*mu_up,
-                        sd_Yt_up = sd_Yt*sd_up,
+                        e_Yt_up = e_Yt + sd_Yt*mu1,
+                        sd_Yt_up = sd_Yt*sd1,
                         # Conditional moments Yt (state dw)
-                        e_Yt_dw = e_Yt + sd_Yt*mu_dw,
-                        sd_Yt_dw = sd_Yt*sd_dw,
+                        e_Yt_dw = e_Yt + sd_Yt*mu2,
+                        sd_Yt_dw = sd_Yt*sd2,
                         # Fitted value depending on B
                         e_Yt_mix = e_Yt +  e_Yt_up*B + e_Yt_dw*(1-B),
                         # Values for target variable
@@ -427,7 +257,7 @@ solarModel_conditional_moments <- function(model, date){
   names(vars_names) <- NULL
   # Extract only relevant variables
   data <- dplyr::select(data, date, Month, Day, Ct, Yt, e_Yt, sd_Yt,
-                        e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw, p_up, B,
+                        e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw, p1, B,
                         tidyr::any_of(vars_names),
                         lower_Kt, upper_Kt, lower_Xt, upper_Xt)
   return(data)
@@ -442,6 +272,9 @@ solarModel_conditional_moments <- function(model, date){
 #' solarModel_unconditional_moments(model, nmonths = 1)
 #' solarModel_unconditional_moments(model, nmonths = 1, ndays = 1)
 #' solarModel_unconditional_moments(model, date = "2022-01-01")
+#'
+#' @rdname solarModel_unconditional_moments
+#' @name solarModel_unconditional_moments
 #'
 #' @export
 solarModel_unconditional_moments <- function(model, nmonths, ndays, date){
@@ -470,13 +303,13 @@ solarModel_unconditional_moments <- function(model, nmonths, ndays, date){
                         # Unconditional std. deviation Yt
                         sd_Yt = sigma_bar*sigma_m,
                         # Unconditional moments Yt (state up)
-                        e_Yt_up = e_Yt + sd_Yt*mu_up,
-                        sd_Yt_up = sd_Yt*sd_up,
+                        e_Yt_up = e_Yt + sd_Yt*mu1,
+                        sd_Yt_up = sd_Yt*sd1,
                         # Unconditional moments Yt (state dw)
-                        e_Yt_dw = e_Yt + sd_Yt*mu_dw,
-                        sd_Yt_dw = sd_Yt*sd_dw,
+                        e_Yt_dw = e_Yt + sd_Yt*mu2,
+                        sd_Yt_dw = sd_Yt*sd2,
                         # Fitted value mixture
-                        e_Yt_mix = e_Yt +  e_Yt_up*p_up + e_Yt_dw*(1-p_up),
+                        e_Yt_mix = e_Yt +  e_Yt_up*p1 + e_Yt_dw*(1-p1),
                         # Values for target variable
                         e_Rt = model$transform$GHI_y(e_Yt, Ct),
                         e_Rt_mix = model$transform$GHI_y(e_Yt_mix, Ct),
@@ -503,7 +336,7 @@ solarModel_unconditional_moments <- function(model, nmonths, ndays, date){
   names(vars_names) <- NULL
   # Extract only relevant variables
   data <- dplyr::select(data, Month, Day, Ct, e_Yt, sd_Yt,
-                        e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw, p_up,
+                        e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw, p1,
                         tidyr::any_of(vars_names),
                         lower_Kt, upper_Kt, lower_Xt, upper_Xt)
   return(data)
@@ -517,6 +350,8 @@ solarModel_unconditional_moments <- function(model, nmonths, ndays, date){
 #' solarModel_forecaster(model, date = "2010-04-01")
 #' object <- solarModel_forecaster(model, date = "2020-04-01", unconditional = TRUE)
 #' object
+#' @rdname solarModel_forecaster
+#' @name solarModel_forecaster
 #' @export
 solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, unconditional = FALSE){
 
@@ -536,13 +371,15 @@ solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, uncondit
   grid_x <- seq(lower_bound, upper_bound, length.out = n_points+2)[-c(1,n_points+2)]
   grid <- dplyr::tibble(x = grid_x, label = as.character(date))
   # Density of Yt
-  pdf_Yt <- function(x) dmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p_up, 1-df_n$p_up))
+  pdf_Yt <- function(x) dmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p1, 1-df_n$p1))
+  # Distribution of Yt
+  cdf_Yt <- function(x) pmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p1, 1-df_n$p1))
   # Density of GHI
   pdf_Rt <- function(x, pdf_Yt) dsolarGHI(x, df_n$Ct, model$transform$alpha, model$transform$beta, pdf_Yt)
   # Add grid of points
   grid[[paste0("pdf_", model$target)]] <- pdf_Rt(grid_x, pdf_Yt)
-  grid[[paste0("pdf_", model$target, "_up")]] <- pdf_Rt(grid_x, function(x) df_n$p_up*dnorm(x, df_n$e_Yt_up, df_n$sd_Yt_up))
-  grid[[paste0("pdf_", model$target, "_dw")]] <- pdf_Rt(grid_x, function(x) (1-df_n$p_up)*dnorm(x, df_n$e_Yt_dw, df_n$sd_Yt_dw))
+  grid[[paste0("pdf_", model$target, "_up")]] <- pdf_Rt(grid_x, function(x) df_n$p1*dnorm(x, df_n$e_Yt_up, df_n$sd_Yt_up))
+  grid[[paste0("pdf_", model$target, "_dw")]] <- pdf_Rt(grid_x, function(x) (1-df_n$p1)*dnorm(x, df_n$e_Yt_dw, df_n$sd_Yt_dw))
 
   # Empiric variables for the day to be extracted
   emp <- model$data
@@ -555,10 +392,13 @@ solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, uncondit
   # Up and down density non weighted
   pdf_Yt_up <- function(x) dnorm(x, df_n$e_Yt_up, df_n$sd_Yt_up)
   pdf_Yt_dw <- function(x) dnorm(x, df_n$e_Yt_dw, df_n$sd_Yt_dw)
+  # Up and down distributions non weighted
+  cdf_Yt_up <- function(x) pnorm(x, df_n$e_Yt_up, df_n$sd_Yt_up)
+  cdf_Yt_dw <- function(x) pnorm(x, df_n$e_Yt_dw, df_n$sd_Yt_dw)
   # Expected value function
   e_Rt <- function(pdf_Yt, .f = function(x) x) integrate(function(x) .f(x)*pdf_Rt(x, pdf_Yt), lower = lower_bound, upper = upper_bound)$value
   # Confidence intervals function
-  conf_Rt <- function(p, pdf_Yt) qsolarGHI(p, df_n$Ct, model$transform$alpha, model$transform$beta, pdf_Yt)
+  conf_Rt <- function(p, cdf_Yt) qsolarGHI(p, df_n$Ct, model$transform$alpha, model$transform$beta, cdf_Yt)
 
   # Expected value and variance
   # Mixture
@@ -574,18 +414,18 @@ solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, uncondit
 
   # Confidence intervals
   # Mixture
-  emp$ci_mix_lo <- conf_Rt(ci, pdf_Yt)
-  emp$ci_mix_hi <- conf_Rt(1-ci, pdf_Yt)
+  emp$ci_mix_lo <- conf_Rt(ci, cdf_Yt)
+  emp$ci_mix_hi <- conf_Rt(1-ci, cdf_Yt)
   emp$pdf_ci_mix_lo <- pdf_Rt(emp$ci_mix_lo, pdf_Yt)
   emp$pdf_ci_mix_hi <- pdf_Rt(emp$ci_mix_hi, pdf_Yt)
   # Sunny state
-  emp$ci_up_lo <- conf_Rt(ci, pdf_Yt_up)
-  emp$ci_up_hi <- conf_Rt(1-ci, pdf_Yt_up)
+  emp$ci_up_lo <- conf_Rt(ci, cdf_Yt_up)
+  emp$ci_up_hi <- conf_Rt(1-ci, cdf_Yt_up)
   emp$pdf_ci_up_lo <- pdf_Rt(emp$ci_up_lo, pdf_Yt)
   emp$pdf_ci_up_hi <- pdf_Rt(emp$ci_up_hi, pdf_Yt)
   # Cloudy state
-  emp$ci_dw_lo <- conf_Rt(ci, pdf_Yt_dw)
-  emp$ci_dw_hi <- conf_Rt(1-ci, pdf_Yt_dw)
+  emp$ci_dw_lo <- conf_Rt(ci, cdf_Yt_dw)
+  emp$ci_dw_hi <- conf_Rt(1-ci, cdf_Yt_dw)
   emp$pdf_ci_dw_lo <- pdf_Rt(emp$ci_dw_lo, pdf_Yt)
   emp$pdf_ci_dw_hi <- pdf_Rt(emp$ci_dw_hi, pdf_Yt)
   emp$ci <- ci
@@ -606,6 +446,8 @@ solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, uncondit
 #' model <- Bologna
 #' dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-01-31"), 1)
 #' solarModel_forecast(model, date = dates)
+#' @rdname solarModel_forecast
+#' @name solarModel_forecast
 #' @export
 solarModel_forecast <- function(model, date, ci = 0.1, unconditional = FALSE){
   fun <- function(date){
@@ -624,7 +466,7 @@ solarModel_forecast <- function(model, date, ci = 0.1, unconditional = FALSE){
 #'
 #' @examples
 #' model <- Bologna
-#' day_date <- "2024-01-01"
+#' day_date <- "2013-01-13"
 #' solarModel_forecaster_plot(model, date = day_date)
 #' solarModel_forecaster_plot(model, date = day_date, unconditional = TRUE)
 #' solarModel_forecaster_plot(model, date = day_date, type = "dw")
@@ -646,8 +488,8 @@ solarModel_forecaster_plot <- function(model, date = "2021-05-29", ci = 0.1, typ
     # Mixture density
     geom_line(data = grid, aes(x, pdf_GHI))+
     # Components densities (weighted by prior probs)
-    geom_line(data = grid, aes(x, pdf_GHI_up), color = "green")+
-    geom_line(data = grid, aes(x, pdf_GHI_dw), color = "red")
+    geom_line(data = grid, aes(x, pdf_GHI_dw), color = "green")+
+    geom_line(data = grid, aes(x, pdf_GHI_up), color = "red")
 
   if (type == "mix") {
     pdf_plot <- pdf_plot +
@@ -697,6 +539,8 @@ solarModel_forecaster_plot <- function(model, date = "2021-05-29", ci = 0.1, typ
 #' @examples
 #' model <- Bologna
 #' solarModel_test_residuals(model)
+#' @rdname solarModel_test_residuals
+#' @name solarModel_test_residuals
 #' @export
 solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile = 0.015, max_quantile = 0.985, seed = 1){
 

@@ -14,12 +14,12 @@
 #'
 #' @examples
 #' model <- Bologna
-#' scen <- solarScenario(model, "2010-01-01", to = "2020-12-31", nsim = 10)
-#' scen <- solarScenario(model, to = "2010-02-01", by = "1 day")
+#' scen <- solarScenario(model, "2024-01-01", "2025-12-31")
+#'
 #' @rdname solarScenario
 #' @name solarScenario
 #' @export
-solarScenario <- function(model, from = "2010-01-01", to = "2010-12-31", by = "1 month", theta = 0, nsim = 1, seed = 1, quiet = FALSE){
+solarScenario <- function(model, from = "2010-01-01", to = "2011-01-01", by = "1 year", theta = 0, nsim = 1, seed = 1, quiet = FALSE){
 
   idx_date <- seq.Date(as.Date(from), as.Date(to), by = by)
   scenarios <- list()
@@ -50,7 +50,6 @@ solarScenario <- function(model, from = "2010-01-01", to = "2010-12-31", by = "1
   return(as_solarScenario(simSpec))
 }
 
-
 #' Specification of a solar scenario
 #'
 #' @inheritParams solarScenario
@@ -75,6 +74,11 @@ solarScenario_spec <- function(model, from = "2010-01-01", to = "2010-12-31", th
   # End date
   to <- as.Date(to)
 
+  # Selected columns
+  cols_emp <- c("date", "n", "Year", "Month", "Day", "GHI", "clearsky",
+                 "Xt", "Yt", "Yt_tilde", "Yt_tilde_hat", "eps", "eps_tilde", "sigma", "u", "u_tilde", "B", "z1", "z2")
+  cols_sim <- c(cols_emp, "Ct", "Yt_bar", "GHI_bar", "sigma_bar", "Yt_tilde_uncond", "sigma_m", "mu1", "mu2", "sd1", "sd2", "p1")
+
   # Initialize a dataset
   max_date_from <- max(data$date)
   max_date_to <- max_date_from - i_start
@@ -90,6 +94,9 @@ solarScenario_spec <- function(model, from = "2010-01-01", to = "2010-12-31", th
                             Month = lubridate::month(date),
                             Day = lubridate::day(date))
     df_emp$n <- solarr::number_of_day(df_emp$date)
+    # Add seasonal variables
+    df_emp <- df_emp[, cols_emp]
+    df_emp <- dplyr::left_join(df_emp, model$seasonal_data, by = c("Month", "Day", "n"))
   } else {
     msg <- paste0("The maximum date for starting a simulation is: ", max_date_from)
     if (!quiet) warning(msg)
@@ -97,7 +104,7 @@ solarScenario_spec <- function(model, from = "2010-01-01", to = "2010-12-31", th
   }
 
   # Initialize simulation dataset
-  df_sim <- df_emp
+  df_sim <- df_emp[, cols_sim]
   # Initialize lambda
   df_sim$theta <- theta
   # Arch parameters
@@ -106,10 +113,8 @@ solarScenario_spec <- function(model, from = "2010-01-01", to = "2010-12-31", th
   garchOrder <- model$GARCH$q
   # Garch next step function
   GARCH_next_step <- GARCH_pq_next_step(model$GARCH$omega, model$GARCH$alpha, model$GARCH$beta)
-  # Remove redundant variables
-  df_sim <- dplyr::select(df_sim, -isTrain, -weights)
   # Filter df_emp to be in [from - to] dates
-  df_emp <- dplyr::select(df_emp, place:z2)
+  df_emp <- df_emp[, cols_emp]
   if (exclude_known) {
     df_emp <- dplyr::filter(df_emp, date >= from & date <= to)
   }
@@ -130,7 +135,7 @@ solarScenario_spec <- function(model, from = "2010-01-01", to = "2010-12-31", th
       # Model transform
       transform = model$transform,
       # Monthly probability
-      p_up = function(nmonth){model$NM_model$p_up[nmonth]},
+      p_up = function(nmonth){model$NM_model$parameters$p1[nmonth]},
       # AR model
       AR_model_Yt = model$AR_model_Yt,
       # GARCH model
@@ -206,7 +211,7 @@ solarScenario_residuals <- function(simSpec, nsim = 1, seed = 1){
     colnames(sim_X) <- simSpec$place
     # Structure binomial simulations
     sim_B <- dplyr::bind_cols(scenario = rep(1:n, nsim), j = rep(1:nsim, n),  sim_B)
-    sim_B <- dplyr::group_by(sim_B, scenario) %>% tidyr::nest()
+    sim_B <- tidyr::nest(dplyr::group_by(sim_B, scenario))
     sim_B <- dplyr::mutate(sim_B, data = purrr::map(data, ~dplyr::mutate(.x, j = 1:nsim)))
     # Structure normal simulations
     sim_X <- dplyr::bind_cols(scenario = rep(1:n, nsim), j = rep(1:nsim, n),  sim_X)
@@ -241,7 +246,6 @@ solarScenario_residuals <- function(simSpec, nsim = 1, seed = 1){
   return(simSpec)
 }
 
-
 #' Simulate trajectories from a a `solarScenario_spec`
 #'
 #' @inheritParams solarScenario
@@ -249,8 +253,8 @@ solarScenario_residuals <- function(simSpec, nsim = 1, seed = 1){
 #'
 #' @examples
 #' model <- Bologna
-#' simSpec <- solarScenario_spec(model)
-#' simSpec <- solarScenario_residuals(simSpec, nsim = 10)
+#' simSpec <- solarScenario_spec(model, from = "2024-06-01", to = "2024-12-31")
+#' simSpec <- solarScenario_residuals(simSpec, nsim = 1)
 #' simSpec <- solarScenario_filter(simSpec)
 #' # Empiric data
 #' df_emp <- simSpec$emp
@@ -289,7 +293,7 @@ solarScenario_filter <- function(simSpec){
       # Simulated Yt_tilde
       df_sim$Yt_tilde_hat[i] <- predict(simSpec$AR_model_Yt, newdata = df_sim[(i-(simSpec$arOrder+1)):i,])[i_start]
       # Simulated standardized monthly normal mixture
-      df_sim$u_tilde[i] <- (df_sim$mu_up[i] + df_sim$sd_up[i]*df_sim$z[i])*df_sim$B[i] + (df_sim$mu_dw[i] + df_sim$sd_dw[i]*df_sim$z[i])*(1-df_sim$B[i])
+      df_sim$u_tilde[i] <- (df_sim$mu1[i] + df_sim$sd1[i]*df_sim$z[i])*df_sim$B[i] + (df_sim$mu2[i] + df_sim$sd2[i]*df_sim$z[i])*(1-df_sim$B[i])
       # IF theta != 0 the probabilities has to be distorted and B and u_tilde re-simulated
       if (df_sim$theta[1] != 0) {
         # Distort probability according to Esscher parameter
@@ -298,9 +302,9 @@ solarScenario_filter <- function(simSpec){
         # Simulated bernoulli jump
         df_sim$B[i] <- rbinom(1, 1, df_sim$p_up[i])
         # Simulated standardized monthly normal mixture
-        df_sim$u_tilde[i] <- (df_sim$mu_up[i] + df_sim$sd_up[i]*df_sim$z[i])*df_sim$B[i] + (df_sim$mu_dw[i] + df_sim$sd_dw[i]*df_sim$z[i])*(1-df_sim$B[i])
+        df_sim$u_tilde[i] <- (df_sim$mu1[i] + df_sim$sd1[i]*df_sim$z[i])*df_sim$B[i] + (df_sim$mu2[i] + df_sim$sd2[i]*df_sim$z[i])*(1-df_sim$B[i])
         # Simulated Esscher parameter
-        df_sim$theta[i] <- df_sim$theta[i]*(df_sim$sigma[i]*df_sim$sigma_bar[i])^2*(df_sim$sd_up[i]^2*df_sim$B[i] + df_sim$sd_dw[i]^2*(1-df_sim$B[i]))
+        df_sim$theta[i] <- df_sim$theta[i]*(df_sim$sigma[i]*df_sim$sigma_bar[i])^2*(df_sim$sd1[i]^2*df_sim$B[i] + df_sim$sd2[i]^2*(1-df_sim$B[i]))
       }
       # Simulated GARCH residuals
       df_sim$u[i] <- df_sim$sigma_m[i]*df_sim$u_tilde[i]
@@ -318,7 +322,7 @@ solarScenario_filter <- function(simSpec){
       df_sim[[simSpec$target]][i] <- simSpec$transform$GHI(df_sim$Xt[i], df_sim$Ct[i])
     }
     # Remove redundant variables
-    df_sim <- dplyr::select(df_sim, -mu_up, -mu_dw, -sd_up, -sd_dw, -p_up, -Ct, -Yt_bar, -sigma_bar, -sigma_m, -Yt_tilde_hat, -Yt_tilde_uncond)
+    df_sim <- dplyr::select(df_sim, -mu1, -mu2, -sd1, -sd2, -p1, -Ct, -Yt_bar, -sigma_bar, -sigma_m, -Yt_tilde_hat, -Yt_tilde_uncond)
     # Remove initial values
     if (simSpec$exclude_known) {
       df_sim <- dplyr::filter(df_sim, date >= simSpec$from & date <= simSpec$to)

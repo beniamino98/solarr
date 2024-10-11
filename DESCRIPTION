@@ -7,23 +7,20 @@ Maintainer: Beniamino Sartini <beniamino.sartini2@unibo.it>
 Description: Implementation of stochastic models and option pricing on solar radiation data.
 Depends: R (>= 3.5.0),
          ggplot2,
-         tibble,
-         np 
+         np,
+         dplyr (>= 1.1.3),
+         mclust,
 Imports: 
     assertive (>= 0.3-6),
     stringr (>= 1.5.0),
     rugarch (>= 1.4.1),
-    dplyr (>= 1.1.3),
     purrr (>= 1.0.2),
-    readr (>= 2.1.2),   
     tidyr (>= 1.2.0),    
     lubridate (>= 1.8.0),
-    reticulate (>= 1.24),
     nortest,
     broom,
     formula.tools
 Suggests: 
-    DT,
     knitr,
     rmarkdown,
     testthat (>= 2.1.0)

@@ -21,7 +21,7 @@ library(ggplot2)
 library(dplyr)
 ```
 
-## Gumbel 
+## Gumbel and Inverted Gumbel
 
 ```{r}
 # ============ Setup ============
@@ -39,7 +39,8 @@ scale <- c(0.5, 1, 1.5)
 ### Density 
 
 ```{r}
-ggplot()+
+# Gumbel density 
+pdf_gumbel <- ggplot()+
   geom_line(aes(x, dgumbel(x, scale = scale[1]), color = "plot_1"))+
   geom_line(aes(x, dgumbel(x, scale = scale[2]), color = "plot_2"))+
   geom_line(aes(x, dgumbel(x, scale = scale[3]), color = "plot_3"))+
@@ -48,11 +49,23 @@ ggplot()+
                      labels = c(plot_1 = scale[1], plot_2 = scale[2], plot_3 = scale[3]))+
   theme_bw()+
   theme(legend.position = "top")
+# Inverted gumbel density 
+pdf_invgumbel <- ggplot()+
+  geom_line(aes(x, dinvgumbel(x, scale = scale[1]), color = "plot_1"))+
+  geom_line(aes(x, dinvgumbel(x, scale = scale[2]), color = "plot_2"))+
+  geom_line(aes(x, dinvgumbel(x, scale = scale[3]), color = "plot_3"))+
+  labs(x = "x", y = "Density", color = "Scale parameter: ")+
+  scale_color_manual(values = c(plot_1 = "red", plot_2 = "black", plot_3 = "blue"),
+                     labels = c(plot_1 = scale[1], plot_2 = scale[2], plot_3 = scale[3]))+
+  theme_bw()+
+  theme(legend.position = "top")
+# Plot 
+gridExtra::grid.arrange(pdf_gumbel, pdf_invgumbel, nrow = 1)
 ```
 ### Distribution 
 
 ```{r}
-ggplot()+
+cdf_gumbel <- ggplot()+
   geom_line(aes(x, pgumbel(x, scale = scale[1]), color = "plot_1"))+
   geom_line(aes(x, pgumbel(x, scale = scale[2]), color = "plot_2"))+
   geom_line(aes(x, pgumbel(x, scale = scale[3]), color = "plot_3"))+
@@ -61,9 +74,21 @@ ggplot()+
                      labels = c(plot_1 = scale[1], plot_2 = scale[2], plot_3 = scale[3]))+
   theme_bw()+
   theme(legend.position = "top")
+
+cdf_invgumbel <- ggplot()+
+  geom_line(aes(x, pinvgumbel(x, scale = scale[1]), color = "plot_1"))+
+  geom_line(aes(x, pinvgumbel(x, scale = scale[2]), color = "plot_2"))+
+  geom_line(aes(x, pinvgumbel(x, scale = scale[3]), color = "plot_3"))+
+  labs(x = "x", y = "P(X < x)", color = "Scale parameter: ")+
+  scale_color_manual(values = c(plot_1 = "red", plot_2 = "black", plot_3 = "blue"),
+                     labels = c(plot_1 = scale[1], plot_2 = scale[2], plot_3 = scale[3]))+
+  theme_bw()+
+  theme(legend.position = "top")
+# Plot 
+gridExtra::grid.arrange(cdf_gumbel, cdf_invgumbel, nrow = 1)
 ```
 
-### Random generator 
+### Random generator (Gumbel)
 
 ```{r}
 # Simulations 
@@ -82,5 +107,22 @@ dplyr::bind_rows(
   theme(legend.position = "top")
 ```
 
+### Random generator (Inverted Gumbel)
 
+```{r}
+# Simulations 
+dplyr::bind_rows(
+  dplyr::bind_cols(type = "plot_1", t = 1:n, x = rinvgumbel(n, scale = scale[1])),
+  dplyr::bind_cols(type = "plot_2", t = 1:n, x = rinvgumbel(n, scale = scale[2])),
+  dplyr::bind_cols(type = "plot_3", t = 1:n, x = rinvgumbel(n, scale = scale[3]))
+) %>%
+  ggplot()+
+  geom_line(aes(t, x, color = type))+
+  facet_wrap(~type)+
+  labs(x = "n", y = "x", color = "Scale parameter: ")+
+  scale_color_manual(values = c(plot_1 = "red", plot_2 = "black", plot_3 = "blue"),
+                     labels = c(plot_1 = scale[1], plot_2 = scale[2], plot_3 = scale[3]))+
+  theme_bw()+
+  theme(legend.position = "top")
+```
 

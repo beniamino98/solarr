@@ -4,7 +4,8 @@
 #'
 #' @param .f density function
 #' @param cdf cumulative distribution function.
-#' @param lower lower bound for integration (domain).
+#' @param lower lower bound for integration (CDF).
+#' @param interval lower and upper bounds for unit root (Quantile).
 #' @param ... other parameters to be passed to `.f`.
 #'
 #' @examples
@@ -17,7 +18,7 @@
 #' cdf(3)
 #' pnorm(3, mean = 0.3, sd = 1.3)
 #' # Numeric quantile function
-#' pnorm(Quantile(dnorm)(0.9))
+#' pnorm(Quantile(pnorm)(0.9))
 #' @name PDF
 #' @rdname PDF
 #' @aliases PDF
@@ -59,12 +60,16 @@ CDF <- function(.f, lower = -Inf, ...){
 
 #' @rdname PDF
 #' @export
-Quantile <- function(cdf, lower = -Inf, x0 = 0){
-  # Loss function
-  loss_function <- function(x, p) {(cdf(x) - p)^2}
+Quantile <- function(cdf, interval = c(-100, 100)){
+
+  # Find the quantile numerically
+  quantile_root <- function(p, cdf, interval){
+    uniroot(function(x) cdf(x) - p,
+            interval = interval,
+            tol = 10^{-16})$root
+  }
   # Quantile function
-  safe_optim <- purrr::quietly(purrr::safely(optim))
-  quantile_ <- function(p) purrr::map_dbl(p, ~safe_optim(par = x0, loss_function, p = .x)$result$result$par)
+  quantile_numeric <- function(p) purrr::map_dbl(p, ~quantile_root(.x, cdf, interval))
 
   function(p, log.p = FALSE, lower.tail = TRUE){
     probs <- p
@@ -77,9 +82,10 @@ Quantile <- function(cdf, lower = -Inf, x0 = 0){
       probs <- 1 - probs
     }
     # Quantiles
-    x <- quantile_(probs)
+    x <- quantile_numeric(probs)
     return(x)
   }
 }
+
 
 

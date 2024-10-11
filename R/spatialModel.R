@@ -164,8 +164,7 @@ spatialModel <- R6::R6Class("spatialModel",
                                 # Interpolate the realized Clearsky
                                 model_inter$.__enclos_env__$private$..data[["clearsky"]] <- self$interpolator(lat, lon, target = "clearsky", n = n)$clearsky
                                 # Update H0 inside clear sky model
-                                H0 <- seasonalSolarFunctions$new("spencer")$H0(model_inter$seasonal_data$n, lat)$H0
-                                model_inter$.__enclos_env__$private$..seasonal_model_Ct$seasonal_data$H0 <- H0
+                                model_inter$seasonal_model_Ct$updateH0(lat)
                                 # Predict the best parameters for the target location
                                 params <- private$..parameters$predict(lat = lat, lon = lon, as_tibble = FALSE)[[1]]
                                 # Update the model parameters

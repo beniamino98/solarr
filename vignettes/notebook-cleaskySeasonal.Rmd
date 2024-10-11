@@ -30,7 +30,8 @@ spec$control$clearsky <- control_seasonalClearsky(method = "II", include.interce
 control <- spec$control
 data <- spec$data
 # Fit a Seasonal model for clear sky radiation
-clearsky_model <- seasonalClearsky(x = data$GHI, date = data$date, lat = spec$coords$lat, clearsky = data$clearsky, control = control$clearsky)
+clearsky_model <- seasonalClearsky$new(control = control$clearsky)
+clearsky_model$fit(x = data$GHI, date = data$date, lat = spec$coords$lat, clearsky = data$clearsky)
 data$Ct <-  clearsky_model$predict(data$n)
 data %>%
 dplyr::filter(date >= "2020-01-01" & date <= "2021-01-01")%>%
@@ -60,7 +61,7 @@ cat(test_msg)
 data %>%
   # dplyr::filter(date >= "2022-01-01" & date <= "2023-01-01")%>%
   ggplot()+
-  geom_line(aes(n, 1-clearsky/Ct), linewidth = 0.1)
+  geom_line(aes(n, 1-clearsky/Ct, group = Year), linewidth = 0.1)
 
 ```
 

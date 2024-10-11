@@ -16,15 +16,15 @@ solarModel_spec(
 )
 }
 \arguments{
-\item{place}{character, name of an element in the `CAMS_data` list.}
+\item{place}{Character, name of an element in the `CAMS_data` list.}
 
-\item{target}{character, target variable to model. Can be `GHI` or `clearsky`.}
+\item{target}{Character, target variable to model. Can be `GHI` or `clearsky`.}
 
-\item{min_date}{character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.}
+\item{min_date}{Character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.}
 
-\item{max_date}{character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.}
+\item{max_date}{Character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.}
 
-\item{from}{character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
+\item{from}{Character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
 If `missing` will be used the minimum data available after filtering for `min_date`.}
 
 \item{to}{character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.

@@ -9,9 +9,44 @@ Solar seasonal functions
 Solar seasonal functions
 }
 \examples{
+dates <- seq.Date(as.Date("2022-01-01"), as.Date("2022-12-31"), 1)
+# Seasonal functions object
 sf <- seasonalSolarFunctions$new()
-sf$angle_minmax("2022-01-01", 44)
-sf$H0(1:365, 44)
+
+# Adjustment parameter
+sf$B(number_of_day(dates))
+
+# Time adjustment in minutes
+sf$E(dates)
+
+# Declination
+sf$declination(dates)
+
+# Solar constant
+sf$G0
+
+# Solar constant adjusted
+sf$G0n(dates)
+
+# Extraterrestrial radiation
+sf$H0(dates, 43)
+
+# Number of hours of sun
+sf$sun_hours(dates, 43)
+
+# Sunset hour angle
+sf$sunset_hour_angle(dates, 43)
+
+}
+\references{
+Duffie, Solar Engineering of Thermal Processes Fourth Edition.
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{legal_hour}}{Logical, when `TRUE` the clock time will be corrected for the legal hour.}
+}
+\if{html}{\out{</div>}}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
@@ -28,17 +63,18 @@ sf$H0(1:365, 44)
 \item \href{#method-B}{\code{seasonalSolarFunctions$B()}}
 \item \href{#method-degree}{\code{seasonalSolarFunctions$degree()}}
 \item \href{#method-radiant}{\code{seasonalSolarFunctions$radiant()}}
-\item \href{#method-time_adjustment}{\code{seasonalSolarFunctions$time_adjustment()}}
+\item \href{#method-E}{\code{seasonalSolarFunctions$E()}}
+\item \href{#method-solar_time}{\code{seasonalSolarFunctions$solar_time()}}
+\item \href{#method-hour_angle}{\code{seasonalSolarFunctions$hour_angle()}}
+\item \href{#method-incidence_angle}{\code{seasonalSolarFunctions$incidence_angle()}}
+\item \href{#method-azimut_angle}{\code{seasonalSolarFunctions$azimut_angle()}}
 \item \href{#method-G0n}{\code{seasonalSolarFunctions$G0n()}}
 \item \href{#method-declination}{\code{seasonalSolarFunctions$declination()}}
-\item \href{#method-solar_angle}{\code{seasonalSolarFunctions$solar_angle()}}
-\item \href{#method-solar_altitude}{\code{seasonalSolarFunctions$solar_altitude()}}
-\item \href{#method-sun_hours}{\code{seasonalSolarFunctions$sun_hours()}}
-\item \href{#method-angle_minmax}{\code{seasonalSolarFunctions$angle_minmax()}}
-\item \href{#method-cosZ}{\code{seasonalSolarFunctions$cosZ()}}
 \item \href{#method-H0}{\code{seasonalSolarFunctions$H0()}}
-\item \href{#method-solar_hour}{\code{seasonalSolarFunctions$solar_hour()}}
-\item \href{#method-omega}{\code{seasonalSolarFunctions$omega()}}
+\item \href{#method-sunset_hour_angle}{\code{seasonalSolarFunctions$sunset_hour_angle()}}
+\item \href{#method-sun_hours}{\code{seasonalSolarFunctions$sun_hours()}}
+\item \href{#method-solar_altitude}{\code{seasonalSolarFunctions$solar_altitude()}}
+\item \href{#method-solar_angles}{\code{seasonalSolarFunctions$solar_angles()}}
 \item \href{#method-clearsky}{\code{seasonalSolarFunctions$clearsky()}}
 \item \href{#method-clone}{\code{seasonalSolarFunctions$clone()}}
 }
@@ -49,13 +85,15 @@ sf$H0(1:365, 44)
 \subsection{Method \code{new()}}{
 Initialize a `seasonalSolarFunctions` object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$new(method = "spencer")}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$new(method = "spencer", legal_hour = TRUE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{method}}{character, method type for computations. Can be `cooper` or `spencer`.}
+
+\item{\code{legal_hour}}{Logical, when `TRUE` the clock time will be corrected for the legal hour.}
 }
 \if{html}{\out{</div>}}
 }
@@ -148,12 +186,12 @@ The function computes:
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-time_adjustment"></a>}}
-\if{latex}{\out{\hypertarget{method-time_adjustment}{}}}
-\subsection{Method \code{time_adjustment()}}{
-Compute solar time adjustment in seconds
+\if{html}{\out{<a id="method-E"></a>}}
+\if{latex}{\out{\hypertarget{method-E}{}}}
+\subsection{Method \code{E()}}{
+Compute the time adjustment in minutes.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$time_adjustment(n)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$E(n)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -164,16 +202,140 @@ Compute solar time adjustment in seconds
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The function computes
-\deqn{229.2(0.000075 + 0.001868 \cos(B) - 0.032077\sin(B) - 0.014615\cos(2B) - 0.04089\sin(2B))}
+The function implement Eq. 1.5.3 from Duffie (4th edition), i.e.
+\deqn{E = 229.2(0.000075 + 0.001868 \cos(B) - 0.032077\sin(B) - 0.014615\cos(2B) - 0.04089\sin(2B))}
 }
 
+\subsection{Returns}{
+The time adjustment in minutes.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solar_time"></a>}}
+\if{latex}{\out{\hypertarget{method-solar_time}{}}}
+\subsection{Method \code{solar_time()}}{
+Compute the solar time from a clock time.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$solar_time(x, lon, lon_sd = 15)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{datetime, clock hour.}
+
+\item{\code{lon}}{longitude of interest in degrees.}
+
+\item{\code{lon_sd}}{longitude of the Local standard meridian in degrees.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function implement Eq. 1.5.2 from Duffie (4th edition), i.e.
+\deqn{solartime = clocktime + 4 (lon_s - lon) + E(n)}
+}
+
+\subsection{Returns}{
+A datetime object
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-hour_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-hour_angle}{}}}
+\subsection{Method \code{hour_angle()}}{
+Compute the solar angle for a specific hour of the day.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$hour_angle(x, lon, lon_sd = 15)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{datetime, clock hour.}
+
+\item{\code{lon}}{longitude of interest in degrees.}
+
+\item{\code{lon_sd}}{longitude of the Local standard meridian in degrees.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An angle in degrees
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-incidence_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-incidence_angle}{}}}
+\subsection{Method \code{incidence_angle()}}{
+Compute the incidence angle
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$incidence_angle(
+  x,
+  lat,
+  lon,
+  lon_sd = 15,
+  beta = 0,
+  gamma = 0
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{datetime, clock hour.}
+
+\item{\code{lat}}{latitude of interest in degrees.}
+
+\item{\code{lon}}{longitude of interest in degrees.}
+
+\item{\code{lon_sd}}{longitude of the Local standard meridian in degrees.}
+
+\item{\code{beta}}{altitude}
+
+\item{\code{gamma}}{orientation}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+An angle in degrees
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-azimut_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-azimut_angle}{}}}
+\subsection{Method \code{azimut_angle()}}{
+Compute the solar azimuth angle for a specific time of the day.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$azimut_angle(x, lat, lon, lon_sd = 15)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{datetime, clock hour.}
+
+\item{\code{lat}}{latitude of interest in degrees.}
+
+\item{\code{lon}}{longitude of interest in degrees.}
+
+\item{\code{lon_sd}}{longitude of the Local standard meridian in degrees.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function implement Eq. 1.6.6 from Duffie (4th edition), i.e.
+\deqn{\gamma_s = sign(\omega) \left|\cos^{-1}\left( \frac{\cos \theta_z \sin \phi - \sin \delta}{\sin \theta_z \cos \phi} \right) \right|}
+}
+
+\subsection{Returns}{
+The solar azimut angle in degrees
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-G0n"></a>}}
 \if{latex}{\out{\hypertarget{method-G0n}{}}}
 \subsection{Method \code{G0n()}}{
-Compute solar constant
+Compute the solar constant adjusted for the day of the year.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$G0n(n)}\if{html}{\out{</div>}}
 }
@@ -186,18 +348,21 @@ Compute solar constant
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-If the selected method is `cooper`, the function computes:
+When method is `cooper` the function implement Eq. 1.4.1a from Duffie (4th edition), i.e.
 \deqn{G_{0,n} = G_0 (1 + 0.033\cos(B))}
-otherwise when it is `spencer` it computes:
+otherwise when it is `spencer` it implement Eq. 1.4.1b from Duffie (4th edition):
 \deqn{G_{0,n} = G_0 (1.000110 + 0.034221\cos(B) + 0.001280\sin(B) + 0.000719\cos(2B) + 0.000077\sin(2B))}
 }
 
+\subsection{Returns}{
+The solar constant in \eqn{W/m^2} for the day n.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-declination"></a>}}
 \if{latex}{\out{\hypertarget{method-declination}{}}}
 \subsection{Method \code{declination()}}{
-Compute solar declination
+Compute solar declination in degrees.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$declination(n)}\if{html}{\out{</div>}}
 }
@@ -210,20 +375,23 @@ Compute solar declination
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-If the selected method was `cooper`, the function computes:
+When method is `cooper` the function implement Eq. 1.6.1a from Duffie (4th edition), i.e.
 \deqn{\delta(n) = 23.45 \sin \left(\frac{2 \pi (284 + n)}{365}\right)}
-otherwise when it is `spencer` it computes:
+otherwise when it is `spencer` it implement Eq. 1.6.1b from Duffie (4th edition):
 \deqn{\delta(n) = \frac{180}{\pi}(0.006918 - 0.399912\cos(B) + 0.070257\sin(B) - 0.006758\cos(2B))}
 }
 
+\subsection{Returns}{
+The solar declination in degrees.
+}
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solar_angle"></a>}}
-\if{latex}{\out{\hypertarget{method-solar_angle}{}}}
-\subsection{Method \code{solar_angle()}}{
-Compute solar angle at sunset in degrees
+\if{html}{\out{<a id="method-H0"></a>}}
+\if{latex}{\out{\hypertarget{method-H0}{}}}
+\subsection{Method \code{H0()}}{
+Compute the solar extraterrestrial radiation
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$solar_angle(n, lat)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$H0(n, lat)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -231,13 +399,62 @@ Compute solar angle at sunset in degrees
 \describe{
 \item{\code{n}}{number of the day of the year}
 
-\item{\code{lat}}{latitude in degrees.}
+\item{\code{lat}}{latitude of interest in degrees.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Extraterrestrial radiation on an horizontal surface in kilowatt hour for metres squared for day.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-sunset_hour_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-sunset_hour_angle}{}}}
+\subsection{Method \code{sunset_hour_angle()}}{
+Compute solar angle at sunset in degrees
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$sunset_hour_angle(n, lat)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{number of the day of the year}
+
+\item{\code{lat}}{Numeric, latitude of interest in degrees.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The function computes
-\deqn{\cos^{-1}(-\tan(\delta(n))\tan(\phi))}
+The function implement Eq. 1.6.10 from Duffie (4th edition), i.e.
+\deqn{\omega_s = \cos^{-1}(-\tan(\delta(n))\tan(\phi))}
+}
+
+\subsection{Returns}{
+The sunset hour angle in degrees.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-sun_hours"></a>}}
+\if{latex}{\out{\hypertarget{method-sun_hours}{}}}
+\subsection{Method \code{sun_hours()}}{
+Compute number of sun hours for a day n.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$sun_hours(n, lat)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{number of the day of the year.}
+
+\item{\code{lat}}{Numeric, latitude of interest in degrees.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function implement Eq. 1.6.11 from Duffie (4th edition), i.e.
+\deqn{\frac{2}{15} \omega_s}
 }
 
 }
@@ -255,7 +472,7 @@ Compute solar altitude in degrees
 \describe{
 \item{\code{n}}{number of the day of the year}
 
-\item{\code{lat}}{latitude in degrees.}
+\item{\code{lat}}{Numeric, latitude of interest in degrees.}
 }
 \if{html}{\out{</div>}}
 }
@@ -266,115 +483,26 @@ The function computes
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-sun_hours"></a>}}
-\if{latex}{\out{\hypertarget{method-sun_hours}{}}}
-\subsection{Method \code{sun_hours()}}{
-Compute number of sun hours
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$sun_hours(n, lat)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{number of the day of the year}
-
-\item{\code{lat}}{latitude in degrees.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Details}{
-The function computes
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-angle_minmax"></a>}}
-\if{latex}{\out{\hypertarget{method-angle_minmax}{}}}
-\subsection{Method \code{angle_minmax()}}{
+\if{html}{\out{<a id="method-solar_angles"></a>}}
+\if{latex}{\out{\hypertarget{method-solar_angles}{}}}
+\subsection{Method \code{solar_angles()}}{
 Compute the solar angle for a latitude in different dates.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$angle_minmax(n, lat)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$solar_angles(x, lat, lon, lon_sd, by = "1 min")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{n}}{number of the day of the year}
+\item{\code{x}}{datetime, clock hour.}
 
-\item{\code{lat}}{latitude in degrees.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-cosZ"></a>}}
-\if{latex}{\out{\hypertarget{method-cosZ}{}}}
-\subsection{Method \code{cosZ()}}{
-Compute the incidence angle
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$cosZ(n, lat)}\if{html}{\out{</div>}}
-}
+\item{\code{lat}}{Numeric, latitude of interest in degrees.}
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{number of the day of the year}
+\item{\code{lon}}{Numeric, longitude of interest in degrees.}
 
-\item{\code{lat}}{latitude in degrees.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-H0"></a>}}
-\if{latex}{\out{\hypertarget{method-H0}{}}}
-\subsection{Method \code{H0()}}{
-Compute the solar extraterrestrial radiation
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$H0(n, lat)}\if{html}{\out{</div>}}
-}
+\item{\code{lon_sd}}{Numeric, longitude of the Local standard meridian in degrees.}
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{n}}{number of the day of the year}
-
-\item{\code{lat}}{latitude in degrees.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solar_hour"></a>}}
-\if{latex}{\out{\hypertarget{method-solar_hour}{}}}
-\subsection{Method \code{solar_hour()}}{
-Compute the solar hour
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$solar_hour(x)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{x}}{datehour}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-omega"></a>}}
-\if{latex}{\out{\hypertarget{method-omega}{}}}
-\subsection{Method \code{omega()}}{
-Compute the solar angle
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$omega(x)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{x}}{datehour}
+\item{\code{by}}{Character, time step. Default is `1 min`.}
 }
 \if{html}{\out{</div>}}
 }

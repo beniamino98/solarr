@@ -12,9 +12,9 @@
 #'
 #' @examples
 #' # Control list
-#' control <- control_solarModel(outliers_quantile = 0.005)
+#' control <- control_solarModel(outliers_quantile = 0)
 #' # Model specification
-#' spec <- solarModel_spec("Bologna", from="2005-01-01", to="2022-01-01", control_model = control)
+#' spec <- solarModel_spec("Bologna", from="2005-01-01", control_model = control)
 #' Bologna <- solarModel$new(spec)
 #' # Model fit
 #' Bologna$fit()
@@ -46,12 +46,17 @@
 solarModel <- R6::R6Class("solarModel",
                             public = list(
                               #' @field place Character, optional name of the location considered.
-                              place = NA,
+                              place = NA_character_,
                               #' @field target Character, name of the target variable to model. Can be `GHI` or `clearsky`.
-                              target = NA,
-                              #' @field dates List, with the range of dates used in the model.
-                              dates = NA,
-                              #' @field coords A List with the coordinates of the location considered.
+                              target = NA_character_,
+                              #' @field dates A named list, with the range of dates used in the model.
+                              dates = list(),
+                              #' @field coords A named list with the coordinates of the location considered. Contains:
+                              #' \describe{
+                              #'  \item{lat}{Numeric, reference latitude in degrees.}
+                              #'  \item{lon}{Numeric, reference longitude in degrees.}
+                              #'  \item{alt}{Numeric, reference altitude in metres.}
+                              #'}
                               coords = list(lat = NA, lon = NA, alt = NA),
                               #' @description
                               #' Initialize a `solarModel`
@@ -83,9 +88,8 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..control <- spec$control
                                 private$..transform <- solarTransform$new(0, 1)
                               },
-                              #' @method fit solarModel
                               #' @description
-                              #' Fit the model given the specification contained in `control`.
+                              #' Initialize and fit a \code{\link{solarModel}} object given the specification contained in `$control`.
                               fit = function(){
                                 self$fit_clearsky_model()
                                 self$compute_risk_drivers()
@@ -105,7 +109,7 @@ solarModel <- R6::R6Class("solarModel",
                                 self$logLik()
                               },
                               #' @description
-                              #' Fit a `seasonalClearsky` given a certain specification
+                              #' Initialize and fit a \code{\link{seasonalClearsky}} model given the specification contained in `$control`.
                               fit_clearsky_model = function(){
                                 # Private arguments
                                 data <- private$..data
@@ -121,7 +125,7 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..seasonal_model_Ct <- seasonal_model_Ct$clone(deep = TRUE)
                               },
                               #' @description
-                              #' Compute the risk drivers and detect outliers with respect to clearsky
+                              #' Compute the risk drivers and impute the observation that are greater or equal to the clearsky level.
                               compute_risk_drivers = function(){
                                 # Self Arguments
                                 target <- self$target
@@ -157,7 +161,7 @@ solarModel <- R6::R6Class("solarModel",
                                 private$outliers <- outliers
                               },
                               #' @description
-                              #' Fit the parameters of the solar tranform
+                              #' Fit the parameters of the \code{\link{solarTransform}} object.
                               fit_solar_transform = function(){
                                 # Self Arguments
                                 control <- self$control
@@ -167,7 +171,7 @@ solarModel <- R6::R6Class("solarModel",
                                 outliers <- private$outliers
                                 # **************************************************** #
                                 # Transformation parameters
-                                params <- st$parameters(data$Xt, control$threshold)
+                                params <- st$fit(data$Xt, control$threshold)
                                 st$update(params$alpha, params$beta)
                                 # Remove minimum and maximum of Xt from computations
                                 outliers$index_type$transform <- c(which.min(data$Xt), which.max(data$Xt))
@@ -181,7 +185,8 @@ solarModel <- R6::R6Class("solarModel",
                                 private$outliers <- outliers
                               },
                               #' @description
-                              #' Detect the outliers that will be excluded from computations
+                              #' Detect and assign a zero weight to the outliers to exclude them from the fit. The threshold to be outlier is specified
+                              #' with the control function.
                               detect_outliers_Yt = function(){
                                 # Private arguments
                                 data <- private$..data
@@ -208,7 +213,7 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..data$weights <- data$weights
                               },
                               #' @description
-                              #' Fit a `seasonalModel` on `Yt` and compute deseasonalized series `Yt_tilde`.
+                              #' Fit a \code{\link{seasonalModel}} the transformed variable (`Yt`) and compute deseasonalized series (`Yt_tilde`).
                               fit_seasonal_mean = function(){
                                 # Self Arguments
                                 target <- self$target
@@ -259,7 +264,7 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..seasonal_data[[paste0(target, "_bar")]] <- self$transform$GHI_y(private$..seasonal_data$Yt_bar, private$..seasonal_data$Ct)
                               },
                               #' @description
-                              #' Correct the deseasonalized series `Yt_tilde` by subtracting its monthly mean.
+                              #' Correct the deseasonalized series (`Yt_tilde`) by subtracting its monthly mean (`Yt_tilde_uncond`).
                               corrective_monthly_mean = function(){
                                 # Self Arguments
                                 control <- self$control$seasonal.mean
@@ -287,7 +292,7 @@ solarModel <- R6::R6Class("solarModel",
                                 }
                               },
                               #' @description
-                              #' Fit an AR model on `Yt_tilde` and compute residuals
+                              #' Fit an AR model (`Yt_tilde`) and compute AR residuals (`eps`).
                               fit_AR_model = function(){
                                 # Self arguments
                                 control <- self$control$mean.model
@@ -334,7 +339,7 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..data[["eps"]] <- data$eps
                               },
                               #' @description
-                              #' Fit a `seasonalModel` on `eps^2` and compute deseasonalized residuals `eps_tilde`.
+                              #' Fit a \code{\link{seasonalModel}} on AR squared residuals (`eps`) and compute deseasonalized residuals `eps_tilde`.
                               fit_seasonal_variance = function(){
                                 # Self arguments
                                 control <- self$control$seasonal.variance
@@ -380,7 +385,8 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..seasonal_data[["sigma_bar"]] <- sqrt(seasonal_variance$predict(private$..seasonal_data$n))
                               },
                               #' @description
-                              #' Fit a `GARCH` model on `eps_tilde` and compute standardized `u` and monthly deseasonalized residuals `u_tilde`.
+                              #' Fit a `GARCH` model on the deseasonalized residuals (`eps_tilde`).
+                              #' Compute the standardized (`u`) and monthly deseasonalized residuals (`u_tilde`).
                               fit_GARCH_model = function(){
                                 # Self arguments
                                 control <- self$control
@@ -425,7 +431,8 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..data[["u_tilde"]] <- data$u_tilde
                               },
                               #' @description
-                              #' Correct the standardized series `u` by dividing by its monthly std. deviation.
+                              #' Correct the standardized GARCH residuals (`u`) by dividing them by the monthly std. deviation (`sigma_m`).
+                              #' @return Update the slots `$data$u_tilde` and `$monthly_data$sigma_m`.
                               corrective_monthly_variance = function(){
                                 # Self arguments
                                 control <- self$control
@@ -452,7 +459,7 @@ solarModel <- R6::R6Class("solarModel",
                                 }
                               },
                               #' @description
-                              #' Fit a `gaussianMixture` monthly model on `u_tilde` and return a series of bernoulli `B` and standardized components `z1` and `z2`.
+                              #' Initialize and fit a `solarMixture` object.
                               fit_mixture_model = function(){
                                 # Self arguments
                                 control <- self$control$mixture.model
@@ -460,18 +467,17 @@ solarModel <- R6::R6Class("solarModel",
                                 data <- private$..data
                                 # **************************************************** #
                                 # 4) Gaussian Mixture
-                                GM_model <- solarModel_mixture(data$u_tilde, date = data$date, weights = data$weights,
-                                                               match_moments = control$match_moments,
-                                                               abstol = control$abstol, maxit = control$maxit)
+                                GM_model <- solarMixture$new(components = 2, maxit = control$maxit, abstol = control$abstol)
+                                GM_model$fit(data$u_tilde, date = data$date, weights = data$weights, EM = control$EM)
                                 # Add the fitted series of Bernoulli
-                                data <- dplyr::left_join(data, dplyr::select(GM_model$data, date, B), by = c("date"))
+                                data <- dplyr::left_join(data, GM_model$fitted, by = c("date"))
                                 # Compute standardized components
-                                data <- dplyr::left_join(data, GM_model$model, by = "Month")
-                                data$z1 <- data$B*(data$u_tilde - data$mu_up)/data$sd_up
-                                data$z2 <- (1-data$B)*(data$u_tilde - data$mu_dw)/data$sd_dw
+                                data <- dplyr::left_join(data, GM_model$parameters, by = "Month")
+                                data$z1 <- data$B*(data$u_tilde - data$mu1)/data$sd1
+                                data$z2 <- (1-data$B)*(data$u_tilde - data$mu2)/data$sd2
                                 # **************************************************** #
                                 # Store Gaussian Mixture parameters
-                                private$..NM_model <- GM_model$model
+                                private$..NM_model <- GM_model
                                 # Add fitted series of bernoulli and of standardized components
                                 private$..data[["B"]] <- data$B
                                 private$..data[["z1"]] <- data$z1
@@ -479,7 +485,7 @@ solarModel <- R6::R6Class("solarModel",
                               },
                               #' @description
                               #' Update the parameters inside object
-                              #' @param params updated parameters
+                              #' @param params List of parameters. See the slot `$parameters` for a template.
                               update = function(params){
                                 # Update clear sky model
                                 private$..seasonal_model_Ct$update(unlist(params$seasonal_model_Ct))
@@ -508,7 +514,9 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..loglik$loglik <- rep(NA, 12)
                               },
                               #' @description
-                              #' Update the time series inside object given certain parameters
+                              #' Filter the time series when new parameters are supplied in the method `$update(params)`.
+                              #' @return Update the slots `$data`, `$seasonal_data`, `$monthly_data`, `$moments$conditional`,
+                              #' `$moments$unconditional` and `$loglik`.
                               filter = function(){
                                 # Self arguments
                                 control <- self$control
@@ -544,15 +552,15 @@ solarModel <- R6::R6Class("solarModel",
                                 # Update seasonal data
                                 private$..seasonal_data[["Ct"]] <- self$seasonal_model_Ct$predict(self$seasonal_data$n)
                                 private$..seasonal_data[["Yt_bar"]] <- self$seasonal_model_Yt$predict(self$seasonal_data$n)
-                                private$..seasonal_data[[paste0(target, "_bar")]] <- self$transform$iY(private$..seasonal_data[["Yt_bar"]])
+                                private$..seasonal_data[[paste0(target, "_bar")]] <- self$transform$GHI_y(private$..seasonal_data[["Yt_bar"]], private$..seasonal_data[["Ct"]])
                                 private$..seasonal_data[["sigma_bar"]] <- sqrt(self$seasonal_variance$predict(self$seasonal_data$n))
-                                # Update moments
+                                # Update log-likelihood and conditional moments
                                 self$conditional_moments()
                                 self$unconditional_moments()
                                 self$logLik()
                               },
                               #' @description
-                              #' Compute the conditional moments.
+                              #' Compute the conditional moments and update the slot `$moments$conditional`.
                               conditional_moments = function(){
                                 # Self arguments
                                 data <- self$data
@@ -564,18 +572,18 @@ solarModel <- R6::R6Class("solarModel",
                                                       # Conditional std. deviation Yt
                                                       sd_Yt = sigma*sigma_bar*sigma_m,
                                                       # Conditional moments Yt (state up)
-                                                      e_Yt_up = e_Yt + sd_Yt*mu_up,
-                                                      sd_Yt_up = sd_Yt*sd_up,
+                                                      e_Yt_up = e_Yt + sd_Yt*mu1,
+                                                      sd_Yt_up = sd_Yt*sd1,
                                                       # Conditional moments Yt (state dw)
-                                                      e_Yt_dw = e_Yt + sd_Yt*mu_dw,
-                                                      sd_Yt_dw = sd_Yt*sd_dw)
+                                                      e_Yt_dw = e_Yt + sd_Yt*mu2,
+                                                      sd_Yt_dw = sd_Yt*sd2)
                                 # Store only relevant variables
                                 data <- dplyr::select(data, date, Year, Month, Day, e_Yt, sd_Yt, e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw)
                                 # **************************************************** #
                                 private$..moments$conditional <- data
                               },
                               #' @description
-                              #' Compute the unconditional seasonal moments.
+                              #' Compute the unconditional seasonal moments and update the slot `$moments$unconditional`.
                               unconditional_moments = function(){
                                 # Self arguments
                                 data <- self$seasonal_data
@@ -587,22 +595,22 @@ solarModel <- R6::R6Class("solarModel",
                                                       # Unconditional std. deviation Yt
                                                       sd_Yt = sigma_bar*sigma_m,
                                                       # Unconditional moments Yt (state up)
-                                                      e_Yt_up = e_Yt + sd_Yt*mu_up,
-                                                      sd_Yt_up = sd_Yt*sd_up,
+                                                      e_Yt_up = e_Yt + sd_Yt*mu1,
+                                                      sd_Yt_up = sd_Yt*sd1,
                                                       # Unconditional moments Yt (state dw)
-                                                      e_Yt_dw = e_Yt + sd_Yt*mu_dw,
-                                                      sd_Yt_dw = sd_Yt*sd_dw)
+                                                      e_Yt_dw = e_Yt + sd_Yt*mu2,
+                                                      sd_Yt_dw = sd_Yt*sd2)
                                 # Store only relevant variables
                                 data <- dplyr::select(data, Month, Day, e_Yt, sd_Yt, e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw)
                                 # **************************************************** #
                                 private$..moments$unconditional <- data
                               },
                               #' @description
-                              #' Compute the log-likelihood of the model given the parameters.
+                              #' Compute the log-likelihood of the model and update the slot `$loglik`.
                               logLik = function(){
                                 # Self arguments
                                 moments <- dplyr::left_join(private$..moments$conditional, private$..data[, c("date", "Yt")], by = "date")
-                                moments <- dplyr::left_join(moments, self$NM_model[, c("Month", "p_up")], by = "Month")
+                                moments <- dplyr::left_join(moments, self$NM_model$parameters[, c("Month", "p1")], by = "Month")
                                 # Add weights
                                 moments$weights <- self$data$weights
                                 # **************************************************** #
@@ -615,7 +623,7 @@ solarModel <- R6::R6Class("solarModel",
                                     next
                                   }
                                   # Conditional mixture Pdf
-                                  pdf_Yt <- function(x) dmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p_up, 1-df_n$p_up))
+                                  pdf_Yt <- function(x) dmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p1, 1-df_n$p1))
                                   moments$loglik[i] <- log(pdf_Yt(df_n$Yt))
                                 }
                                 # Aggregate log-likelihood by month
@@ -647,24 +655,23 @@ solarModel <- R6::R6Class("solarModel",
                               ..moments = list(conditional = NA, unconditional = NA)
                             ),
                             active = list(
-                              #' @field data Get a data frame containing the complete data with seasonal and monthly parameters.
+                              #' @field data A data frame with the fitted data, and the seasonal and monthly parameters.
                               data = function(){
                                 dplyr::left_join(private$..data, dplyr::select(self$seasonal_data, -n), by = c("Month", "Day"))
                               },
-                              #' @field seasonal_data Get a data frame containing seasonal and monthly parameters.
+                              #' @field seasonal_data A data frame containing seasonal and monthly parameters.
                               seasonal_data = function(){
                                 dplyr::left_join(private$..seasonal_data, self$monthly_data, by = "Month")
                               },
-                              #' @field monthly_data Get a data frame that contains monthly parameters.
+                              #' @field monthly_data A data frame that contains monthly parameters.
                               monthly_data = function(){
-                                NM_data <- dplyr::select(self$NM_model, -loss, -nobs, -e_x, -v_x, -e_x_hat, -v_x_hat)
-                                dplyr::left_join(private$..monthly_data, NM_data, by = "Month")
+                                dplyr::left_join(private$..monthly_data, self$NM_model$parameters, by = "Month")
                               },
-                              #' @field loglik Get the log-likelihood of the train data.
+                              #' @field loglik The log-likelihood computed on train data.
                               loglik = function(){
                                 sum(private$..loglik)
                               },
-                              #' @field control A list of control parameters that govern the behavior of the model's fitting process and other configurations.
+                              #' @field control A list of control parameters that govern the behavior of the model's fitting process.
                               control = function(){
                                 private$..control
                               },
@@ -672,7 +679,7 @@ solarModel <- R6::R6Class("solarModel",
                               location = function(){
                                 dplyr::bind_cols(place = self$place, target = self$target, dplyr::bind_rows(self$coords))
                               },
-                              #' @field transform An object representing the transformation functions applied to the data.
+                              #' @field transform A \code{\link{solarTransform}} object with the transformation functions applied to the data.
                               transform = function(){
                                 private$..transform
                               },
@@ -722,15 +729,15 @@ solarModel <- R6::R6Class("solarModel",
                                 # 5. GARCH(1,1) variance model
                                 GARCH <- as.list(self$GARCH$coefficients)
                                 # 6. Gaussian mixture model
-                                NM_mu_up <- self$NM_model$mu_up
+                                NM_mu_up <- self$NM_model$parameters$mu1
                                 names(NM_mu_up) <- paste0("mu_up_", 1:12)
-                                NM_mu_dw <- self$NM_model$mu_dw
+                                NM_mu_dw <- self$NM_model$parameters$mu2
                                 names(NM_mu_dw) <- paste0("mu_dw_", 1:12)
-                                NM_sd_up <- self$NM_model$sd_up
+                                NM_sd_up <- self$NM_model$parameters$sd1
                                 names(NM_sd_up) <- paste0("sd_up_", 1:12)
-                                NM_sd_dw <- self$NM_model$sd_dw
+                                NM_sd_dw <- self$NM_model$parameters$sd2
                                 names(NM_sd_dw) <- paste0("sd_dw_", 1:12)
-                                NM_p_up <- self$NM_model$p_up
+                                NM_p_up <- self$NM_model$parameters$p1
                                 names(NM_p_up) <- paste0("p_", 1:12)
 
                                 # Output list of parameter for each model
@@ -751,12 +758,12 @@ solarModel <- R6::R6Class("solarModel",
                                 # Eventually add correlation (stochastic clearsky models)
                                 check_rho_up <- suppressWarnings(!is.null(self$NM_model$rho_up[1]))
                                 if (check_rho_up) {
-                                  NM_rho_up <- self$NM_model$rho_up
+                                  NM_rho_up <- self$NM_model$parameters$rho_up
                                   names(NM_rho_up) <- paste0("rho_up_", 1:12)
                                   params <- append(params, values = list(rho_up = dplyr::bind_rows(NM_rho_up)))
                                 }
                                 # Eventually add correlation (stochastic clearsky models)
-                                check_rho_dw <- suppressWarnings(!is.null(self$NM_model$rho_dw[1]))
+                                check_rho_dw <- suppressWarnings(!is.null(self$NM_model$parameters$rho_dw[1]))
                                 if (check_rho_dw) {
                                   NM_rho_dw <- self$NM_model$rho_dw
                                   names(NM_rho_dw) <- paste0("rho_dw_", 1:12)

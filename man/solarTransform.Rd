@@ -2,10 +2,9 @@
 % Please edit documentation in R/solarTransform.R
 \name{solarTransform}
 \alias{solarTransform}
-\title{Solar Model transformation functions}
+\title{solarTransform
+Solar functions}
 \description{
-Solar Model transformation functions
-
 Solar Model transformation functions
 }
 \examples{
@@ -16,9 +15,9 @@ st$GHI(st$iGHI(0.4, 3), 3)
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{alpha}}{Return the first transformation parameters}
+\item{\code{alpha}}{Numeric, the first transformation parameter.}
 
-\item{\code{beta}}{the second transformation parameters}
+\item{\code{beta}}{Numeric, the second transformation parameter.}
 }
 \if{html}{\out{</div>}}
 }
@@ -31,7 +30,7 @@ st$GHI(st$iGHI(0.4, 3), 3)
 \item \href{#method-iGHI}{\code{solarTransform$iGHI()}}
 \item \href{#method-Y}{\code{solarTransform$Y()}}
 \item \href{#method-iY}{\code{solarTransform$iY()}}
-\item \href{#method-parameters}{\code{solarTransform$parameters()}}
+\item \href{#method-fit}{\code{solarTransform$fit()}}
 \item \href{#method-bounds}{\code{solarTransform$bounds()}}
 \item \href{#method-update}{\code{solarTransform$update()}}
 \item \href{#method-clone}{\code{solarTransform$clone()}}
@@ -41,7 +40,7 @@ st$GHI(st$iGHI(0.4, 3), 3)
 \if{html}{\out{<a id="method-new"></a>}}
 \if{latex}{\out{\hypertarget{method-new}{}}}
 \subsection{Method \code{new()}}{
-Solar Model transformation functions
+Initialize a solarTransform object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$new(alpha = 0, beta = 1)}\if{html}{\out{</div>}}
 }
@@ -49,9 +48,9 @@ Solar Model transformation functions
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{bound parameters.}
+\item{\code{alpha}}{Numeric, transformation parameter.}
 
-\item{\code{beta}}{bound parameters.}
+\item{\code{beta}}{Numeric, transformation parameter.}
 }
 \if{html}{\out{</div>}}
 }
@@ -68,9 +67,9 @@ Solar radiation function
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{numeric vector in \eqn{(\alpha, \alpha+\beta)}.}
+\item{\code{x}}{Numeric values in \eqn{(\alpha, \alpha+\beta)}.}
 
-\item{\code{Ct}}{clear sky radiation.}
+\item{\code{Ct}}{Numeric, clear sky radiation.}
 }
 \if{html}{\out{</div>}}
 }
@@ -79,6 +78,9 @@ The function computes:
 \deqn{GHI(x) = C_t(1 - x)}
 }
 
+\subsection{Returns}{
+Numeric values in \eqn{C_t(1-\alpha-\beta, 1-\alpha)}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-GHI_y"></a>}}
@@ -92,9 +94,9 @@ Solar radiation function in terms of y
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{y}}{numeric vector in \eqn{(-\infty, \infty)}.}
+\item{\code{y}}{Numeric values in \eqn{(-\infty, \infty)}.}
 
-\item{\code{Ct}}{clear sky radiation.}
+\item{\code{Ct}}{Numeric, clear sky radiation.}
 }
 \if{html}{\out{</div>}}
 }
@@ -103,12 +105,15 @@ The function computes:
 \deqn{GHI(y) = C_t(1 - \alpha-\beta \exp(-\exp(x)))}
 }
 
+\subsection{Returns}{
+Numeric values in \eqn{[C_t(1-\alpha-\beta), C_t(1-\alpha)]}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-iGHI"></a>}}
 \if{latex}{\out{\hypertarget{method-iGHI}{}}}
 \subsection{Method \code{iGHI()}}{
-Compute the risk driver process for solar radiation
+Compute the risk driver process
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$iGHI(x, Ct)}\if{html}{\out{</div>}}
 }
@@ -116,9 +121,9 @@ Compute the risk driver process for solar radiation
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{numeric vector in \eqn{C_t (\alpha, \alpha+\beta)}.}
+\item{\code{x}}{Numeric values in \eqn{[C_t(1-\alpha-\beta), C_t(1-\alpha)]}.}
 
-\item{\code{Ct}}{clear sky radiation.}
+\item{\code{Ct}}{Numeric, clear sky radiation.}
 }
 \if{html}{\out{</div>}}
 }
@@ -127,6 +132,9 @@ The function computes the inverse of the `GHI`funcion
 \deqn{iGHI(x) = 1 - \frac{x}{C_t}}
 }
 
+\subsection{Returns}{
+Numeric values in \eqn{[\alpha,\alpha+\beta]}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Y"></a>}}
@@ -140,17 +148,18 @@ Transformation function from X to Y
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{numeric vector in \eqn{(\alpha, \alpha+\beta)}.}
-
-\item{\code{inverse}}{when `TRUE` will compute the inverse transform.}
+\item{\code{x}}{numeric vector in \eqn{[\alpha, \alpha+\beta]}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The function computes the transformation:
+The function computes:
 \deqn{Y(x) = \log(\log(\beta) - \log(x - \alpha))}
 }
 
+\subsection{Returns}{
+Numeric values in \eqn{[-\infty, \infty]}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-iY"></a>}}
@@ -164,23 +173,26 @@ Inverse transformation from Y to X.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{y}}{numeric vector in \eqn{(-\infty, \infty)}.}
+\item{\code{y}}{numeric vector in \eqn{[-\infty, \infty]}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The function computes the transformation:
+The function computes:
 \deqn{iY(y) = \alpha + \beta \exp(-\exp(y))}
 }
 
+\subsection{Returns}{
+Numeric values in \eqn{[\alpha, \alpha + \beta]}.
+}
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-parameters"></a>}}
-\if{latex}{\out{\hypertarget{method-parameters}{}}}
-\subsection{Method \code{parameters()}}{
+\if{html}{\out{<a id="method-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-fit}{}}}
+\subsection{Method \code{fit()}}{
 Fit the best parameters from a time series
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarTransform$parameters(x, threshold = 0.01)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$fit(x, threshold = 0.01)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -192,12 +204,26 @@ Fit the best parameters from a time series
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Details}{
+Return a list that contains:
+\describe{
+ \item{alpha}{Numeric, first transformation parameter.}
+ \item{beta}{Numeric, second transformation parameter.}
+ \item{epsilon}{Numeric, threshold used for fitting.}
+ \item{Xt_min}{Numeric, minimum value of the supplied time series.}
+ \item{Xt_min}{Numeric, maximum value of the supplied time series.}
+}
+}
+
+\subsection{Returns}{
+A named list.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-bounds"></a>}}
 \if{latex}{\out{\hypertarget{method-bounds}{}}}
 \subsection{Method \code{bounds()}}{
-Compute the bounds for each tranform
+Compute the bounds for the transformed variables.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$bounds(target = "Xt")}\if{html}{\out{</div>}}
 }
@@ -205,16 +231,24 @@ Compute the bounds for each tranform
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{target}}{target variable}
+\item{\code{target}}{target variable. Available choices are:
+\describe{
+ \item{Xt}{Solar risk driver, the bounds returned are \eqn{[\alpha, \alpha + \beta]}.}
+ \item{Kt}{Clearness index, the bounds returned are \eqn{[1-\alpha-\beta, 1-\alpha]}.}
+ \item{Yt}{Solar transform, the bounds returned are \eqn{[-\infty, \infty]}.}
+}}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector where the first element is the lower bound and the second the upper bound.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-update"></a>}}
 \if{latex}{\out{\hypertarget{method-update}{}}}
 \subsection{Method \code{update()}}{
-Update the parameters
+Update the transformation parameters
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$update(alpha, beta)}\if{html}{\out{</div>}}
 }
@@ -222,11 +256,14 @@ Update the parameters
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{bounds parameter.}
+\item{\code{alpha}}{Numeric, transformation parameter.}
 
-\item{\code{beta}}{bounds parameter.}
+\item{\code{beta}}{Numeric, transformation parameter.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Update the slots `$alpha` and `$beta`.
 }
 }
 \if{html}{\out{<hr>}}

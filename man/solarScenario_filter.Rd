@@ -14,8 +14,8 @@ Simulate trajectories from a a `solarScenario_spec`
 }
 \examples{
 model <- Bologna
-simSpec <- solarScenario_spec(model)
-simSpec <- solarScenario_residuals(simSpec, nsim = 10)
+simSpec <- solarScenario_spec(model, from = "2024-06-01", to = "2024-12-31")
+simSpec <- solarScenario_residuals(simSpec, nsim = 1)
 simSpec <- solarScenario_filter(simSpec)
 # Empiric data
 df_emp <- simSpec$emp

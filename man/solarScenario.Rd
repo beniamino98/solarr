@@ -7,8 +7,8 @@
 solarScenario(
   model,
   from = "2010-01-01",
-  to = "2010-12-31",
-  by = "1 month",
+  to = "2011-01-01",
+  by = "1 year",
   theta = 0,
   nsim = 1,
   seed = 1,
@@ -38,6 +38,6 @@ Simulate multiple scenarios of solar radiation with a `solarModel` object.
 }
 \examples{
 model <- Bologna
-scen <- solarScenario(model, "2010-01-01", to = "2020-12-31", nsim = 10)
-scen <- solarScenario(model, to = "2010-02-01", by = "1 day")
+scen <- solarScenario(model, "2024-01-01", "2025-12-31")
+
 }

@@ -7,13 +7,13 @@
 \alias{rsolarGHI}
 \title{Solar radiation random variable}
 \usage{
-dsolarGHI(x, Ct, alpha, beta, pdf_Yt, log = FALSE)
+dsolarGHI(x, Ct, alpha, beta, pdf_Y, log = FALSE)
 
-psolarGHI(x, Ct, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE)
+psolarGHI(x, Ct, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE)
 
-qsolarGHI(p, Ct, alpha, beta, pdf_Yt, log.p = FALSE, lower.tail = TRUE)
+qsolarGHI(p, Ct, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE)
 
-rsolarGHI(n, Ct, alpha, beta, pdf_Yt)
+rsolarGHI(n, Ct, alpha, beta, cdf_Y)
 }
 \arguments{
 \item{x}{vector of quantiles.}
@@ -24,9 +24,11 @@ rsolarGHI(n, Ct, alpha, beta, pdf_Yt)
 
 \item{beta}{parameter `beta > 0` and `alpha + beta < 1`.}
 
-\item{pdf_Yt}{density of Yt.}
+\item{pdf_Y}{density of Y.}
 
 \item{log}{logical; if `TRUE`, probabilities are returned as `log(p)`.}
+
+\item{cdf_Y}{distribution of Y.}
 
 \item{log.p}{logical; if `TRUE`, probabilities p are given as `log(p)`.}
 
@@ -38,31 +40,40 @@ rsolarGHI(n, Ct, alpha, beta, pdf_Yt)
 Solar radiation density, distribution, quantile and random generator.
 }
 \details{
-Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Yt`. Then
+Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Y`. Then
 the funtion `dsolarGHI` compute the density function of the following transformed random variable, i.e.
 \deqn{GHI(Y) = C_t (1-\alpha-\beta \exp(-\exp(Y)))}
-where \eqn{GHI(Y) \in [Ct(1-\alpha-\beta), Ct(1-\alpha)]}.
+where \eqn{GHI(Y) \in [C_t(1-\alpha-\beta), C_t(1-\alpha)]}.
 }
 \examples{
+# Parameters
+alpha = 0
+beta = 0.9
+Ct <- 7
+# Grid of points
+grid <- seq(Ct*(1-alpha-beta), Ct*(1-alpha), by = 0.01)
+
 # Density
-dsolarGHI(5, 7, 0.001, 0.9, function(x) dnorm(x))
-dsolarGHI(5, 7, 0.001, 0.9, function(x) dnorm(x, sd=2))
+dsolarGHI(5, Ct, alpha, beta, function(x) dnorm(x))
+dsolarGHI(5, Ct, alpha, beta, function(x) dnorm(x, sd=2))
+plot(grid, dsolarGHI(grid, Ct, alpha, beta, function(x) dnorm(x, mean = -1, sd = 0.9)), type="l")
 
 # Distribution
-psolarGHI(3.993, 7, 0.001, 0.9, function(x) dnorm(x))
-psolarGHI(3.993, 7, 0.001, 0.9, function(x) dnorm(x, sd=2))
+psolarGHI(3.993, 7, 0.001, 0.9, function(x) pnorm(x))
+psolarGHI(3.993, 7, 0.001, 0.9, function(x) pnorm(x, sd=2))
+plot(grid, psolarGHI(grid, Ct, alpha, beta, function(x) pnorm(x, sd = 0.2)), type="l")
 
 # Quantile
-qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) dnorm(x))
-qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) dnorm(x, sd=2))
+qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) pnorm(x))
+qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) pnorm(x, sd=2))
 
 # Random generator (I)
 Ct <- Bologna$seasonal_data$Ct
-GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, 0.001, 0.9, function(x) dnorm(x, sd=0.8)))
+GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, alpha, beta, function(x) pnorm(x, sd=1.4)))
 plot(1:366, GHI, type="l")
 
 # Random generator (II)
-pdf <- function(x) dmixnorm(x, c(-0.8, 0.5), c(1.2, 0.7), c(0.3, 0.7))
-GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, 0.001, 0.9, pdf))
+cdf <- function(x) pmixnorm(x, c(-0.8, 0.5), c(1.2, 0.7), c(0.3, 0.7))
+GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, 0.001, 0.9, cdf))
 plot(1:366, GHI, type="l")
 }

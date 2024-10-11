@@ -10,16 +10,18 @@ PDF(.f, ...)
 
 CDF(.f, lower = -Inf, ...)
 
-Quantile(cdf, lower = -Inf, x0 = 0)
+Quantile(cdf, interval = c(-100, 100))
 }
 \arguments{
 \item{.f}{density function}
 
 \item{...}{other parameters to be passed to `.f`.}
 
-\item{lower}{lower bound for integration (domain).}
+\item{lower}{lower bound for integration (CDF).}
 
 \item{cdf}{cumulative distribution function.}
+
+\item{interval}{lower and upper bounds for unit root (Quantile).}
 }
 \description{
 Return a function of `x` given the specification of a function of `x`.
@@ -34,5 +36,5 @@ cdf <- CDF(dnorm, mean = 0.3, sd = 1.3)
 cdf(3)
 pnorm(3, mean = 0.3, sd = 1.3)
 # Numeric quantile function
-pnorm(Quantile(dnorm)(0.9))
+pnorm(Quantile(pnorm)(0.9))
 }

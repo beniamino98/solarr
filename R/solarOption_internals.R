@@ -63,22 +63,24 @@ discountFactor <- function(r = 0.03, discrete = TRUE) {
 #' @name solarOption_contracts
 #' @keywords 2beRevised
 #' @export
-solarOption_contracts  <- function(payoff, type = "mod", premium = "Q", nyear = 2021, tick = 0.06, efficiency = 0.2, n_panels = 2000, pun = 0.06){
+solarOption_contracts  <- function(payoff, type = "model", premium = "Q", put = TRUE, nyear = 2021, tick = 0.06, efficiency = 0.2, n_panels = 2000, pun = 0.06){
 
-  # Extract historical payoff
-  payoff_hist <- payoff$hist$payoff
+  # Match option type
+  option_type <- ifelse(put, "put", "call")
   # Match the type of computation
-  type <- match.arg(type, choices = c("mod", "sim"))
+  type <- match.arg(type, choices = c("model", "scenarios"))
+  # Extract historical payoff
+  payoff_hist <- payoff[[option_type]]$historical$payoff
   # Extract the payoff
-  payoffs <- payoff[[type]]
+  payoff <- payoff[[option_type]][[type]]
   # Match the type of premium
-  premium <- match.arg(premium, names(payoffs))
+  premium <- match.arg(premium, choices = names(payoff))
   # Extract daily premium
-  payoffs <- payoffs[[premium]]$payoff_month_day
+  payoff <- payoff[[premium]]$payoff_month_day
   # Select only relevant column
-  payoffs <- dplyr::select(payoffs, Month, Day, premium)
+  payoff <- dplyr::select(payoff, Month, Day, premium)
   # Merge realized GHI and premium
-  df_hedged <- dplyr::left_join(payoff_hist, payoffs, by = c("Month", "Day"))
+  df_hedged <- dplyr::left_join(payoff_hist, payoff, by = c("Month", "Day"))
   # Loss function depending on the number of contracts
   loss_function <- function(n_contracts, df_hedged){
     # Compute hedged cash-flows
