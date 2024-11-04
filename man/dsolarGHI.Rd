@@ -20,19 +20,19 @@ rsolarGHI(n, Ct, alpha, beta, cdf_Y)
 
 \item{Ct}{clear sky radiation}
 
-\item{alpha}{parameter `alpha > 0`.}
+\item{alpha}{parameter \code{alpha > 0}.}
 
-\item{beta}{parameter `beta > 0` and `alpha + beta < 1`.}
+\item{beta}{parameter \code{beta > 0} and \code{alpha + beta < 1}.}
 
 \item{pdf_Y}{density of Y.}
 
-\item{log}{logical; if `TRUE`, probabilities are returned as `log(p)`.}
+\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
 
 \item{cdf_Y}{distribution of Y.}
 
-\item{log.p}{logical; if `TRUE`, probabilities p are given as `log(p)`.}
+\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
 
-\item{lower.tail}{logical; if `TRUE`, the default, the computed probabilities are `P[X < x]`. Otherwise, `P[X > x]`.}
+\item{lower.tail}{logical; if \code{TRUE}, the default, the computed probabilities are \code{P[X < x]}. Otherwise, \code{P[X > x]}.}
 
 \item{p}{vector of probabilities.}
 }
@@ -40,8 +40,8 @@ rsolarGHI(n, Ct, alpha, beta, cdf_Y)
 Solar radiation density, distribution, quantile and random generator.
 }
 \details{
-Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Y`. Then
-the funtion `dsolarGHI` compute the density function of the following transformed random variable, i.e.
+Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function \code{pdf_Y}. Then
+the funtion \code{dsolarGHI} compute the density function of the following transformed random variable, i.e.
 \deqn{GHI(Y) = C_t (1-\alpha-\beta \exp(-\exp(Y)))}
 where \eqn{GHI(Y) \in [C_t(1-\alpha-\beta), C_t(1-\alpha)]}.
 }

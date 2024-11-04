@@ -16,7 +16,7 @@ desscher(pdf, theta = 0, lower = -Inf, upper = Inf)
 \item{upper}{numeric, lower bound for integration, i.e. the upper bound for the pdf.}
 }
 \description{
-Given a function of `x`, i.e. \eqn{f_X(x)}, compute its Esscher transform and return again a function of `x`.
+Given a function of \code{x}, i.e. \eqn{f_X(x)}, compute its Esscher transform and return again a function of \code{x}.
 }
 \details{
 Given a pdf \eqn{f_X(x)} the function computes its Esscher transform, i.e.

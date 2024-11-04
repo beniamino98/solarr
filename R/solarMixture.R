@@ -27,8 +27,7 @@ solarMixture <-  R6::R6Class("solarMixture",
                                #' @param date date vector
                                #' @param weights observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
                                #' When `missing` all the available observations will be used.
-                               #' @param EM logical when TRUE will be applied EM algo
-                               fit = function(x, date, weights, EM = FALSE){
+                               fit = function(x, date, weights){
                                  # Add data
                                  private$x <- x
                                  private$date <- date
@@ -40,62 +39,67 @@ solarMixture <-  R6::R6Class("solarMixture",
                                  }
                                  w[is.na(x)] <- 0
                                  private$w <- w
-
-                                 data <- self$data
                                  # Gaussian Mixture parameters
-                                 GM_models <- list()
-                                 # Monthly data
-                                 data_months <- list()
                                  for(m in 1:12){
-                                   data_months[[m]] <- dplyr::filter(data, Month == m)
-                                   w <- data_months[[m]]$w
+                                   data_months <- dplyr::filter(self$data, Month == m)
+                                   w <- data_months$w
                                    # Monthly data
-                                   eps <- data_months[[m]]$x
+                                   eps <- data_months$x
+                                   private$date_month[[m]] <- data_months$date
                                    # Fitted model
-                                   GM_models[[m]] <- gaussianMixture$new(maxit = self$maxit, abstol = self$abstol, components = self$components)
-                                   GM_models[[m]]$fit(eps, w)
-                                   if (EM) GM_models[[m]]$EM(eps, w)
-                                   # Add fitted Bernoulli series
-                                   data_months[[m]]$B <- GM_models[[m]]$fitted$B1
-                                   # Reorder parameters
-                                   #if (GM_models[[m]]$means[1] < GM_models[[m]]$means[2]) {
-                                   #   data_months[[m]]$B <- GM_models[[m]]$fitted$B2
-                                   # }
+                                   GM_model <- gaussianMixture$new(maxit = self$maxit, abstol = self$abstol, components = self$components)
+                                   GM_model$fit(eps, w)
+                                   # Add model
+                                   private$..model[[m]] <- GM_model$clone(deep = TRUE)
                                  }
-                                 # Add models
-                                 private$model1 = GM_models[[1]]$clone(deep = TRUE)
-                                 private$model2 = GM_models[[2]]$clone(deep = TRUE)
-                                 private$model3 = GM_models[[3]]$clone(deep = TRUE)
-                                 private$model4 = GM_models[[4]]$clone(deep = TRUE)
-                                 private$model5 = GM_models[[5]]$clone(deep = TRUE)
-                                 private$model6 = GM_models[[6]]$clone(deep = TRUE)
-                                 private$model7 = GM_models[[7]]$clone(deep = TRUE)
-                                 private$model8 = GM_models[[8]]$clone(deep = TRUE)
-                                 private$model9 = GM_models[[9]]$clone(deep = TRUE)
-                                 private$model10 = GM_models[[10]]$clone(deep = TRUE)
-                                 private$model11 = GM_models[[11]]$clone(deep = TRUE)
-                                 private$model12 = GM_models[[12]]$clone(deep = TRUE)
-                                 # Add fitted values
-                                 private$..fitted <- dplyr::select(dplyr::bind_rows(data_months), date, B)
+                                 names(private$..model) <- lubridate::month(1:12, label = TRUE)
+                                 names(private$date_month) <- lubridate::month(1:12, label = TRUE)
+                               },
+                               #' @description
+                               #' Update means, sd, p and recompute log-likelihood and fitted data.
+                               #' @param means Numeric matrix of means parameters.
+                               #' @param sd Numeric matrix of std. deviation parameters.
+                               #' @param p Numeric matrix of probability parameters.
+                               update = function(means, sd, p){
+                                 # Mean parameters
+                                 if (missing(means)) {
+                                   means <- self$means
+                                 }
+                                 # Std. deviations parameters
+                                 if (missing(sd)) {
+                                   sd <- self$sd
+                                 }
+                                 # Probability parameters
+                                 if (missing(p)) {
+                                   p <- self$p
+                                 }
+                                 # Update parameters, fitted data and log-likelihood
+                                 for(m in 1:12){
+                                   private$..model[[m]]$update(means = means[m,], sd = sd[m,], p = p[m,])
+                                 }
                                }
                              ),
                              private = list(
                                x = NA,
                                w = NA,
                                date = NA,
-                               model1 = list(),
-                               model2 = list(),
-                               model3 = list(),
-                               model4 = list(),
-                               model5 = list(),
-                               model6 = list(),
-                               model7 = list(),
-                               model8 = list(),
-                               model9 = list(),
-                               model10 = list(),
-                               model11 = list(),
-                               model12 = list(),
-                               ..fitted = list()
+                               date_month = list(),
+                               ..model = list(),
+                               deep_clone = function(name, value){
+                                 if (name == "..model") {
+                                   # Clonazione profonda degli oggetti kernelRegression all'interno della lista ..models
+                                   return(lapply(value, function(model) {
+                                     if (!is.null(model)) {
+                                       model$clone(deep = TRUE)  # Clonazione profonda per ogni oggetto kernelRegression
+                                     } else {
+                                       NULL
+                                     }
+                                   }))
+                                 } else {
+                                   # Per altri campi, usa il comportamento di clonazione predefinito
+                                   return(value)
+                                 }
+                               }
                              ),
                              active = list(
                                #' @field data A tibble with the following columns:
@@ -108,13 +112,39 @@ solarMixture <-  R6::R6Class("solarMixture",
                                data = function(){
                                  dplyr::tibble(date = private$date, Month = lubridate::month(date), x = private$x, w = private$w)
                                },
+                               #' @field means Matrix of means where a row represents a month and a column a mixture component.
+                               means = function(){
+                                 means <- matrix(0, nrow = 12, ncol = self$components)
+                                 for(m in 1:12){
+                                   means[m,] <- self$model[[m]]$means
+                                 }
+                                 colnames(means) <- names(self$model[[1]]$means)
+                                 rownames(means) <- lubridate::month(1:12, label = TRUE)
+                                 return(means)
+                               },
+                               #' @field means Matrix of std. deviations where a row represents a month and a column a mixture component.
+                               sd = function(){
+                                 sd <- matrix(0, nrow = 12, ncol = self$components)
+                                 for(m in 1:12){
+                                   sd[m,] <- self$model[[m]]$sd
+                                 }
+                                 colnames(sd) <- names(self$model[[1]]$sd)
+                                 rownames(sd) <- lubridate::month(1:12, label = TRUE)
+                                 return(sd)
+                               },
+                               #' @field means Matrix of probabilities where a row represents a month and a column a mixture component.
+                               p = function(){
+                                 p <- matrix(0, nrow = 12, ncol = self$components)
+                                 for(m in 1:12){
+                                   p[m,] <- self$model[[m]]$p
+                                 }
+                                 colnames(p) <- names(self$model[[1]]$p)
+                                 rownames(p) <- lubridate::month(1:12, label = TRUE)
+                                 return(p)
+                               },
                                #' @field model Named List with 12 \code{\link{gaussianMixture}} objects.
                                model = function(){
-                                 GM_models <- list(private$model1, private$model2, private$model3, private$model4,
-                                                   private$model5, private$model6, private$model7, private$model8,
-                                                   private$model9, private$model10, private$model11, private$model12)
-                                 names(GM_models) <- lubridate::month(1:12, label = TRUE)
-                                 return(GM_models)
+                                 private$..model
                                },
                                #' @field loglik Numeric, total log-likelihood.
                                loglik = function(){
@@ -122,7 +152,8 @@ solarMixture <-  R6::R6Class("solarMixture",
                                },
                                #' @field fitted A `tibble` with the classified series
                                fitted = function(){
-                                 private$..fitted
+                                 df_fitted <- purrr::map2_df(self$model, private$date_month, ~ dplyr::bind_cols(date = .y, dplyr::select(.x$fitted, B = "B1", uncertanty)))
+                                 dplyr::arrange(df_fitted, date)
                                },
                                #' @field moments A `tibble` with the theoric moments. It contains:
                                #' #' \describe{

@@ -2,16 +2,23 @@
 % Please edit documentation in R/spatialParameters.R
 \name{spatialParameters}
 \alias{spatialParameters}
-\title{`spatialParameters` object}
+\title{\code{spatialParameters} object}
 \description{
-`spatialParameters` object
+\code{spatialParameters} object
 
-`spatialParameters` object
+\code{spatialParameters} object
+}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{quiet}}{Logical}
+}
+\if{html}{\out{</div>}}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{models}}{list of `kernelRegression` objects}
+\item{\code{models}}{list of \code{kernelRegression} objects}
 
 \item{\code{data}}{dataset with the parameters used for fitting}
 }
@@ -20,38 +27,40 @@
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{spatialParameters$new()}}
-\item \href{#method-fit}{\code{spatialParameters$fit()}}
-\item \href{#method-predict}{\code{spatialParameters$predict()}}
-\item \href{#method-clone}{\code{spatialParameters$clone()}}
+\item \href{#method-spatialParameters-new}{\code{spatialParameters$new()}}
+\item \href{#method-spatialParameters-fit}{\code{spatialParameters$fit()}}
+\item \href{#method-spatialParameters-predict}{\code{spatialParameters$predict()}}
+\item \href{#method-spatialParameters-clone}{\code{spatialParameters$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-spatialParameters-new"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialParameters-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a `spatialParameters` object
+Initialize a \code{spatialParameters} object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{spatialParameters$new(solarModels, models, quiet = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{spatialParameters$new(data, params_names, models, sample)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{solarModels}}{list of `solarModel` objects.}
+\item{\code{data}}{dataset with spatial parameters and lon, lat.}
 
-\item{\code{models}}{an optional list of models.}
+\item{\code{params_names}}{Names of the parameters to fit.}
 
-\item{\code{quiet}}{logical}
+\item{\code{models}}{an optional list of kernelRegression models already fitted.}
+
+\item{\code{sample}}{List of parameter used as sample.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-fit"></a>}}
-\if{latex}{\out{\hypertarget{method-fit}{}}}
+\if{html}{\out{<a id="method-spatialParameters-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialParameters-fit}{}}}
 \subsection{Method \code{fit()}}{
-Fit a `kernelRegression` object for a parameter or a group of parameters.
+Fit a \code{kernelRegression} object for a parameter or a group of parameters.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialParameters$fit(params)}\if{html}{\out{</div>}}
 }
@@ -65,8 +74,8 @@ Fit a `kernelRegression` object for a parameter or a group of parameters.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-predict"></a>}}
-\if{latex}{\out{\hypertarget{method-predict}{}}}
+\if{html}{\out{<a id="method-spatialParameters-predict"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialParameters-predict}{}}}
 \subsection{Method \code{predict()}}{
 Predict all the parameters for a specified location.
 \subsection{Usage}{
@@ -80,14 +89,14 @@ Predict all the parameters for a specified location.
 
 \item{\code{lon}}{numeric, longitude in degrees.}
 
-\item{\code{as_tibble}}{logical, when `TRUE` will be returned a `tibble`.}
+\item{\code{as_tibble}}{logical, when \code{TRUE} will be returned a \code{tibble}.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-spatialParameters-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialParameters-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

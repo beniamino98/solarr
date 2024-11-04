@@ -2,12 +2,12 @@
 % Please edit documentation in R/solarModel_internals.R
 \name{solarModel_conditional_moments}
 \alias{solarModel_conditional_moments}
-\title{Compute conditional moments from a `solarModel` object}
+\title{Compute conditional moments from a \code{solarModel} object}
 \usage{
 solarModel_conditional_moments(model, date)
 }
 \description{
-Compute conditional moments from a `solarModel` object
+Compute conditional moments from a \code{solarModel} object
 }
 \examples{
 model <- Bologna

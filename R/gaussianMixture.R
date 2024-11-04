@@ -3,21 +3,28 @@
 #' Fit the parameters of a gaussian mixture with k-components.
 #'
 #' @examples
-#' means = c(-3,0,3)
+#' means = c(0,0.5,2)
 #' sd = rep(1, 3)
 #' p = c(0.2, 0.3, 0.5)
-#' # Density function
-#' pdf <- dmixnorm(means, sd, p)
-#' # Distribution function
-#' cdf <- pmixnorm(means, sd, p)
-#' # Random numbers
+#' # Grid
+#' grid <- seq(-4, 4, 0.01)
+#' plot(dmixnorm(grid, means, sd, p))
+#' # Simulated sample
 #' x <- rmixnorm(5000, means, sd, p)
+#' # Gaussian mixture model
 #' gm <- gaussianMixture$new(components=3)
+#' # Fit the model
 #' gm$fit(x$X)
-#' gm$parameters
+#' # EM-algo
 #' gm$EM(x$X)
+#' # Model parameters
 #' gm$parameters
+#' # Fitted series
 #' gm$fitted
+#' # Theoric moments
+#' gm$moments
+#' gm$update(means = c(-2, 0, 2))
+#'
 #' @rdname gaussianMixture
 #' @name gaussianMixture
 #' @export
@@ -27,19 +34,14 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  maxit = 100,
                                  #' @field abstol Numeric, absolute level for convergence.
                                  abstol = 10e-5,
-                                 #' @field components Integer, number of components.
+                                 #' @field components Integer, number of mixture components.
                                  components = 2,
-                                 #' @field means Numeric vector of means parameters.
-                                 means = NA,
-                                 #' @field sd Numeric vector of std. deviation parameters.
-                                 sd = NA,
-                                 #' @field p Numeric vector of probability parameters.
-                                 p = NA,
                                  #' @description
                                  #' Initialize a gaussianMixture object
                                  #' @param components Integer, number of components.
-                                 #' @param maxit Numeric, maximum number of iterations.
-                                 #' @param abstol Numeric, absolute level for convergence.
+                                 #' @param maxit (`integer(1)`)\cr
+                                 #'   Numeric, maximum number of iterations.
+                                 #' @param abstol (`numeric(1)`) Numeric, absolute level for convergence.
                                  initialize = function(components = 2, maxit = 500, abstol = 10e-10){
                                    # Control parameters
                                    self$maxit <- maxit
@@ -87,6 +89,9 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  #' Classify the time series in its components
                                  #' @param x vector
                                  classify = function(x){
+                                   if (missing(x)) {
+                                     x <- private$x
+                                   }
                                    # Optimal parameters
                                    params <- self$parameters
                                    # Number of observations
@@ -97,8 +102,10 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    x_hat <- matrix(0, nrow = n, ncol = self$components)
                                    B_hat <- matrix(0, nrow = n, ncol = self$components)
                                    classification <- c()
+                                   uncertanty <- c()
                                    for(i in 1:n) {
                                      classification[i] <- which.max(responsabilities[i,])
+                                     uncertanty[i] <- 1-max(responsabilities[i,])
                                      B_hat[i, classification[i]] <- 1
                                      x_hat[i,] <- B_hat[i,]*x[i]
                                    }
@@ -109,7 +116,8 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    z_hat <- dplyr::as_tibble((x_hat-params$means)/params$sd*B_hat)
                                    colnames(z_hat) <- paste0("z", 1:self$components)
                                    # Output
-                                   dplyr::bind_cols(classification = classification, B_hat, x_hat, z_hat)
+                                   dplyr::bind_cols(classification = classification, B_hat, x_hat, z_hat,
+                                                    uncertanty = uncertanty)
                                  },
                                  #' @description
                                  #' Fit the parameters with mclust package
@@ -129,15 +137,13 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    # Fitted parameters
                                    clust <- mclust::Mclust(x[w!=0], G = self$components, modelNames = c("V"), verbose = FALSE)
                                    # Update the parameters
-                                   idx_order <- order(clust$parameters$mean)
-                                   self$means <- clust$parameters$mean[idx_order]
-                                   self$sd <- clust$parameters$variance$scale[idx_order]
-                                   self$p <- clust$parameters$pro[idx_order]
+                                   private$..means <- clust$parameters$mean
+                                   private$..sd <- sqrt(clust$parameters$variance$scale)
+                                   private$..p <- clust$parameters$pro
                                    # Assign a name to the parameters
-                                   names(self$means) <- paste0("mu", 1:self$components)
-                                   names(self$sd) <- paste0("sd", 1:self$components)
-                                   names(self$p) <- paste0("p", 1:self$components)
-
+                                   names(private$..means) <- paste0("mu", 1:self$components)
+                                   names(private$..sd) <- paste0("sd", 1:self$components)
+                                   names(private$..p) <- paste0("p", 1:self$components)
                                    # E-step: posterior probabilities
                                    private$responsabilities <- self$E_step(x)
                                    # Calculate the log-likelihood
@@ -192,8 +198,8 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                        params$p[k] <- n_k/n_w
                                      }
                                      # Check divergence
-                                     if (any(params$p > 0.9)) {
-                                       warning("Probs > 0.9 break")
+                                     if (any(params$p > 0.98)) {
+                                       warning("Probs > 0.98 break")
                                        params <- previous_params
                                        break
                                      }
@@ -212,13 +218,13 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    }
                                    # Update the parameters
                                    idx_order <- order(params$means)
-                                   self$means <- params$means[idx_order]
-                                   self$sd <- params$sd[idx_order]
-                                   self$p <- params$p[idx_order]
+                                   private$..means <- params$means[idx_order]
+                                   private$..sd <- params$sd[idx_order]
+                                   private$..p <- params$p[idx_order]
                                    # Assign a name to the parameters
-                                   names(self$means) <- paste0("mu", 1:self$components)
-                                   names(self$sd) <- paste0("sd", 1:self$components)
-                                   names(self$p) <- paste0("p", 1:self$components)
+                                   names(private$..means) <- paste0("mu", 1:self$components)
+                                   names(private$..sd) <- paste0("sd", 1:self$components)
+                                   names(private$..p) <- paste0("p", 1:self$components)
 
                                    # E-step: posterior probabilities
                                    private$responsabilities <- self$E_step(x)
@@ -233,7 +239,7 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    private$w <- w
                                  },
                                  #' @description
-                                 #' Update the responsabilities, means, sd, p and recompute log-likelihood and fitted data.
+                                 #' Update the responsibilities, means, sd, p and recompute log-likelihood and fitted data.
                                  #' @param x vector
                                  #' @param weights observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
                                  #' When `missing` all the available observations will be used.
@@ -241,36 +247,37 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  #' @param sd Numeric vector of std. deviation parameters.
                                  #' @param p Numeric vector of probability parameters.
                                  update = function(x, weights, means, sd, p){
-                                   if (missing(x)){
+                                   if (missing(x)) {
                                      x <- private$x
                                    }
-                                   if (missing(weights)){
+                                   if (missing(weights)) {
                                      w <- private$w
                                    } else {
                                      w <- ifelse(weights == 0, 0, 1)
                                    }
                                    w[is.na(x)] <- 0
+
                                    # Update mean parameters
                                    if (!missing(means)) {
-                                     self$means <- means
+                                     private$..means <- means
                                    }
                                    # Update Std. deviations parameters
                                    if (!missing(sd)) {
-                                     self$sd <- sd
+                                     private$..sd <- sd
                                    }
                                    # Update probability parameters
                                    if (!missing(p)) {
-                                     self$p <- p
+                                     private$..p <- p
                                    }
                                    # Reorder the parameters
-                                   idx_order <- order(self$means)
-                                   self$means <- self$means[idx_order]
-                                   self$sd <- self$sd[idx_order]
-                                   self$p <- self$p[idx_order]
-                                   # Assign a name to the parameters
-                                   names(self$means) <- paste0("mu", 1:self$components)
-                                   names(self$sd) <- paste0("sd", 1:self$components)
-                                   names(self$p) <- paste0("p", 1:self$components)
+                                   idx_order <- order(private$..means)
+                                   private$..means <- private$..means[idx_order]
+                                   private$..sd <- private$..sd[idx_order]
+                                   private$..p <- private$..p[idx_order]
+                                   # Assign a unique name to the parameters
+                                   names(private$..means) <- paste0("mu", 1:self$components)
+                                   names(private$..sd) <- paste0("sd", 1:self$components)
+                                   names(private$..p) <- paste0("p", 1:self$components)
 
                                    # Update posterior probabilities
                                    private$responsabilities <- self$E_step(x)
@@ -290,10 +297,25 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  w = NA,
                                  ..loglik = NA,
                                  ..fitted = NA,
+                                 ..means = NA,
+                                 ..sd = NA,
+                                 ..p = NA,
                                  responsabilities = NA,
                                  ..moments = list(mean = NA, variance = NA, skewness = NA, kurtosis = NA, nobs = NA)
                                ),
                                active = list(
+                                 #' @field means Numeric vector containing the location parameter for each component.
+                                 means = function(){
+                                   private$..means
+                                 },
+                                 #' @field sd Numeric vector containing the scale parameter for each component.
+                                 sd = function(){
+                                   private$..sd
+                                 },
+                                 #' @field p Numeric vector containing the probability for each component.
+                                 p = function(){
+                                   private$..p
+                                 },
                                  #' @field parameters named list with mixture parameters.
                                  parameters = function(){
                                    # Output data
@@ -309,19 +331,26 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  },
                                  #' @field fitted fitted series
                                  fitted = function(){
-                                   private$..fitted
+                                   df <- private$..fitted
+                                   limit_uncertanty <- median(df$uncertanty)
+                                   dplyr::mutate(df, uncertanty = ifelse(uncertanty < limit_uncertanty, uncertanty, 0.5))
                                  },
                                  #' @field moments Tibble with the theoric moments and the number of observations used for fit.
                                  moments = function(){
-                                   # Compute moments
+                                   # Compute expectation
                                    private$..moments$mean <- sum(self$means*self$p)
+                                   # Compute variance
                                    private$..moments$variance <- sum((self$means^2 + self$sd^2)*self$p) - private$..moments$mean^2
-                                   # private$..moments$skewness
-                                   # private$..moments$kurtosis
+                                   # Compute skewness
+                                   # https://stats.stackexchange.com/questions/54733/skewness-of-a-mixture-density
+                                   private$..moments$skewness <- sum(self$p*((self$means - private$..moments$mean)^2 + 3*self$sd^2)*(self$means - private$..moments$mean))
+                                   # Compute kurtosisù
+                                   # https://en.wikipedia.org/wiki/Kurtosis#Sample_kurtosis
+                                   # https://en.wikipedia.org/wiki/Normal_distribution#Moments
+                                   private$..moments$kurtosis <- sum((self$means^4 + 3*self$sd^4 + 6*self$means^2*self$sd^2)*self$p)/(sum((self$means^2 + self$sd^2)*self$p)^2)-3
                                    return(dplyr::bind_cols(private$..moments))
                                  }
                                ))
-
 
 
 #' Multivariate gaussian mixture
@@ -476,7 +505,6 @@ mvgaussianMixture <- function(x, means, sd, p, components = 2, maxit = 100, abst
     upd_params$sigma2[i,] <- diag(params$sd[[i]])
     upd_params$rho[i] <-  params$sd[[i]][upper.tri(params$sd[[i]])]/prod(sqrt(diag(params$sd[[i]])))
   }
-
   structure(
     list(
       B_hat = B_hat,

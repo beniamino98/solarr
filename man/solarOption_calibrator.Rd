@@ -13,14 +13,14 @@ solarOption_calibrator(
 )
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
 \item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
 
 \item{abstol}{The absolute convergence tolerance. Only useful for non-negative functions, as a tolerance for reaching zero.}
 
 \item{reltol}{Relative convergence tolerance. The algorithm stops if it is unable to reduce the value by a factor of reltol * (abs(val) + reltol) at a step.
-Defaults to `sqrt(.Machine$double.eps)`, typically about 1e-8.}
+Defaults to \code{sqrt(.Machine$double.eps)}, typically about 1e-8.}
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
 }

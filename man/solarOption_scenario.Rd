@@ -13,18 +13,18 @@ solarOption_scenario(
 )
 }
 \arguments{
-\item{scenario}{object with the class `solarModelScenario`. See the function \code{\link{solarModel_scenarios}} for details.}
+\item{scenario}{object with the class \code{solarModelScenario}. See the function \code{\link{solarModel_scenarios}} for details.}
 
 \item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
 
-\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
+\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
 
 \item{nsim}{number of simulation to use for computation.}
 
 \item{control_options}{control function, see \code{\link{control_solarOption}} for details.}
 }
 \value{
-An object of the class `solarOptionPayoff`.
+An object of the class \code{solarOptionPayoff}.
 }
 \description{
 Payoff on simulated Data

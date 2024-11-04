@@ -2,13 +2,13 @@
 % Please edit documentation in R/spatialScenario.R
 \name{spatialScenario_filter}
 \alias{spatialScenario_filter}
-\title{Simulate trajectories from a `spatialScenario_spec`}
+\title{Simulate trajectories from a \code{spatialScenario_spec}}
 \usage{
 spatialScenario_filter(simSpec)
 }
 \arguments{
-\item{simSpec}{object with the class `spatialScenario_spec`. See the function \code{\link{spatialScenario_spec}} for details.}
+\item{simSpec}{object with the class \code{spatialScenario_spec}. See the function \code{\link{spatialScenario_spec}} for details.}
 }
 \description{
-Simulate trajectories from a `spatialScenario_spec`
+Simulate trajectories from a \code{spatialScenario_spec}
 }

@@ -11,14 +11,14 @@ solarOption_historical_bootstrap(
 )
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
+\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
 }
 \value{
-An object of the class `solarOptionBoot`.
+An object of the class \code{solarOptionBoot}.
 }
 \description{
 Bootstrap a fair premium from historical data

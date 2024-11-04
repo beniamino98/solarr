@@ -153,6 +153,16 @@ solarTransform <- R6::R6Class("solarTransform",
                                   # Update parameters
                                   private$..alpha <- alpha
                                   private$..beta <- beta
+                                },
+                                #' @description
+                                #' Print method for the class `solarTransform`
+                                print = function(){
+                                  alpha_ <- format(self$alpha, digits = 3, scientific = FALSE)
+                                  beta_ <- format(self$beta, digits = 4, scientific = FALSE)
+                                  msg_1 <- paste0("------------------------ \033[1;35m Solar Transform \033[0m ------------------------", "\n")
+                                  msg_2 <- paste0("iY(y): \033[1;32m ",  alpha_, "\033[0m + \033[1;32m", beta_, "\033[0m exp(-exp(Y)) \n")
+                                  msg_3 <- paste0("Y(x): log(log(\033[1;32m",  beta_, "\033[0m) - log(x- \033[1;32m", alpha_, "\033[0m))")
+                                  cat(msg_1, msg_2, msg_3)
                                 }
                               ),
                               private = list(

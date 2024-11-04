@@ -29,18 +29,18 @@ Calibrate Esscher Bounds and parameters
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{solarEsscher$new()}}
-\item \href{#method-calibrator}{\code{solarEsscher$calibrator()}}
-\item \href{#method-calibrate_bounds}{\code{solarEsscher$calibrate_bounds()}}
-\item \href{#method-create_grid}{\code{solarEsscher$create_grid()}}
-\item \href{#method-fit_theta}{\code{solarEsscher$fit_theta()}}
-\item \href{#method-predict}{\code{solarEsscher$predict()}}
-\item \href{#method-clone}{\code{solarEsscher$clone()}}
+\item \href{#method-solarEsscher-new}{\code{solarEsscher$new()}}
+\item \href{#method-solarEsscher-calibrator}{\code{solarEsscher$calibrator()}}
+\item \href{#method-solarEsscher-calibrate_bounds}{\code{solarEsscher$calibrate_bounds()}}
+\item \href{#method-solarEsscher-create_grid}{\code{solarEsscher$create_grid()}}
+\item \href{#method-solarEsscher-fit_theta}{\code{solarEsscher$fit_theta()}}
+\item \href{#method-solarEsscher-predict}{\code{solarEsscher$predict()}}
+\item \href{#method-solarEsscher-clone}{\code{solarEsscher$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-solarEsscher-new"></a>}}
+\if{latex}{\out{\hypertarget{method-solarEsscher-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize the settings for calibration of Esscher parameter.
 \subsection{Usage}{
@@ -67,9 +67,9 @@ Initialize the settings for calibration of Esscher parameter.
 
 \item{\code{upper_lambda}}{numeric, upper value for the Esscher parameter.}
 
-\item{\code{put}}{logical, when `TRUE` will be considered a put contract otherwise a call contract.}
+\item{\code{put}}{logical, when \code{TRUE} will be considered a put contract otherwise a call contract.}
 
-\item{\code{target.Yt}}{logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
+\item{\code{target.Yt}}{logical, when \code{TRUE} will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
 
 \item{\code{quiet}}{logical}
 
@@ -79,8 +79,8 @@ Initialize the settings for calibration of Esscher parameter.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-calibrator"></a>}}
-\if{latex}{\out{\hypertarget{method-calibrator}{}}}
+\if{html}{\out{<a id="method-solarEsscher-calibrator"></a>}}
+\if{latex}{\out{\hypertarget{method-solarEsscher-calibrator}{}}}
 \subsection{Method \code{calibrator()}}{
 Calibrate the optimal Esscher parameter given a target price
 \subsection{Usage}{
@@ -92,18 +92,18 @@ Calibrate the optimal Esscher parameter given a target price
 \describe{
 \item{\code{model}}{solar model}
 
-\item{\code{target_price}}{the `target_price` represent the model price under the target Q-measure.}
+\item{\code{target_price}}{the \code{target_price} represent the model price under the target Q-measure.}
 
 \item{\code{nmonths}}{month or months}
 
-\item{\code{target.Yt}}{logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
+\item{\code{target.Yt}}{logical, when \code{TRUE} will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-calibrate_bounds"></a>}}
-\if{latex}{\out{\hypertarget{method-calibrate_bounds}{}}}
+\if{html}{\out{<a id="method-solarEsscher-calibrate_bounds"></a>}}
+\if{latex}{\out{\hypertarget{method-solarEsscher-calibrate_bounds}{}}}
 \subsection{Method \code{calibrate_bounds()}}{
 Calibrate Esscher upper and lower bounds
 \subsection{Usage}{
@@ -113,18 +113,18 @@ Calibrate Esscher upper and lower bounds
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{model}}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{\code{model}}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{\code{payoffs}}{object with the class `solarOptionPayoffs`. See the function \code{\link{solarOptionPayoffs}} for details.}
+\item{\code{payoffs}}{object with the class \code{solarOptionPayoffs}. See the function \code{\link{solarOptionPayoffs}} for details.}
 
-\item{\code{target.Yt}}{logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
+\item{\code{target.Yt}}{logical, when \code{TRUE} will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-create_grid"></a>}}
-\if{latex}{\out{\hypertarget{method-create_grid}{}}}
+\if{html}{\out{<a id="method-solarEsscher-create_grid"></a>}}
+\if{latex}{\out{\hypertarget{method-solarEsscher-create_grid}{}}}
 \subsection{Method \code{create_grid()}}{
 Create a grid of optimal theta and expected returns with respect of the benchmark price.
 \subsection{Usage}{
@@ -140,7 +140,7 @@ Create a grid of optimal theta and expected returns with respect of the benchmar
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{model}}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{\code{model}}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
 \item{\code{benchmark_price}}{benchmark price for an expected return equal to zero.}
 
@@ -148,14 +148,14 @@ Create a grid of optimal theta and expected returns with respect of the benchmar
 
 \item{\code{upper_price}}{upper price in the grid.}
 
-\item{\code{target.Yt}}{logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
+\item{\code{target.Yt}}{logical, when \code{TRUE} will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-fit_theta"></a>}}
-\if{latex}{\out{\hypertarget{method-fit_theta}{}}}
+\if{html}{\out{<a id="method-solarEsscher-fit_theta"></a>}}
+\if{latex}{\out{\hypertarget{method-solarEsscher-fit_theta}{}}}
 \subsection{Method \code{fit_theta()}}{
 Fit the models to predict the optimal Esscher parameters given the grid.
 \subsection{Usage}{
@@ -164,8 +164,8 @@ Fit the models to predict the optimal Esscher parameters given the grid.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-predict"></a>}}
-\if{latex}{\out{\hypertarget{method-predict}{}}}
+\if{html}{\out{<a id="method-solarEsscher-predict"></a>}}
+\if{latex}{\out{\hypertarget{method-solarEsscher-predict}{}}}
 \subsection{Method \code{predict()}}{
 Predict the optimal Esscher parameters given a certain level of expected return.
 \subsection{Usage}{
@@ -177,14 +177,14 @@ Predict the optimal Esscher parameters given a certain level of expected return.
 \describe{
 \item{\code{r}}{expected return}
 
-\item{\code{target.Yt}}{logical, when `TRUE` will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
+\item{\code{target.Yt}}{logical, when \code{TRUE} will be distorted with esscher parameter the pdf of Yt otherwise the pdf of the GHI.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-solarEsscher-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-solarEsscher-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

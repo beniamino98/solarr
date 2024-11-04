@@ -16,14 +16,14 @@ solarScenario(
 )
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{from}{character, start Date for simulations in the format `YYYY-MM-DD`.}
+\item{from}{character, start Date for simulations in the format \code{YYYY-MM-DD}.}
 
-\item{to}{character, end Date for simulations in the format `YYYY-MM-DD`.}
+\item{to}{character, end Date for simulations in the format \code{YYYY-MM-DD}.}
 
-\item{by}{character, steps for multiple scenarios, e.g. `1 day` (day-ahead simulations), `15 days`, `1 month`, `3 months`, ecc.
-For each step are simulated `nsim` scenarios.}
+\item{by}{character, steps for multiple scenarios, e.g. \verb{1 day} (day-ahead simulations), \verb{15 days}, \verb{1 month}, \verb{3 months}, ecc.
+For each step are simulated \code{nsim} scenarios.}
 
 \item{theta}{numeric, Esscher parameter.}
 
@@ -34,7 +34,7 @@ For each step are simulated `nsim` scenarios.}
 \item{quiet}{logical}
 }
 \description{
-Simulate multiple scenarios of solar radiation with a `solarModel` object.
+Simulate multiple scenarios of solar radiation with a \code{solarModel} object.
 }
 \examples{
 model <- Bologna

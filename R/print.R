@@ -28,40 +28,6 @@ print.solarModelSpec <- function(object){
 }
 
 
-#' Print method for the class `solarModel`
-#'
-#' @param object an object of the class \code{\link{solarModel}}.
-#'
-#' @keywords internal
-#' @noRd
-#' @export
-print.solarModel <- function(object){
-  print.solarModelSpec(object)
-}
-
-
-#' Print method for the class `seasonalModel`
-#'
-#' @param object an object of the class \code{\link{seasonalModel}}.
-#'
-#' @keywords internal
-#' @noRd
-#' @export
-print.seasonalModel <- function(object){
-  cat(paste0("----------------------- ", class(object)[1], " ----------------------- \n"))
-  msg_1 <- paste0(" - Order: ", object$order, "\n - Period: ", object$period, "\n")
-  n_external_reg <- ncol(object$seasonal_data)-1
-  if (n_external_reg == 0) {
-    msg_2 <- paste0("- External regressors: ", n_external_reg, "\n")
-  } else {
-    msg_2 <- paste0("- External regressors: ", n_external_reg, " (", names(object$seasonal_data)[-1], ")\n")
-  }
-  cat(c(msg_1, msg_2))
-  cat(paste0("--------------------------------------------------------------\n"))
-  print(object$model)
-}
-
-
 #' Print method for the class `solarOptionPayoff`
 #'
 #' @param object an object of the class `solarOptionPayoff`.
@@ -193,22 +159,6 @@ print.spatialModel <- function(object){
   cat(paste0(msg_1, msg_2))
 }
 
-
-#' Print method for the class `solarTransform`
-#'
-#' @param object an object of the class \code{\link{solarTransform}}.
-#'
-#' @keywords internal
-#' @noRd
-#' @export
-print.solarTransform <- function(object){
-  alpha_ <- format(object$alpha, digits = 3, scientific = FALSE)
-  beta_ <- format(object$beta, digits = 4, scientific = FALSE)
-  msg_1 <- paste0("------------------------ \033[1;35m Solar Transform \033[0m ------------------------", "\n")
-  msg_2 <- paste0("iY(y): \033[1;32m ",  alpha_, "\033[0m + \033[1;32m", beta_, "\033[0m exp(-exp(Y)) \n")
-  msg_3 <- paste0("Y(x): log(log(\033[1;32m",  beta_, "\033[0m) - log(x- \033[1;32m", alpha_, "\033[0m))")
-  cat(msg_1, msg_2, msg_3)
-}
 
 
 #' Print method for the class `spatialScenarioSpec`

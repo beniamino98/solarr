@@ -16,7 +16,7 @@ solarOption_model(
 )
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
 \item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
 
@@ -24,16 +24,16 @@ solarOption_model(
 
 \item{combinations}{list of 12 elements with gaussian mixture components.}
 
-\item{implvol}{implied unconditional GARCH variance, the default is `1`.}
+\item{implvol}{implied unconditional GARCH variance, the default is \code{1}.}
 
-\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
+\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
 
-\item{target.Yt}{logical, when `TRUE`, the default, the computations will consider the pdf of `Yt` otherwise the pdf of solar radiation.}
+\item{target.Yt}{logical, when \code{TRUE}, the default, the computations will consider the pdf of \code{Yt} otherwise the pdf of solar radiation.}
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
 }
 \value{
-An object of the class `solarOptionPayoff`.
+An object of the class \code{solarOptionPayoff}.
 }
 \description{
 Pricing function under the solar model

@@ -146,7 +146,6 @@ spatialModel_interpolator = function(nb_models, target = "GHI", n = 4, weights =
 }
 
 
-
 #' @noRd
 #' @keywords spatialModel internal
 #' @export

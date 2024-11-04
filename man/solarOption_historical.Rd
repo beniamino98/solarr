@@ -12,16 +12,16 @@ solarOption_historical(
 )
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
 \item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
 
-\item{put}{logical, when `TRUE`, the default, the computations will consider a `put` contract. Otherwise a `call`.}
+\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
 
 \item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
 }
 \value{
-An object of the class `solarOptionPayoff`.
+An object of the class \code{solarOptionPayoff}.
 }
 \description{
 Payoff on Historical Data

@@ -44,46 +44,46 @@ Duffie, Solar Engineering of Thermal Processes Fourth Edition.
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{legal_hour}}{Logical, when `TRUE` the clock time will be corrected for the legal hour.}
+\item{\code{legal_hour}}{Logical, when \code{TRUE} the clock time will be corrected for the legal hour.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{G0}}{solar constant, i,e, `1367`.}
+\item{\code{G0}}{solar constant, i,e, \code{1367}.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{seasonalSolarFunctions$new()}}
-\item \href{#method-update_method}{\code{seasonalSolarFunctions$update_method()}}
-\item \href{#method-B}{\code{seasonalSolarFunctions$B()}}
-\item \href{#method-degree}{\code{seasonalSolarFunctions$degree()}}
-\item \href{#method-radiant}{\code{seasonalSolarFunctions$radiant()}}
-\item \href{#method-E}{\code{seasonalSolarFunctions$E()}}
-\item \href{#method-solar_time}{\code{seasonalSolarFunctions$solar_time()}}
-\item \href{#method-hour_angle}{\code{seasonalSolarFunctions$hour_angle()}}
-\item \href{#method-incidence_angle}{\code{seasonalSolarFunctions$incidence_angle()}}
-\item \href{#method-azimut_angle}{\code{seasonalSolarFunctions$azimut_angle()}}
-\item \href{#method-G0n}{\code{seasonalSolarFunctions$G0n()}}
-\item \href{#method-declination}{\code{seasonalSolarFunctions$declination()}}
-\item \href{#method-H0}{\code{seasonalSolarFunctions$H0()}}
-\item \href{#method-sunset_hour_angle}{\code{seasonalSolarFunctions$sunset_hour_angle()}}
-\item \href{#method-sun_hours}{\code{seasonalSolarFunctions$sun_hours()}}
-\item \href{#method-solar_altitude}{\code{seasonalSolarFunctions$solar_altitude()}}
-\item \href{#method-solar_angles}{\code{seasonalSolarFunctions$solar_angles()}}
-\item \href{#method-clearsky}{\code{seasonalSolarFunctions$clearsky()}}
-\item \href{#method-clone}{\code{seasonalSolarFunctions$clone()}}
+\item \href{#method-seasonalSolarFunctions-new}{\code{seasonalSolarFunctions$new()}}
+\item \href{#method-seasonalSolarFunctions-update_method}{\code{seasonalSolarFunctions$update_method()}}
+\item \href{#method-seasonalSolarFunctions-B}{\code{seasonalSolarFunctions$B()}}
+\item \href{#method-seasonalSolarFunctions-degree}{\code{seasonalSolarFunctions$degree()}}
+\item \href{#method-seasonalSolarFunctions-radiant}{\code{seasonalSolarFunctions$radiant()}}
+\item \href{#method-seasonalSolarFunctions-E}{\code{seasonalSolarFunctions$E()}}
+\item \href{#method-seasonalSolarFunctions-solar_time}{\code{seasonalSolarFunctions$solar_time()}}
+\item \href{#method-seasonalSolarFunctions-hour_angle}{\code{seasonalSolarFunctions$hour_angle()}}
+\item \href{#method-seasonalSolarFunctions-incidence_angle}{\code{seasonalSolarFunctions$incidence_angle()}}
+\item \href{#method-seasonalSolarFunctions-azimut_angle}{\code{seasonalSolarFunctions$azimut_angle()}}
+\item \href{#method-seasonalSolarFunctions-G0n}{\code{seasonalSolarFunctions$G0n()}}
+\item \href{#method-seasonalSolarFunctions-declination}{\code{seasonalSolarFunctions$declination()}}
+\item \href{#method-seasonalSolarFunctions-H0}{\code{seasonalSolarFunctions$H0()}}
+\item \href{#method-seasonalSolarFunctions-sunset_hour_angle}{\code{seasonalSolarFunctions$sunset_hour_angle()}}
+\item \href{#method-seasonalSolarFunctions-sun_hours}{\code{seasonalSolarFunctions$sun_hours()}}
+\item \href{#method-seasonalSolarFunctions-solar_altitude}{\code{seasonalSolarFunctions$solar_altitude()}}
+\item \href{#method-seasonalSolarFunctions-solar_angles}{\code{seasonalSolarFunctions$solar_angles()}}
+\item \href{#method-seasonalSolarFunctions-clearsky}{\code{seasonalSolarFunctions$clearsky()}}
+\item \href{#method-seasonalSolarFunctions-clone}{\code{seasonalSolarFunctions$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-new"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a `seasonalSolarFunctions` object
+Initialize a \code{seasonalSolarFunctions} object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$new(method = "spencer", legal_hour = TRUE)}\if{html}{\out{</div>}}
 }
@@ -91,16 +91,16 @@ Initialize a `seasonalSolarFunctions` object
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{method}}{character, method type for computations. Can be `cooper` or `spencer`.}
+\item{\code{method}}{character, method type for computations. Can be \code{cooper} or \code{spencer}.}
 
-\item{\code{legal_hour}}{Logical, when `TRUE` the clock time will be corrected for the legal hour.}
+\item{\code{legal_hour}}{Logical, when \code{TRUE} the clock time will be corrected for the legal hour.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-update_method"></a>}}
-\if{latex}{\out{\hypertarget{method-update_method}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-update_method"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-update_method}{}}}
 \subsection{Method \code{update_method()}}{
 Extract or update the method used for computations.
 \subsection{Usage}{
@@ -110,18 +110,18 @@ Extract or update the method used for computations.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{character, method type. Can be `cooper` or `spencer`.}
+\item{\code{x}}{character, method type. Can be \code{cooper} or \code{spencer}.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-When `x` is missing it return a character containing the method that
+When \code{x} is missing it return a character containing the method that
 is actually used.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-B"></a>}}
-\if{latex}{\out{\hypertarget{method-B}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-B"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-B}{}}}
 \subsection{Method \code{B()}}{
 Seasonal adjustment parameter.
 \subsection{Usage}{
@@ -142,8 +142,8 @@ The function computes
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-degree"></a>}}
-\if{latex}{\out{\hypertarget{method-degree}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-degree"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-degree}{}}}
 \subsection{Method \code{degree()}}{
 Convert angles in radiant into an angles in degrees.
 \subsection{Usage}{
@@ -164,8 +164,8 @@ The function computes:
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-radiant"></a>}}
-\if{latex}{\out{\hypertarget{method-radiant}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-radiant"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-radiant}{}}}
 \subsection{Method \code{radiant()}}{
 Convert angles in degrees into an angles in radiant
 \subsection{Usage}{
@@ -186,8 +186,8 @@ The function computes:
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-E"></a>}}
-\if{latex}{\out{\hypertarget{method-E}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-E"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-E}{}}}
 \subsection{Method \code{E()}}{
 Compute the time adjustment in minutes.
 \subsection{Usage}{
@@ -211,8 +211,8 @@ The time adjustment in minutes.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solar_time"></a>}}
-\if{latex}{\out{\hypertarget{method-solar_time}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-solar_time"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-solar_time}{}}}
 \subsection{Method \code{solar_time()}}{
 Compute the solar time from a clock time.
 \subsection{Usage}{
@@ -240,8 +240,8 @@ A datetime object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-hour_angle"></a>}}
-\if{latex}{\out{\hypertarget{method-hour_angle}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-hour_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-hour_angle}{}}}
 \subsection{Method \code{hour_angle()}}{
 Compute the solar angle for a specific hour of the day.
 \subsection{Usage}{
@@ -264,8 +264,8 @@ An angle in degrees
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-incidence_angle"></a>}}
-\if{latex}{\out{\hypertarget{method-incidence_angle}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-incidence_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-incidence_angle}{}}}
 \subsection{Method \code{incidence_angle()}}{
 Compute the incidence angle
 \subsection{Usage}{
@@ -301,8 +301,8 @@ An angle in degrees
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-azimut_angle"></a>}}
-\if{latex}{\out{\hypertarget{method-azimut_angle}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-azimut_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-azimut_angle}{}}}
 \subsection{Method \code{azimut_angle()}}{
 Compute the solar azimuth angle for a specific time of the day.
 \subsection{Usage}{
@@ -332,8 +332,8 @@ The solar azimut angle in degrees
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-G0n"></a>}}
-\if{latex}{\out{\hypertarget{method-G0n}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-G0n"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-G0n}{}}}
 \subsection{Method \code{G0n()}}{
 Compute the solar constant adjusted for the day of the year.
 \subsection{Usage}{
@@ -348,9 +348,9 @@ Compute the solar constant adjusted for the day of the year.
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-When method is `cooper` the function implement Eq. 1.4.1a from Duffie (4th edition), i.e.
+When method is \code{cooper} the function implement Eq. 1.4.1a from Duffie (4th edition), i.e.
 \deqn{G_{0,n} = G_0 (1 + 0.033\cos(B))}
-otherwise when it is `spencer` it implement Eq. 1.4.1b from Duffie (4th edition):
+otherwise when it is \code{spencer} it implement Eq. 1.4.1b from Duffie (4th edition):
 \deqn{G_{0,n} = G_0 (1.000110 + 0.034221\cos(B) + 0.001280\sin(B) + 0.000719\cos(2B) + 0.000077\sin(2B))}
 }
 
@@ -359,8 +359,8 @@ The solar constant in \eqn{W/m^2} for the day n.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-declination"></a>}}
-\if{latex}{\out{\hypertarget{method-declination}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-declination"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-declination}{}}}
 \subsection{Method \code{declination()}}{
 Compute solar declination in degrees.
 \subsection{Usage}{
@@ -375,9 +375,9 @@ Compute solar declination in degrees.
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-When method is `cooper` the function implement Eq. 1.6.1a from Duffie (4th edition), i.e.
+When method is \code{cooper} the function implement Eq. 1.6.1a from Duffie (4th edition), i.e.
 \deqn{\delta(n) = 23.45 \sin \left(\frac{2 \pi (284 + n)}{365}\right)}
-otherwise when it is `spencer` it implement Eq. 1.6.1b from Duffie (4th edition):
+otherwise when it is \code{spencer} it implement Eq. 1.6.1b from Duffie (4th edition):
 \deqn{\delta(n) = \frac{180}{\pi}(0.006918 - 0.399912\cos(B) + 0.070257\sin(B) - 0.006758\cos(2B))}
 }
 
@@ -386,8 +386,8 @@ The solar declination in degrees.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-H0"></a>}}
-\if{latex}{\out{\hypertarget{method-H0}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-H0"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-H0}{}}}
 \subsection{Method \code{H0()}}{
 Compute the solar extraterrestrial radiation
 \subsection{Usage}{
@@ -408,8 +408,8 @@ Extraterrestrial radiation on an horizontal surface in kilowatt hour for metres 
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-sunset_hour_angle"></a>}}
-\if{latex}{\out{\hypertarget{method-sunset_hour_angle}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-sunset_hour_angle"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-sunset_hour_angle}{}}}
 \subsection{Method \code{sunset_hour_angle()}}{
 Compute solar angle at sunset in degrees
 \subsection{Usage}{
@@ -435,8 +435,8 @@ The sunset hour angle in degrees.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-sun_hours"></a>}}
-\if{latex}{\out{\hypertarget{method-sun_hours}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-sun_hours"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-sun_hours}{}}}
 \subsection{Method \code{sun_hours()}}{
 Compute number of sun hours for a day n.
 \subsection{Usage}{
@@ -459,8 +459,8 @@ The function implement Eq. 1.6.11 from Duffie (4th edition), i.e.
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solar_altitude"></a>}}
-\if{latex}{\out{\hypertarget{method-solar_altitude}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-solar_altitude"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-solar_altitude}{}}}
 \subsection{Method \code{solar_altitude()}}{
 Compute solar altitude in degrees
 \subsection{Usage}{
@@ -483,8 +483,8 @@ The function computes
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solar_angles"></a>}}
-\if{latex}{\out{\hypertarget{method-solar_angles}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-solar_angles"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-solar_angles}{}}}
 \subsection{Method \code{solar_angles()}}{
 Compute the solar angle for a latitude in different dates.
 \subsection{Usage}{
@@ -502,14 +502,14 @@ Compute the solar angle for a latitude in different dates.
 
 \item{\code{lon_sd}}{Numeric, longitude of the Local standard meridian in degrees.}
 
-\item{\code{by}}{Character, time step. Default is `1 min`.}
+\item{\code{by}}{Character, time step. Default is \verb{1 min}.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clearsky"></a>}}
-\if{latex}{\out{\hypertarget{method-clearsky}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-clearsky"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-clearsky}{}}}
 \subsection{Method \code{clearsky()}}{
 Hottel clearsky
 \subsection{Usage}{
@@ -536,8 +536,8 @@ Hottel clearsky
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-seasonalSolarFunctions-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

@@ -11,111 +11,65 @@ Spatial model object
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{models}}{list of `solarModel` objects}
+\item{\code{models}}{list of \code{solarModel} objects}
 
-\item{\code{locations}}{dataset with all the locations.}
+\item{\code{grid}}{object with the spatial grid}
 
-\item{\code{parameters}}{`spatialParameters` object}
+\item{\code{parameters}}{\code{spatialParameters} object}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{spatialModel$new()}}
-\item \href{#method-neighborhoods}{\code{spatialModel$neighborhoods()}}
-\item \href{#method-is_known_location}{\code{spatialModel$is_known_location()}}
-\item \href{#method-gridModel}{\code{spatialModel$gridModel()}}
-\item \href{#method-is_inside_limits}{\code{spatialModel$is_inside_limits()}}
-\item \href{#method-interpolator}{\code{spatialModel$interpolator()}}
-\item \href{#method-solarModel}{\code{spatialModel$solarModel()}}
-\item \href{#method-combinations}{\code{spatialModel$combinations()}}
-\item \href{#method-clone}{\code{spatialModel$clone()}}
+\item \href{#method-spatialModel-new}{\code{spatialModel$new()}}
+\item \href{#method-spatialModel-gridModel}{\code{spatialModel$gridModel()}}
+\item \href{#method-spatialModel-interpolator}{\code{spatialModel$interpolator()}}
+\item \href{#method-spatialModel-solarModel}{\code{spatialModel$solarModel()}}
+\item \href{#method-spatialModel-combinations}{\code{spatialModel$combinations()}}
+\item \href{#method-spatialModel-clone}{\code{spatialModel$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-spatialModel-new"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialModel-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize the spatial model
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{spatialModel$new(locations, models, paramsModels, beta = 2, d0, quiet = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$new(grid, models, paramsModels, quiet = FALSE)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{locations}}{A tibble with columns `place`, `lat`, `lon`, `from`, `to`, `nobs`.}
+\item{\code{grid}}{A \code{spatialGrid} object.}
 
-\item{\code{models}}{A list of `solarModel` objects}
+\item{\code{models}}{A list of \code{solarModel} objects}
 
-\item{\code{paramsModels}}{A `spatialParameters` object.}
+\item{\code{paramsModels}}{A \code{spatialParameters} object.}
+
+\item{\code{quiet}}{logical}
 
 \item{\code{beta}}{numeric, used in exponential and power functions.}
 
 \item{\code{d0}}{numeric, used only in exponential function.}
-
-\item{\code{quiet}}{logical}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-neighborhoods"></a>}}
-\if{latex}{\out{\hypertarget{method-neighborhoods}{}}}
-\subsection{Method \code{neighborhoods()}}{
-Find the n-closest neighborhoods of a point
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{spatialModel$neighborhoods(lat, lon, n = 4)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{lat}}{numeric, latitude of a point in the grid.}
-
-\item{\code{lon}}{numeric, longitude of a point in the grid.}
-
-\item{\code{n}}{number of neighborhoods}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-is_known_location"></a>}}
-\if{latex}{\out{\hypertarget{method-is_known_location}{}}}
-\subsection{Method \code{is_known_location()}}{
-Check if a point is already in the spatial grid
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{spatialModel$is_known_location(lat, lon)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{lat}}{numeric, latitude of a location.}
-
-\item{\code{lon}}{numeric, longitude of a location.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-`TRUE` when the point is a known point and `FALSE` otherwise.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-gridModel"></a>}}
-\if{latex}{\out{\hypertarget{method-gridModel}{}}}
+\if{html}{\out{<a id="method-spatialModel-gridModel"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialModel-gridModel}{}}}
 \subsection{Method \code{gridModel()}}{
 Get a known model in the grid from place or coordinates.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{spatialModel$gridModel(place, lat, lon)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{spatialModel$gridModel(id, lat, lon)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{place}}{character, id of the location.}
+\item{\code{id}}{character, id of the location.}
 
 \item{\code{lat}}{numeric, latitude of a location.}
 
@@ -125,30 +79,8 @@ Get a known model in the grid from place or coordinates.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-is_inside_limits"></a>}}
-\if{latex}{\out{\hypertarget{method-is_inside_limits}{}}}
-\subsection{Method \code{is_inside_limits()}}{
-Check if a point is inside the limits of the spatial grid.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{spatialModel$is_inside_limits(lat, lon)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{lat}}{numeric, latitude of a location.}
-
-\item{\code{lon}}{numeric, longitude of a location.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-`TRUE` when the point is inside the limits and `FALSE` otherwise.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-interpolator"></a>}}
-\if{latex}{\out{\hypertarget{method-interpolator}{}}}
+\if{html}{\out{<a id="method-spatialModel-interpolator"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialModel-interpolator}{}}}
 \subsection{Method \code{interpolator()}}{
 Perform the bilinear interpolation for a target variable.
 \subsection{Usage}{
@@ -172,10 +104,10 @@ Perform the bilinear interpolation for a target variable.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel}{}}}
+\if{html}{\out{<a id="method-spatialModel-solarModel"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialModel-solarModel}{}}}
 \subsection{Method \code{solarModel()}}{
-Interpolator function for a `solarModel` object
+Interpolator function for a \code{solarModel} object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialModel$solarModel(lat, lon, n = 4)}\if{html}{\out{</div>}}
 }
@@ -193,8 +125,8 @@ Interpolator function for a `solarModel` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-combinations"></a>}}
-\if{latex}{\out{\hypertarget{method-combinations}{}}}
+\if{html}{\out{<a id="method-spatialModel-combinations"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialModel-combinations}{}}}
 \subsection{Method \code{combinations()}}{
 Compute monthly moments for mixture with 16 components
 \subsection{Usage}{
@@ -216,8 +148,8 @@ Compute monthly moments for mixture with 16 components
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-spatialModel-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialModel-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

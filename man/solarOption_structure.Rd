@@ -12,16 +12,16 @@ solarOption_structure(
 )
 }
 \arguments{
-\item{payoffs}{object with the class `solarOptionPayoffs`. See the function \code{\link{solarOptionPayoffs}} for details.}
+\item{payoffs}{object with the class \code{solarOptionPayoffs}. See the function \code{\link{solarOptionPayoffs}} for details.}
 
-\item{type}{method used for computing the premium. If `model`, the default will be used the analytic model,
-otherwise with `scenarios` the monte carlo scenarios stored inside the `model$scenarios$P`.}
+\item{type}{method used for computing the premium. If \code{model}, the default will be used the analytic model,
+otherwise with \code{scenarios} the monte carlo scenarios stored inside the \code{model$scenarios$P}.}
 
-\item{exact_daily_premium}{when `TRUE` the historical premium is computed as daily average among all the years.
+\item{exact_daily_premium}{when \code{TRUE} the historical premium is computed as daily average among all the years.
 Otherwise the monthly premium is computed and then divided by the number of days of the month.}
 }
 \value{
-The object `payoffs` with class `solarOptionPayoffs`.
+The object \code{payoffs} with class \code{solarOptionPayoffs}.
 }
 \description{
 Structure payoffs

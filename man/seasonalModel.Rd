@@ -2,9 +2,9 @@
 % Please edit documentation in R/seasonalModel.R
 \name{seasonalModel}
 \alias{seasonalModel}
-\title{Seasonal Model Object}
+\title{Seasonal Model}
 \description{
-The `seasonalModel` class implements a seasonal regression model as a linear combination of sine and cosine functions.
+The \code{seasonalModel} class implements a seasonal regression model as a linear combination of sine and cosine functions.
 This model is designed to capture periodic effects in time series data, particularly for applications involving seasonal trends.
 }
 \details{
@@ -14,40 +14,41 @@ to model seasonal variations. The periodicity can be customized, and the model c
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{seasonal_data}}{Slot that contains eventual externals seasonal regressors used for fitting.}
+\item{\code{seasonal_data}}{Tibble with externals seasonal regressors used for fitting.}
 
-\item{\code{extra_params}}{Slot used for containing eventual extra parameters.}
+\item{\code{extra_params}}{Slot that contains eventual extra parameters.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{coefficients}}{Get a vector with the fitted coefficients.}
+\item{\code{coefficients}}{A named vector with the fitted coefficients.}
 
-\item{\code{model}}{Get the fitted `lm` object.}
+\item{\code{model}}{A slot with the fitted \code{lm} object.}
 
-\item{\code{period}}{Get the seasonality in days.}
+\item{\code{period}}{Integer, the seasonality period.}
 
-\item{\code{order}}{Get the number of combinations of sines and cosines used.}
+\item{\code{order}}{Integer, number of combinations of sines and cosines.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{seasonalModel$new()}}
-\item \href{#method-fit}{\code{seasonalModel$fit()}}
-\item \href{#method-predict}{\code{seasonalModel$predict()}}
-\item \href{#method-update}{\code{seasonalModel$update()}}
-\item \href{#method-clone}{\code{seasonalModel$clone()}}
+\item \href{#method-seasonalModel-new}{\code{seasonalModel$new()}}
+\item \href{#method-seasonalModel-fit}{\code{seasonalModel$fit()}}
+\item \href{#method-seasonalModel-predict}{\code{seasonalModel$predict()}}
+\item \href{#method-seasonalModel-update}{\code{seasonalModel$update()}}
+\item \href{#method-seasonalModel-print}{\code{seasonalModel$print()}}
+\item \href{#method-seasonalModel-clone}{\code{seasonalModel$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-seasonalModel-new"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize an object of the class `seasonalModel`.
+Initialize an object of the class \code{seasonalModel}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(order = 1, period = 365)}\if{html}{\out{</div>}}
 }
@@ -55,16 +56,16 @@ Initialize an object of the class `seasonalModel`.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{order}}{numeric, number of sine and cosine used in fitting.}
+\item{\code{order}}{Integer, number of combinations of sines and cosines.}
 
-\item{\code{period}}{numeric, seasonal periodicity. The default is \eqn{\frac{2\pi}{365}}.}
+\item{\code{period}}{Integer, seasonality period. The default is 365.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-fit"></a>}}
-\if{latex}{\out{\hypertarget{method-fit}{}}}
+\if{html}{\out{<a id="method-seasonalModel-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-fit}{}}}
 \subsection{Method \code{fit()}}{
 Fit a seasonal model as a linear combination of sine and cosine functions and
 eventual external regressors specified in the formula. The external regressors used should
@@ -76,22 +77,22 @@ have the same periodicity, i.e. not stochastic regressors are allowed.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{formula}}{formula, an object of class `formula` (or one that can be coerced to that class).
-It is a symbolic description of the model to be fitted and can be used to include or exclude the intercept or external regressors in `data`.}
+\item{\code{formula}}{formula, an object of class \code{formula} (or one that can be coerced to that class).
+It is a symbolic description of the model to be fitted and can be used to include or exclude the intercept or external regressors in \code{data}.}
 
 \item{\code{data}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
-If not found in data, the variables are taken from environment(formula), typically the environment from which `lm` is called.}
+If not found in data, the variables are taken from environment(formula), typically the environment from which \code{lm} is called.}
 
-\item{\code{...}}{other parameters to be passed to the function lm.}
+\item{\code{...}}{other parameters to be passed to the function \code{lm}.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-predict"></a>}}
-\if{latex}{\out{\hypertarget{method-predict}{}}}
+\if{html}{\out{<a id="method-seasonalModel-predict"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-predict}{}}}
 \subsection{Method \code{predict()}}{
-Predict method for the class `seasonalModel`.
+Predict method for the class \code{seasonalModel}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$predict(n)}\if{html}{\out{</div>}}
 }
@@ -105,8 +106,8 @@ Predict method for the class `seasonalModel`.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-update"></a>}}
-\if{latex}{\out{\hypertarget{method-update}{}}}
+\if{html}{\out{<a id="method-seasonalModel-update"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-update}{}}}
 \subsection{Method \code{update()}}{
 Update the parameters inside the model.
 \subsection{Usage}{
@@ -116,14 +117,24 @@ Update the parameters inside the model.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{coefficients}}{vector of parameters.}
+\item{\code{coefficients}}{A named vector with coefficients.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-seasonalModel-print"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-print}{}}}
+\subsection{Method \code{print()}}{
+Print method for the class \code{seasonalModel}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$print()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-seasonalModel-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

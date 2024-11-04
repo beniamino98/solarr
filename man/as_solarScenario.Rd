@@ -2,15 +2,15 @@
 % Please edit documentation in R/solarScenario.R
 \name{as_solarScenario}
 \alias{as_solarScenario}
-\title{Extract and structure simulations from a `solarScenarioSpec`}
+\title{Extract and structure simulations from a \code{solarScenarioSpec}}
 \usage{
 as_solarScenario(simSpec)
 }
 \arguments{
-\item{simSpec}{object with the class `solarScenario_spec`. See the function \code{\link{solarScenario_spec}} for details.}
+\item{simSpec}{object with the class \code{solarScenario_spec}. See the function \code{\link{solarScenario_spec}} for details.}
 }
 \description{
-Extract and structure simulations from a `solarScenarioSpec`
+Extract and structure simulations from a \code{solarScenarioSpec}
 }
 \keyword{internal}
 \keyword{solarScenario}

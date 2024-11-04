@@ -7,8 +7,8 @@
 spectralDistribution(x, measure = "nanometer")
 }
 \arguments{
-\item{measure}{character, measure of the irradiated energy. If `nanometer` the final energy will be in W/m2 x nanometer,
-otherwise if `micrometer` the final energy will be in W/m2 x micrometer.}
+\item{measure}{character, measure of the irradiated energy. If \code{nanometer} the final energy will be in W/m2 x nanometer,
+otherwise if \code{micrometer} the final energy will be in W/m2 x micrometer.}
 
 \item{lambda}{numeric, wave length in micrometers.}
 }

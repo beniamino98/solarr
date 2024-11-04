@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarModel_internals.R
 \name{solarModel_spec}
 \alias{solarModel_spec}
-\title{Specification function for a `solarModel`}
+\title{Specification function for a \code{solarModel}}
 \usage{
 solarModel_spec(
   place,
@@ -16,26 +16,26 @@ solarModel_spec(
 )
 }
 \arguments{
-\item{place}{Character, name of an element in the `CAMS_data` list.}
+\item{place}{Character, name of an element in the \code{CAMS_data} list.}
 
-\item{target}{Character, target variable to model. Can be `GHI` or `clearsky`.}
+\item{target}{Character, target variable to model. Can be \code{GHI} or \code{clearsky}.}
 
-\item{min_date}{Character. Date in the format `YYYY-MM-DD`. Minimum date for the complete data. If `missing` will be used the minimum data available.}
+\item{min_date}{Character. Date in the format \code{YYYY-MM-DD}. Minimum date for the complete data. If \code{missing} will be used the minimum data available.}
 
-\item{max_date}{Character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.}
+\item{max_date}{Character. Date in the format \code{YYYY-MM-DD}. Maximum date for the complete data. If \code{missing} will be used the maximum data available.}
 
-\item{from}{Character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
-If `missing` will be used the minimum data available after filtering for `min_date`.}
+\item{from}{Character. Date in the format \code{YYYY-MM-DD}. Starting date to use for training data.
+If \code{missing} will be used the minimum data available after filtering for \code{min_date}.}
 
-\item{to}{character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.
-If `missing` will be used the maximum data available after filtering for `max_date`.}
+\item{to}{character. Date in the format \code{YYYY-MM-DD}. Ending date to use for training data.
+If \code{missing} will be used the maximum data available after filtering for \code{max_date}.}
 
 \item{CAMS_data}{named list with radiation data for different locations.}
 
 \item{control_model}{list with control parameters, see \code{\link{control_solarModel}} for details.}
 }
 \description{
-Specification function for a `solarModel`
+Specification function for a \code{solarModel}
 }
 \examples{
 control <- control_solarModel(outliers_quantile = 0)

@@ -24,21 +24,22 @@ st$GHI(st$iGHI(0.4, 3), 3)
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{solarTransform$new()}}
-\item \href{#method-GHI}{\code{solarTransform$GHI()}}
-\item \href{#method-GHI_y}{\code{solarTransform$GHI_y()}}
-\item \href{#method-iGHI}{\code{solarTransform$iGHI()}}
-\item \href{#method-Y}{\code{solarTransform$Y()}}
-\item \href{#method-iY}{\code{solarTransform$iY()}}
-\item \href{#method-fit}{\code{solarTransform$fit()}}
-\item \href{#method-bounds}{\code{solarTransform$bounds()}}
-\item \href{#method-update}{\code{solarTransform$update()}}
-\item \href{#method-clone}{\code{solarTransform$clone()}}
+\item \href{#method-solarTransform-new}{\code{solarTransform$new()}}
+\item \href{#method-solarTransform-GHI}{\code{solarTransform$GHI()}}
+\item \href{#method-solarTransform-GHI_y}{\code{solarTransform$GHI_y()}}
+\item \href{#method-solarTransform-iGHI}{\code{solarTransform$iGHI()}}
+\item \href{#method-solarTransform-Y}{\code{solarTransform$Y()}}
+\item \href{#method-solarTransform-iY}{\code{solarTransform$iY()}}
+\item \href{#method-solarTransform-fit}{\code{solarTransform$fit()}}
+\item \href{#method-solarTransform-bounds}{\code{solarTransform$bounds()}}
+\item \href{#method-solarTransform-update}{\code{solarTransform$update()}}
+\item \href{#method-solarTransform-print}{\code{solarTransform$print()}}
+\item \href{#method-solarTransform-clone}{\code{solarTransform$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-solarTransform-new"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a solarTransform object.
 \subsection{Usage}{
@@ -56,8 +57,8 @@ Initialize a solarTransform object.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-GHI"></a>}}
-\if{latex}{\out{\hypertarget{method-GHI}{}}}
+\if{html}{\out{<a id="method-solarTransform-GHI"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-GHI}{}}}
 \subsection{Method \code{GHI()}}{
 Solar radiation function
 \subsection{Usage}{
@@ -83,8 +84,8 @@ Numeric values in \eqn{C_t(1-\alpha-\beta, 1-\alpha)}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-GHI_y"></a>}}
-\if{latex}{\out{\hypertarget{method-GHI_y}{}}}
+\if{html}{\out{<a id="method-solarTransform-GHI_y"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-GHI_y}{}}}
 \subsection{Method \code{GHI_y()}}{
 Solar radiation function in terms of y
 \subsection{Usage}{
@@ -110,8 +111,8 @@ Numeric values in \eqn{[C_t(1-\alpha-\beta), C_t(1-\alpha)]}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-iGHI"></a>}}
-\if{latex}{\out{\hypertarget{method-iGHI}{}}}
+\if{html}{\out{<a id="method-solarTransform-iGHI"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-iGHI}{}}}
 \subsection{Method \code{iGHI()}}{
 Compute the risk driver process
 \subsection{Usage}{
@@ -128,7 +129,7 @@ Compute the risk driver process
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
-The function computes the inverse of the `GHI`funcion
+The function computes the inverse of the \code{GHI}funcion
 \deqn{iGHI(x) = 1 - \frac{x}{C_t}}
 }
 
@@ -137,8 +138,8 @@ Numeric values in \eqn{[\alpha,\alpha+\beta]}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Y"></a>}}
-\if{latex}{\out{\hypertarget{method-Y}{}}}
+\if{html}{\out{<a id="method-solarTransform-Y"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-Y}{}}}
 \subsection{Method \code{Y()}}{
 Transformation function from X to Y
 \subsection{Usage}{
@@ -162,8 +163,8 @@ Numeric values in \eqn{[-\infty, \infty]}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-iY"></a>}}
-\if{latex}{\out{\hypertarget{method-iY}{}}}
+\if{html}{\out{<a id="method-solarTransform-iY"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-iY}{}}}
 \subsection{Method \code{iY()}}{
 Inverse transformation from Y to X.
 \subsection{Usage}{
@@ -187,8 +188,8 @@ Numeric values in \eqn{[\alpha, \alpha + \beta]}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-fit"></a>}}
-\if{latex}{\out{\hypertarget{method-fit}{}}}
+\if{html}{\out{<a id="method-solarTransform-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-fit}{}}}
 \subsection{Method \code{fit()}}{
 Fit the best parameters from a time series
 \subsection{Usage}{
@@ -207,11 +208,11 @@ Fit the best parameters from a time series
 \subsection{Details}{
 Return a list that contains:
 \describe{
- \item{alpha}{Numeric, first transformation parameter.}
- \item{beta}{Numeric, second transformation parameter.}
- \item{epsilon}{Numeric, threshold used for fitting.}
- \item{Xt_min}{Numeric, minimum value of the supplied time series.}
- \item{Xt_min}{Numeric, maximum value of the supplied time series.}
+\item{alpha}{Numeric, first transformation parameter.}
+\item{beta}{Numeric, second transformation parameter.}
+\item{epsilon}{Numeric, threshold used for fitting.}
+\item{Xt_min}{Numeric, minimum value of the supplied time series.}
+\item{Xt_min}{Numeric, maximum value of the supplied time series.}
 }
 }
 
@@ -220,8 +221,8 @@ A named list.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-bounds"></a>}}
-\if{latex}{\out{\hypertarget{method-bounds}{}}}
+\if{html}{\out{<a id="method-solarTransform-bounds"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-bounds}{}}}
 \subsection{Method \code{bounds()}}{
 Compute the bounds for the transformed variables.
 \subsection{Usage}{
@@ -233,9 +234,9 @@ Compute the bounds for the transformed variables.
 \describe{
 \item{\code{target}}{target variable. Available choices are:
 \describe{
- \item{Xt}{Solar risk driver, the bounds returned are \eqn{[\alpha, \alpha + \beta]}.}
- \item{Kt}{Clearness index, the bounds returned are \eqn{[1-\alpha-\beta, 1-\alpha]}.}
- \item{Yt}{Solar transform, the bounds returned are \eqn{[-\infty, \infty]}.}
+\item{Xt}{Solar risk driver, the bounds returned are \eqn{[\alpha, \alpha + \beta]}.}
+\item{Kt}{Clearness index, the bounds returned are \eqn{[1-\alpha-\beta, 1-\alpha]}.}
+\item{Yt}{Solar transform, the bounds returned are \eqn{[-\infty, \infty]}.}
 }}
 }
 \if{html}{\out{</div>}}
@@ -245,8 +246,8 @@ A numeric vector where the first element is the lower bound and the second the u
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-update"></a>}}
-\if{latex}{\out{\hypertarget{method-update}{}}}
+\if{html}{\out{<a id="method-solarTransform-update"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-update}{}}}
 \subsection{Method \code{update()}}{
 Update the transformation parameters
 \subsection{Usage}{
@@ -263,12 +264,22 @@ Update the transformation parameters
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-Update the slots `$alpha` and `$beta`.
+Update the slots \verb{$alpha} and \verb{$beta}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-solarTransform-print"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-print}{}}}
+\subsection{Method \code{print()}}{
+Print method for the class \code{solarTransform}
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$print()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarTransform-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

@@ -2,7 +2,7 @@
 #'
 #' Skewed Normal density, distribution, quantile and random generator.
 #'
-#' @param x vector of quantiles.
+#' @param x,q vector of quantiles.
 #' @param p vector of probabilities.
 #' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
 #' @param location location parameter.
@@ -12,7 +12,7 @@
 #' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
 #' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
 #'
-#' @references Skewed Normal Distribution [\href{https://en.wikipedia.org/wiki/Skew_normal_distribution}{W}].
+# @references Skewed Normal Distribution [\href{https://en.wikipedia.org/wiki/Skew_normal_distribution}{W}].
 #'
 #' @examples
 #' # Grid of points
@@ -20,9 +20,9 @@
 #'
 #' # Density function
 #' # right tailed
-#' plot(x, dsnorm(x, shape = 4.9), type = "l")
+#' plot(x, dsnorm(x, shape = 1.9), type = "l")
 #' # left tailed
-#' plot(x, dsnorm(x, shape = -4.9), type = "l")
+#' plot(x, dsnorm(x, shape = -1.9), type = "l")
 #'
 #' # Distribution function
 #' plot(x, psnorm(x, shape = 4.9), type = "l")
@@ -34,8 +34,8 @@
 #' psnorm(qsnorm(0.9, shape = 3), shape = 3)
 #'
 #' # Random generator
-#' set.seet(1)
-#' plot(rsnorm(100, shape = 4), type = "l")
+#' set.seed(1)
+#' plot(rsnorm(100, shape = 5), type = "l")
 #'
 #' @name dsnorm
 #' @rdname dsnorm
@@ -48,33 +48,33 @@ dsnorm <- function(x, location = 0, scale = 1, shape = 0, log = FALSE){
   # Standardized values
   z <- (x - location)/scale
   # Probabilities
-  probs <- 2*dnorm(z)*pnorm(shape*z)
+  p <- 2*dnorm(z)*pnorm(shape*z)
   # Log-probabilities
   if (log) {
-    probs <- base::log(probs)
+    p <- base::log(p)
   }
-  return(probs)
+  return(p)
 }
 
 
 #' @rdname dsnorm
 #' @export
-psnorm <- function(x, location = 0, scale = 1, shape = 0, log.p = FALSE, lower.tail = TRUE){
+psnorm <- function(q, location = 0, scale = 1, shape = 0, log.p = FALSE, lower.tail = TRUE){
   # Standardized values
-  z <- (x - location)/scale
+  z <- (q - location)/scale
   # Distribution function
   cdf <- CDF(dsnorm, location = location, scale = scale, shape = shape, lower=-Inf, log = FALSE)
   # Cumulated probabilities
-  probs <- cdf(z)
+  p <- cdf(z)
   # Lower tail
   if (!lower.tail) {
-    probs <- 1 - probs
+    p <- 1 - p
   }
   # Log-probabilities
   if (log.p) {
-    probs <- base::log(probs)
+    p <- base::log(p)
   }
-  return(probs)
+  return(p)
 }
 
 
@@ -86,19 +86,18 @@ qsnorm <- function(p, location = 0, scale = 1, shape = 0, log.p = FALSE, lower.t
   # Quantile function
   quantile_numeric <- Quantile(cdf, interval = c(-location - scale*10, location + scale*10))
   # Quantiles
-  x <- quantile_numeric(p, log.p = log.p, lower.tail = lower.tail)
-  return(x)
+  q <- quantile_numeric(p, log.p = log.p, lower.tail = lower.tail)
+  return(q)
 }
 
 
 #' @rdname dsnorm
 #' @export
 rsnorm <- function(n, location = 0, scale = 1, shape = 0){
-  # Control
-  if (length(n) > 1){
-    n <- length(n)
-  }
+  # Simulated grades
   u <- runif(n, min = 0, max = 1)
-  qsnorm(u, location, scale, shape, log.p = FALSE, lower.tail = TRUE)
+  # Quantiles
+  q <- qsnorm(u, location, scale, shape, log.p = FALSE, lower.tail = TRUE)
+  return(q)
 }
-
+?extraDistr::rdnorm

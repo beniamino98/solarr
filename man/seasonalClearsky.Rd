@@ -34,7 +34,7 @@ spec$data$Ct <- model$predict(spec$data$n)
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{control}}{See the function \code{\link{control_seasonalClearsky}} for details.}
+\item{\code{control}}{Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.}
 
 \item{\code{lat}}{latitude of the place considered.}
 }
@@ -43,25 +43,26 @@ spec$data$Ct <- model$predict(spec$data$n)
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{seasonalClearsky$new()}}
-\item \href{#method-fit}{\code{seasonalClearsky$fit()}}
-\item \href{#method-updateH0}{\code{seasonalClearsky$updateH0()}}
-\item \href{#method-clone}{\code{seasonalClearsky$clone()}}
+\item \href{#method-seasonalClearsky-new}{\code{seasonalClearsky$new()}}
+\item \href{#method-seasonalClearsky-fit}{\code{seasonalClearsky$fit()}}
+\item \href{#method-seasonalClearsky-updateH0}{\code{seasonalClearsky$updateH0()}}
+\item \href{#method-seasonalClearsky-print}{\code{seasonalClearsky$print()}}
+\item \href{#method-seasonalClearsky-clone}{\code{seasonalClearsky$clone()}}
 }
 }
-\if{html}{
-\out{<details open ><summary>Inherited methods</summary>}
-\itemize{
-\item \out{<span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="predict">}\href{../../solarr/html/seasonalModel.html#method-predict}{\code{solarr::seasonalModel$predict()}}\out{</span>}
-\item \out{<span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="update">}\href{../../solarr/html/seasonalModel.html#method-update}{\code{solarr::seasonalModel$update()}}\out{</span>}
-}
-\out{</details>}
-}
+\if{html}{\out{
+<details open><summary>Inherited methods</summary>
+<ul>
+<li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="predict"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-predict'><code>solarr::seasonalModel$predict()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="update"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-update'><code>solarr::seasonalModel$update()</code></a></span></li>
+</ul>
+</details>
+}}
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-seasonalClearsky-new"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalClearsky-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a seasonalClearsky model
+Initialize a \code{seasonalClearsky} model
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$new(control = control_seasonalClearsky())}\if{html}{\out{</div>}}
 }
@@ -69,16 +70,16 @@ Initialize a seasonalClearsky model
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{control}}{See the function \code{\link{control_seasonalClearsky}} for details.}
+\item{\code{control}}{Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-fit"></a>}}
-\if{latex}{\out{\hypertarget{method-fit}{}}}
+\if{html}{\out{<a id="method-seasonalClearsky-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalClearsky-fit}{}}}
 \subsection{Method \code{fit()}}{
-Fit a seasonal model for clear sky radiation
+Fit a seasonal model for clear sky radiation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$fit(x, date, lat, clearsky)}\if{html}{\out{</div>}}
 }
@@ -86,22 +87,22 @@ Fit a seasonal model for clear sky radiation
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{time series of solar radiation}
+\item{\code{x}}{time series of solar radiation.}
 
-\item{\code{date}}{time series of dates}
+\item{\code{date}}{time series of dates.}
 
-\item{\code{lat}}{reference latitude}
+\item{\code{lat}}{Numeric, reference latitude.}
 
-\item{\code{clearsky}}{optional time series of observed clerasky radiation.}
+\item{\code{clearsky}}{Numeric, optional time series of observed clerasky radiation.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-updateH0"></a>}}
-\if{latex}{\out{\hypertarget{method-updateH0}{}}}
+\if{html}{\out{<a id="method-seasonalClearsky-updateH0"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalClearsky-updateH0}{}}}
 \subsection{Method \code{updateH0()}}{
-Update the time series of Extraterrestrial radiation
+Update the time series of extraterrestrial radiation for a given latitude.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$updateH0(lat)}\if{html}{\out{</div>}}
 }
@@ -115,8 +116,18 @@ Update the time series of Extraterrestrial radiation
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-seasonalClearsky-print"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalClearsky-print}{}}}
+\subsection{Method \code{print()}}{
+Print method for the class \code{seasonalClearsky}
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$print()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-seasonalClearsky-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalClearsky-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

@@ -7,11 +7,12 @@
 clearsky_outliers(x, Ct, date, threshold = 1e-04, quiet = FALSE)
 }
 \arguments{
-\item{x}{numeric values to be checked.}
+\item{x}{Numeric vector, realized solar radiation.}
 
-\item{Ct}{numeric values of maximum radiation possible.}
+\item{Ct}{Numeric vector, clear sky radiation.}
 
-\item{date}{optional time series of dates. It will be used in the imputation procedure for `NA` for a more precise imputation.}
+\item{date}{Vector, optional time series of dates.
+It will be used for a more precise imputation when a solar radiation value is \code{NA}.}
 }
 \description{
 Detect and impute outliers with respect to a maximum level of radiation (Ct)

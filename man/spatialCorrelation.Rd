@@ -24,19 +24,19 @@ spatialCorrelation object
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{spatialCorrelation$new()}}
-\item \href{#method-get_sigma_B}{\code{spatialCorrelation$get_sigma_B()}}
-\item \href{#method-get_margprob}{\code{spatialCorrelation$get_margprob()}}
-\item \href{#method-get_cr_X}{\code{spatialCorrelation$get_cr_X()}}
-\item \href{#method-get}{\code{spatialCorrelation$get()}}
-\item \href{#method-clone}{\code{spatialCorrelation$clone()}}
+\item \href{#method-spatialCorrelation-new}{\code{spatialCorrelation$new()}}
+\item \href{#method-spatialCorrelation-get_sigma_B}{\code{spatialCorrelation$get_sigma_B()}}
+\item \href{#method-spatialCorrelation-get_margprob}{\code{spatialCorrelation$get_margprob()}}
+\item \href{#method-spatialCorrelation-get_cr_X}{\code{spatialCorrelation$get_cr_X()}}
+\item \href{#method-spatialCorrelation-get}{\code{spatialCorrelation$get()}}
+\item \href{#method-spatialCorrelation-clone}{\code{spatialCorrelation$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-spatialCorrelation-new"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialCorrelation-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize an object with class `spatialCorrelation`.
+Initialize an object with class \code{spatialCorrelation}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$new(binprobs, mixture_cr)}\if{html}{\out{</div>}}
 }
@@ -52,8 +52,8 @@ Initialize an object with class `spatialCorrelation`.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_sigma_B"></a>}}
-\if{latex}{\out{\hypertarget{method-get_sigma_B}{}}}
+\if{html}{\out{<a id="method-spatialCorrelation-get_sigma_B"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialCorrelation-get_sigma_B}{}}}
 \subsection{Method \code{get_sigma_B()}}{
 Extract the implied covariance matrix for a given month and places.
 \subsection{Usage}{
@@ -71,8 +71,8 @@ Extract the implied covariance matrix for a given month and places.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_margprob"></a>}}
-\if{latex}{\out{\hypertarget{method-get_margprob}{}}}
+\if{html}{\out{<a id="method-spatialCorrelation-get_margprob"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialCorrelation-get_margprob}{}}}
 \subsection{Method \code{get_margprob()}}{
 Extract the marginal probabilities for a given month and places.
 \subsection{Usage}{
@@ -90,8 +90,8 @@ Extract the marginal probabilities for a given month and places.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get_cr_X"></a>}}
-\if{latex}{\out{\hypertarget{method-get_cr_X}{}}}
+\if{html}{\out{<a id="method-spatialCorrelation-get_cr_X"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialCorrelation-get_cr_X}{}}}
 \subsection{Method \code{get_cr_X()}}{
 Extract the covariance matrix of the gaussian mixture for a given month and places.
 \subsection{Usage}{
@@ -109,10 +109,10 @@ Extract the covariance matrix of the gaussian mixture for a given month and plac
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-get"></a>}}
-\if{latex}{\out{\hypertarget{method-get}{}}}
+\if{html}{\out{<a id="method-spatialCorrelation-get"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialCorrelation-get}{}}}
 \subsection{Method \code{get()}}{
-Extract a list with `sigma_B`, `margprob` and `cr_X` for a given month.
+Extract a list with \code{sigma_B}, \code{margprob} and \code{cr_X} for a given month.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{spatialCorrelation$get(places, nmonth = 1, date)}\if{html}{\out{</div>}}
 }
@@ -130,8 +130,8 @@ Extract a list with `sigma_B`, `margprob` and `cr_X` for a given month.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-spatialCorrelation-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-spatialCorrelation-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

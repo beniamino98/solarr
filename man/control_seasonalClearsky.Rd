@@ -2,7 +2,7 @@
 % Please edit documentation in R/seasonalClearsky.R
 \name{control_seasonalClearsky}
 \alias{control_seasonalClearsky}
-\title{Control parameters for a `seasonalClearsky` object}
+\title{Control parameters for a \code{seasonalClearsky} object}
 \usage{
 control_seasonalClearsky(
   method = "II",
@@ -18,31 +18,34 @@ control_seasonalClearsky(
 )
 }
 \arguments{
-\item{method}{character, method for clear sky estimate, can be `I` or `II`.}
+\item{method}{Character, method used for estimate clear sky radiation. Can be \code{I} or \code{II}.}
 
-\item{include.intercept}{logical. When `TRUE`, the default, the intercept will be included in the model.}
+\item{include.intercept}{Logical, when \code{TRUE}, the default, the intercept will be included in the clear sky model.}
 
-\item{order}{numeric, of sine and cosine elements.}
+\item{order}{Integer scalar, number of combinations of sines and cosines.}
 
-\item{period}{numeric, periodicity. The default is `365`.}
+\item{period}{Integer scalar, seasonality period. The default is 365.}
 
-\item{delta0}{Value for delta init in the clear sky model.}
+\item{delta0}{Numeric scalar, initial value for delta.}
 
-\item{lower}{numeric, lower bound for delta grid.}
+\item{lower}{Numeric scalar, lower bound for delta grid.}
 
-\item{upper}{numeric, upper bound for delta grid.}
+\item{upper}{Numeric scalar, upper bound for delta grid.}
 
-\item{by}{numeric, step for delta grid.}
+\item{by}{Numeric scalar, step for delta grid.}
 
-\item{ntol}{integer, tolerance for `clearsky > GHI` condition. Maximum number of violations admitted.}
+\item{ntol}{Integer, tolerance for \code{clearsky > GHI} condition. Maximum number of violations admitted.}
 
-\item{quiet}{logical. When `FALSE`, the default, the functions displays warning or messages.}
+\item{quiet}{Logical, when \code{FALSE}, the default, the functions displays warning or messages.}
+}
+\value{
+Named list of control parameters.
 }
 \description{
-Control parameters for a `seasonalClearsky` object
+Control parameters for a \code{seasonalClearsky} object
 }
 \details{
-The parameters `ntol`, `lower`, `upper` and `by` are used exclusively in \code{\link{clearsky_optimizer}}.
+The parameters \code{ntol}, \code{lower}, \code{upper} and \code{by} are used exclusively in \code{\link{clearsky_optimizer}}.
 }
 \examples{
 control = control_seasonalClearsky()

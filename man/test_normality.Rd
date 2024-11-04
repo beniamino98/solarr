@@ -9,7 +9,7 @@ test_normality(x = NULL, pvalue = 0.05)
 \arguments{
 \item{x}{numeric, a vector of observation.}
 
-\item{pvalue}{numeric, the desiderd level of `p.value` at which the null hypothesis will be rejected.}
+\item{pvalue}{numeric, the desiderd level of \code{p.value} at which the null hypothesis will be rejected.}
 }
 \value{
 a tibble with the results of the normality tests.

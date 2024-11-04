@@ -17,11 +17,11 @@ solarOption_contracts(
 )
 }
 \arguments{
-\item{type}{character, method used for computing the premium. Can be `model` (Model with integral) or `sim` (Monte Carlo).}
+\item{type}{character, method used for computing the premium. Can be \code{model} (Model with integral) or \code{sim} (Monte Carlo).}
 
-\item{premium}{character, premium used. Can be `P`, `Qdw`, `Qup`, or `Q`.}
+\item{premium}{character, premium used. Can be \code{P}, \code{Qdw}, \code{Qup}, or \code{Q}.}
 
-\item{nyear}{integer, actual year. The optimization will be performed excluding the year `nyear` and the following.}
+\item{nyear}{integer, actual year. The optimization will be performed excluding the year \code{nyear} and the following.}
 
 \item{tick}{numeric, conversion tick for the monetary payoff of a contract.}
 
@@ -31,7 +31,7 @@ solarOption_contracts(
 
 \item{pun}{numeric, reference electricity price at which the energy is sold for computing the cash-flows.}
 
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 }
 \description{
 Compute the optimal number of contracts given a particular setup.

@@ -7,7 +7,7 @@
 seasonalRadiation(spec)
 }
 \arguments{
-\item{spec}{an object with class `solarModelSpec`. See the function \code{\link{solarModel_spec}} for details.}
+\item{spec}{an object with class \code{solarModelSpec}. See the function \code{\link{solarModel_spec}} for details.}
 }
 \description{
 Fit a seasonal model for solar radiation

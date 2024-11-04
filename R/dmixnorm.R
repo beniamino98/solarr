@@ -2,30 +2,31 @@
 #'
 #' Gaussian mixture density, distribution, quantile and random generator.
 #'
-#' @param x vector of quantiles or probabilities.
+#' @param x,q vector of quantiles.
+#' @param p vector of probabilities.
 #' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
-#' @param means vector of means parameters.
+#' @param mean vector of means parameters.
 #' @param sd vector of std. deviation parameters.
-#' @param p vector of probability parameters.
+#' @param alpha vector of probability parameters for each component.
 #' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
 #' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
 #' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
 #'
-#' @references Mixture Models [\href{https://en.wikipedia.org/wiki/Mixture_model}{W}].
+# @references Mixture Models [\href{https://en.wikipedia.org/wiki/Mixture_model}{W}].
 #'
 #' @examples
 #' # Parameters
-#' means = c(-3,0,3)
+#' mean = c(-3,0,3)
 #' sd = rep(1, 3)
-#' p = c(0.2, 0.3, 0.5)
+#' alpha = c(0.2, 0.3, 0.5)
 #' # Density function
-#' dmixnorm(3, means, sd, p)
+#' dmixnorm(3, mean, sd, alpha)
 #' # Distribution function
-#' dmixnorm(c(1.2, -3), means, sd, p)
+#' dmixnorm(c(1.2, -3), mean, sd, alpha)
 #' # Quantile function
-#' qmixnorm(0.2, means, sd, p)
+#' qmixnorm(0.2, mean, sd, alpha)
 #' # Random generator
-#' rmixnorm(1000, means, sd, p)
+#' rmixnorm(1000, mean, sd, alpha)
 #'
 #' @rdname dmixnorm
 #' @name dmixnorm
@@ -34,76 +35,66 @@
 #' @aliases qmixnorm
 #' @aliases rmixnorm
 #' @export
-dmixnorm <- function(x, means = rep(0, 2), sd = rep(1, 2), p = rep(1/2, 2), log = FALSE){
+dmixnorm <- function(x, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), log = FALSE){
 
-  # Number of components
-  k <- length(means)
-  # List of parameters
-  params <- list(mean = means, sd = sd, p = p)
   # Density
-  probs <- c()
+  p <- c()
   for(i in 1:length(x)){
-    probs[i] <- 0
-    for(s in 1:k){
-      probs[i] <- probs[i] + p[s]*dnorm(x[i], mean = means[s], sd = sd[s])
+    p[i] <- 0
+    for(s in 1:length(mean)){
+      p[i] <- p[i] + alpha[s]*dnorm(x[i], mean = mean[s], sd = sd[s])
     }
   }
   # Log-probability
   if (log) {
-    probs <- base::log(probs)
+    p <- base::log(p)
   }
-  return(probs)
+  return(p)
 }
 
 #' @rdname dmixnorm
 #' @export
-pmixnorm <- function(x, means = rep(0, 2), sd = rep(1, 2), p = rep(1/2, 2),
-                     lower.tail = TRUE, log.p = FALSE){
-
-  # Number of components
-  k <- length(means)
-  # List of parameters
-  params <- list(mean = means, sd = sd, p = p)
+pmixnorm <- function(q, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), lower.tail = TRUE, log.p = FALSE){
   # Distribution
-  probs <- c()
-  for(i in 1:length(x)){
-    probs[i] <- 0
-    for(s in 1:k){
-      probs[i] <- probs[i] + p[s]*pnorm(x[i], mean = means[s], sd = sd[s], lower.tail = lower.tail)
+  p <- c()
+  for(i in 1:length(q)){
+    p[i] <- 0
+    for(s in 1:length(mean)){
+      p[i] <- p[i] + alpha[s]*pnorm(q[i], mean = mean[s], sd = sd[s], lower.tail = lower.tail)
     }
   }
   # Log-probability
   if (log.p) {
-    probs <- base::log(probs)
+    p <- base::log(p)
   }
-  return(probs)
+  return(p)
 }
 
 #' @rdname dmixnorm
 #' @export
-qmixnorm <- function(x, means = rep(0, 2), sd = rep(1, 2), p = rep(1/2, 2),
-                     lower.tail = TRUE, log.p = FALSE) {
+qmixnorm <- function(p, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), lower.tail = TRUE, log.p = FALSE) {
   # Log-probabilities
-  probs <- x
   if (log.p) {
-    probs <- base::exp(probs)
+    p <- base::exp(p)
   }
   # Distribution function
-  cdf <- function(x) pmixnorm(x, means = means, sd = sd, p = p, lower.tail = lower.tail)
+  cdf <- function(x) pmixnorm(x, mean, sd, alpha, lower.tail = lower.tail)
   # Empirical quantile
-  quantile_numeric <- Quantile(cdf, interval = c(-min(means) - max(sd)*10, max(means) + max(sd)*10))
+  quantile_numeric <- Quantile(cdf, interval = c(min(mean) - max(sd)*10, max(mean) + max(sd)*10))
   # Quantiles
-  x <- quantile_numeric(p)
-  return(x)
+  q <- quantile_numeric(p)
+  #q <- p
+  #q[p <= 0] <- -Inf
+  #q[p >= 1] <- Inf
+  #q[p > 0 & p < 1] <- quantile_numeric(p[p > 0 & p < 1])
+  return(q)
 }
 
 #' @rdname dmixnorm
 #' @export
-rmixnorm <- function(n, means = rep(0, 3), sd = rep(1, 3), p = rep(1/3, 3)){
-
+rmixnorm <- function(n, mean = rep(0, 3), sd = rep(1, 3), alpha = rep(1/3, 3)){
   # Number of components
-  k <- length(means)
-
+  k <- length(mean)
   X <- matrix(NA, nrow = n, ncol = k)
   B <- matrix(0, nrow = n, ncol = k)
   index <- 1:n
@@ -112,10 +103,10 @@ rmixnorm <- function(n, means = rep(0, 3), sd = rep(1, 3), p = rep(1/3, 3)){
     if (s == k) {
       B[index,][,s] <- 1
     } else {
-      B[index,][,s] <- rbinom(n, 1, p[s]/sum(p[s:k]))
+      B[index,][,s] <- rbinom(n, 1, alpha[s]/sum(alpha[s:k]))
     }
     # Simulated component
-    X[B[,s] == 1, s] <- rnorm(sum(B[, s]), mean = means[s], sd = sd[s])
+    X[B[,s] == 1, s] <- rnorm(sum(B[, s]), mean = mean[s], sd = sd[s])
     # Update number of remaining elements
     n <- n - sum(B[,s])
     # Update the remaining indexes

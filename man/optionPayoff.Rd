@@ -11,7 +11,7 @@ optionPayoff(x, strike = 0, c0 = 0, put = TRUE)
 
 \item{strike}{numeric, option strike.}
 
-\item{put}{logical, when `TRUE`, the default, the payoff function is a put othewise a call.}
+\item{put}{logical, when \code{TRUE}, the default, the payoff function is a put othewise a call.}
 
 \item{v0}{numeric, price of the option.}
 }

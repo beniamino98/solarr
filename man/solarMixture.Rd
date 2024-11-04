@@ -24,46 +24,53 @@ Monthly Gaussian mixture with two components
 \describe{
 \item{\code{data}}{A tibble with the following columns:
 #' \describe{
- \item{date}{Time series of dates.}
- \item{Month}{Vector of Month.}
- \item{x}{Time series used for fitting.}
- \item{w}{Time series of weights.}
+\item{date}{Time series of dates.}
+\item{Month}{Vector of Month.}
+\item{x}{Time series used for fitting.}
+\item{w}{Time series of weights.}
 }}
+
+\item{\code{means}}{Matrix of means where a row represents a month and a column a mixture component.}
+
+\item{\code{means}}{Matrix of std. deviations where a row represents a month and a column a mixture component.}
+
+\item{\code{means}}{Matrix of probabilities where a row represents a month and a column a mixture component.}
 
 \item{\code{model}}{Named List with 12 \code{\link{gaussianMixture}} objects.}
 
 \item{\code{loglik}}{Numeric, total log-likelihood.}
 
-\item{\code{fitted}}{A `tibble` with the classified series}
+\item{\code{fitted}}{A \code{tibble} with the classified series}
 
-\item{\code{moments}}{A `tibble` with the theoric moments. It contains:
+\item{\code{moments}}{A \code{tibble} with the theoric moments. It contains:
 #' \describe{
- \item{Month}{Month of the year.}
- \item{mean}{Theoric monthly expected value of the mixture model.}
- \item{variance}{Theoric monthly variance of the mixture model.}
- \item{skewness}{Theoric monthly skewness.}
- \item{kurtosis}{Theoric monthly kurtosis.}
- \item{nobs}{Number of observations used for fitting.}
- \item{loglik}{Monthly log-likelihood.}
+\item{Month}{Month of the year.}
+\item{mean}{Theoric monthly expected value of the mixture model.}
+\item{variance}{Theoric monthly variance of the mixture model.}
+\item{skewness}{Theoric monthly skewness.}
+\item{kurtosis}{Theoric monthly kurtosis.}
+\item{nobs}{Number of observations used for fitting.}
+\item{loglik}{Monthly log-likelihood.}
 }}
 
-\item{\code{parameters}}{A `tibble` with the fitted parameters.}
+\item{\code{parameters}}{A \code{tibble} with the fitted parameters.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{solarMixture$new()}}
-\item \href{#method-fit}{\code{solarMixture$fit()}}
-\item \href{#method-clone}{\code{solarMixture$clone()}}
+\item \href{#method-solarMixture-new}{\code{solarMixture$new()}}
+\item \href{#method-solarMixture-fit}{\code{solarMixture$fit()}}
+\item \href{#method-solarMixture-update}{\code{solarMixture$update()}}
+\item \href{#method-solarMixture-clone}{\code{solarMixture$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-solarMixture-new"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a `solarMixture` object
+Initialize a \code{solarMixture} object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMixture$new(components = 2, maxit = 100, abstol = 1e-14)}\if{html}{\out{</div>}}
 }
@@ -81,12 +88,12 @@ Initialize a `solarMixture` object
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-fit"></a>}}
-\if{latex}{\out{\hypertarget{method-fit}{}}}
+\if{html}{\out{<a id="method-solarMixture-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-fit}{}}}
 \subsection{Method \code{fit()}}{
 Fit the parameters with mclust package
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMixture$fit(x, date, weights, EM = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$fit(x, date, weights)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -97,16 +104,35 @@ Fit the parameters with mclust package
 \item{\code{date}}{date vector}
 
 \item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
-When `missing` all the available observations will be used.}
-
-\item{\code{EM}}{logical when TRUE will be applied EM algo}
+When \code{missing} all the available observations will be used.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-solarMixture-update"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-update}{}}}
+\subsection{Method \code{update()}}{
+Update means, sd, p and recompute log-likelihood and fitted data.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$update(means, sd, p)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{means}}{Numeric matrix of means parameters.}
+
+\item{\code{sd}}{Numeric matrix of std. deviation parameters.}
+
+\item{\code{p}}{Numeric matrix of probability parameters.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

@@ -15,7 +15,7 @@ Quantile(cdf, interval = c(-100, 100))
 \arguments{
 \item{.f}{density function}
 
-\item{...}{other parameters to be passed to `.f`.}
+\item{...}{other parameters to be passed to \code{.f}.}
 
 \item{lower}{lower bound for integration (CDF).}
 
@@ -24,7 +24,7 @@ Quantile(cdf, interval = c(-100, 100))
 \item{interval}{lower and upper bounds for unit root (Quantile).}
 }
 \description{
-Return a function of `x` given the specification of a function of `x`.
+Return a function of \code{x} given the specification of a function of \code{x}.
 }
 \examples{
 # Density

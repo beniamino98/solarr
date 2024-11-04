@@ -7,63 +7,62 @@
 \alias{rmixnorm}
 \title{Gaussian mixture random variable}
 \usage{
-dmixnorm(x, means = rep(0, 2), sd = rep(1, 2), p = rep(1/2, 2), log = FALSE)
+dmixnorm(x, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), log = FALSE)
 
 pmixnorm(
-  x,
-  means = rep(0, 2),
+  q,
+  mean = rep(0, 2),
   sd = rep(1, 2),
-  p = rep(1/2, 2),
+  alpha = rep(1/2, 2),
   lower.tail = TRUE,
   log.p = FALSE
 )
 
 qmixnorm(
-  x,
-  means = rep(0, 2),
+  p,
+  mean = rep(0, 2),
   sd = rep(1, 2),
-  p = rep(1/2, 2),
+  alpha = rep(1/2, 2),
   lower.tail = TRUE,
   log.p = FALSE
 )
 
-rmixnorm(n, means = rep(0, 3), sd = rep(1, 3), p = rep(1/3, 3))
+rmixnorm(n, mean = rep(0, 3), sd = rep(1, 3), alpha = rep(1/3, 3))
 }
 \arguments{
-\item{x}{vector of quantiles or probabilities.}
+\item{x, q}{vector of quantiles.}
 
-\item{means}{vector of means parameters.}
+\item{mean}{vector of means parameters.}
 
 \item{sd}{vector of std. deviation parameters.}
 
-\item{p}{vector of probability parameters.}
+\item{alpha}{vector of probability parameters for each component.}
 
-\item{log}{logical; if `TRUE`, probabilities are returned as `log(p)`.}
+\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
 
-\item{lower.tail}{logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.}
+\item{lower.tail}{logical; if TRUE (default), probabilities are \code{P[X < x]} otherwise, \code{P[X > x]}.}
 
-\item{log.p}{logical; if `TRUE`, probabilities p are given as `log(p)`.}
+\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
 
-\item{n}{number of observations. If `length(n) > 1`, the length is taken to be the number required.}
+\item{p}{vector of probabilities.}
+
+\item{n}{number of observations. If \code{length(n) > 1}, the length is taken to be the number required.}
 }
 \description{
 Gaussian mixture density, distribution, quantile and random generator.
 }
 \examples{
 # Parameters
-means = c(-3,0,3)
+mean = c(-3,0,3)
 sd = rep(1, 3)
-p = c(0.2, 0.3, 0.5)
+alpha = c(0.2, 0.3, 0.5)
 # Density function
-dmixnorm(3, means, sd, p)
+dmixnorm(3, mean, sd, alpha)
 # Distribution function
-dmixnorm(c(1.2, -3), means, sd, p)
+dmixnorm(c(1.2, -3), mean, sd, alpha)
 # Quantile function
-qmixnorm(0.2, means, sd, p)
+qmixnorm(0.2, mean, sd, alpha)
 # Random generator
-rmixnorm(1000, means, sd, p)
+rmixnorm(1000, mean, sd, alpha)
 
-}
-\references{
-Mixture Models [\href{https://en.wikipedia.org/wiki/Mixture_model}{W}].
 }

@@ -15,15 +15,15 @@ spatialScenario_spec(
 )
 }
 \arguments{
-\item{sm}{`spatialModel` object}
+\item{sm}{\code{spatialModel} object}
 
-\item{sc}{`spatialCorrelation` object}
+\item{sc}{\code{spatialCorrelation} object}
 
 \item{places}{target places}
 
-\item{from}{character, start Date for simulations in the format `YYYY-MM-DD`.}
+\item{from}{character, start Date for simulations in the format \code{YYYY-MM-DD}.}
 
-\item{to}{character, end Date for simulations in the format `YYYY-MM-DD`.}
+\item{to}{character, end Date for simulations in the format \code{YYYY-MM-DD}.}
 
 \item{exclude_known}{when true the two starting points (equals for all the simulations) will be excluded from the output.}
 

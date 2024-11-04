@@ -2,15 +2,15 @@
 % Please edit documentation in R/solarScenario.R
 \name{solarScenario_filter}
 \alias{solarScenario_filter}
-\title{Simulate trajectories from a a `solarScenario_spec`}
+\title{Simulate trajectories from a a \code{solarScenario_spec}}
 \usage{
 solarScenario_filter(simSpec)
 }
 \arguments{
-\item{simSpec}{object with the class `solarScenario_spec`. See the function \code{\link{solarScenario_spec}} for details.}
+\item{simSpec}{object with the class \code{solarScenario_spec}. See the function \code{\link{solarScenario_spec}} for details.}
 }
 \description{
-Simulate trajectories from a a `solarScenario_spec`
+Simulate trajectories from a a \code{solarScenario_spec}
 }
 \examples{
 model <- Bologna

@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarModel_internals.R
 \name{control_solarModel}
 \alias{control_solarModel}
-\title{Control parameters for a `solarModel` object}
+\title{Control parameters for a \code{solarModel} object}
 \usage{
 control_solarModel(
   clearsky = control_seasonalClearsky(),
@@ -13,7 +13,7 @@ control_solarModel(
   seasonal.variance = list(seasonalOrder = 1, correction = TRUE, monthly.mean = TRUE),
   variance.model = rugarch::ugarchspec(variance.model = list(garchOrder = c(1, 1)),
     mean.model = list(armaOrder = c(0, 0), include.mean = FALSE)),
-  mixture.model = list(abstol = 0.001, maxit = 150, EM = TRUE),
+  mixture.model = list(abstol = 0.001, maxit = 150),
   threshold = 0.01,
   outliers_quantile = 0,
   quiet = FALSE
@@ -24,40 +24,39 @@ control_solarModel(
 
 \item{seasonal.mean}{a list of parameters. Available choices are:
 \describe{
- \item{`seasonalOrder`}{An integer specifying the order of the seasonal component. The default is `1`.}
- \item{`include.intercept`}{Logical, when `TRUE` the intercept will be included in the seasonal model, otherwise will be omitted. The dafault if `TRUE`.}
- \item{`include.H0`}{Logical, when `TRUE` the extraterrestrial radiation will be included in the seasonal model, otherwise will be omitted. The dafault if `FALSE`.}
- \item{`monthly.mean`}{Logical, when `TRUE` a vector of 12 monthly means is computed on the deseasonalized series and it is subtracted to ensure that it is perfectly centered around zero.}
+\item{\code{seasonalOrder}}{An integer specifying the order of the seasonal component. The default is \code{1}.}
+\item{\code{include.intercept}}{Logical, when \code{TRUE} the intercept will be included in the seasonal model, otherwise will be omitted. The dafault if \code{TRUE}.}
+\item{\code{include.H0}}{Logical, when \code{TRUE} the extraterrestrial radiation will be included in the seasonal model, otherwise will be omitted. The dafault if \code{FALSE}.}
+\item{\code{monthly.mean}}{Logical, when \code{TRUE} a vector of 12 monthly means is computed on the deseasonalized series and it is subtracted to ensure that it is perfectly centered around zero.}
 }}
 
 \item{mean.model}{a list of parameters for the AR model.
 \describe{
- \item{`arOrder`}{An integer specifying the order of the AR component. The default is `2`.}
- \item{`include.intercept`}{When `TRUE` an intercept will be included in the AR equation, otherwise is omitted. The dafault if `FALSE`.}
+\item{\code{arOrder}}{An integer specifying the order of the AR component. The default is \code{2}.}
+\item{\code{include.intercept}}{When \code{TRUE} an intercept will be included in the AR equation, otherwise is omitted. The dafault if \code{FALSE}.}
 }}
 
 \item{seasonal.variance}{a list of parameters for the seasonal variance. Available choices are:
 \describe{
- \item{`seasonalOrder`}{Integer, it specify the order of the seasonal component in the model. The default is `1`.}
- \item{`correction`}{Logical, when `TRUE` the parameters of seasonal variance are corrected to ensure that the standardize the residuals have exactly a unitary variance.}
- \item{`monthly.mean`}{Logical, when `TRUE` a vector of 12 monthly std. deviations is computed on the GARCH residuals. Then, they are divided by this quantity to ensure that the monthly variance is one.}
+\item{\code{seasonalOrder}}{Integer, it specify the order of the seasonal component in the model. The default is \code{1}.}
+\item{\code{correction}}{Logical, when \code{TRUE} the parameters of seasonal variance are corrected to ensure that the standardize the residuals have exactly a unitary variance.}
+\item{\code{monthly.mean}}{Logical, when \code{TRUE} a vector of 12 monthly std. deviations is computed on the GARCH residuals. Then, they are divided by this quantity to ensure that the monthly variance is one.}
 }}
 
-\item{variance.model}{an `ugarchspec` object for GARCH variance. Default is `GARCH(1,1)` specification.}
+\item{variance.model}{an \code{ugarchspec} object for GARCH variance. Default is \code{GARCH(1,1)} specification.}
 
 \item{mixture.model}{a list of parameters for the monthly Gaussian mixture model. Available choices are:
 \describe{
- \item{`abstol`}{Numeric, absolute level for convergence. The default is `1e-3`.}
- \item{`maxit`}{Integer, maximum number of iterations. The default is `200`.}
- \item{`EM`}{Logical, when `TRUE` the estimated parameters from `mclust` function will be used to initialize the EM-routine. The default is `TRUE`.}
+\item{\code{abstol}}{Numeric, absolute level for convergence. The default is \code{1e-3}.}
+\item{\code{maxit}}{Integer, maximum number of iterations. The default is \code{200}.}
 }}
 
 \item{threshold}{numeric, threshold used to estimate the transformation parameters alpha and beta. See \code{\link{solarTransform}} for details.}
 
-\item{outliers_quantile}{quantile for outliers detection. If different from 0, the observations that are below the quantile at confidence levels `outliers_quantile` and
-the observation above the quantile at confidence level 1-`outliers_quantile` will have a weight equal to zero and will be excluded from estimations.}
+\item{outliers_quantile}{quantile for outliers detection. If different from 0, the observations that are below the quantile at confidence levels \code{outliers_quantile} and
+the observation above the quantile at confidence level 1-\code{outliers_quantile} will have a weight equal to zero and will be excluded from estimations.}
 
-\item{quiet}{logical, when `TRUE` the function will not display any message.}
+\item{quiet}{logical, when \code{TRUE} the function will not display any message.}
 }
 \description{
 Control function for a solarModel

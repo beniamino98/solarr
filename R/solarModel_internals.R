@@ -26,7 +26,6 @@
 #'\describe{
 #'  \item{`abstol`}{Numeric, absolute level for convergence. The default is `1e-3`.}
 #'  \item{`maxit`}{Integer, maximum number of iterations. The default is `200`.}
-#'  \item{`EM`}{Logical, when `TRUE` the estimated parameters from `mclust` function will be used to initialize the EM-routine. The default is `TRUE`.}
 #'}
 #' @param threshold numeric, threshold used to estimate the transformation parameters alpha and beta. See \code{\link{solarTransform}} for details.
 #' @param outliers_quantile quantile for outliers detection. If different from 0, the observations that are below the quantile at confidence levels `outliers_quantile` and
@@ -47,7 +46,7 @@ control_solarModel <- function(clearsky = control_seasonalClearsky(),
                                seasonal.variance = list(seasonalOrder = 1, correction = TRUE, monthly.mean = TRUE),
                                variance.model = rugarch::ugarchspec(variance.model = list(garchOrder = c(1,1)),
                                                                     mean.model = list(armaOrder = c(0, 0), include.mean = FALSE)),
-                               mixture.model = list(abstol = 1e-3, maxit = 150, EM = TRUE),
+                               mixture.model = list(abstol = 1e-3, maxit = 150),
                                threshold = 0.01, outliers_quantile = 0, quiet = FALSE){
 
   # Seasonal mean model default parameters
@@ -456,7 +455,7 @@ solarModel_forecast <- function(model, date, ci = 0.1, unconditional = FALSE){
     if (is.null(smf)){
       return(NULL)
     }
-    smf[-1][[1]]
+    return(smf[-1][[1]])
   }
   out <- purrr::map_df(date, fun)
   return(out)
@@ -550,10 +549,9 @@ solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile 
     # Residuals
     x <- dplyr::filter(model$data, Month == nmonth)$u_tilde
     # Gaussian mixture parameters
-    nm <- model$NM_model[nmonth,]
-    means = c(nm$mu_up,  nm$mu_dw)
-    sd = c(nm$sd_up,  nm$sd_dw)
-    p = c(nm$p_up,  1-nm$p_up)
+    means = model$NM_model$means[nmonth,]
+    sd = model$NM_model$sd[nmonth,]
+    p = model$NM_model$p[nmonth,]
 
     # Mixture CDF
     cdf_GM <- function(x) pmixnorm(x, means = means, sd = sd, p = p)
@@ -574,59 +572,5 @@ solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile 
       stationary = dplyr::bind_rows(stationary_test)
     )
   )
-}
-
-
-#' Empiric Gaussian Mixture parameters
-#'
-#' @keywords OLD
-solarModel_empiric_GM <- function(model, match_moments = FALSE){
-  # Select only train data
-  data <- model$data
-  data <- dplyr::filter(data, isTrain & weights != 0)
-  data <- dplyr::select(data, Month, u_tilde, B)
-  for(m in 1:12){
-    # Monthly data
-    df_m <- dplyr::filter(data, Month == m)
-    u_up <- dplyr::filter(df_m, B == 1)$u_tilde
-    u_dw <- dplyr::filter(df_m, B == 0)$u_tilde
-    nm <- model$NM_model[m,]
-    # Up moments
-    n1 <- length(u_up)
-    nm$mu_up <- mean(u_up, na.rm = TRUE)
-    nm$sd_up <- sd(u_up, na.rm = TRUE)*sqrt(n1/(n1-1))
-    nm$p_up <- mean(df_m$B, na.rm = TRUE)
-    # Down moments
-    n2 <- length(u_dw)
-    nm$mu_dw <- mean(u_dw, na.rm = TRUE)
-    nm$sd_dw <- sd(u_dw, na.rm = TRUE)*sqrt(n2/(n2-1))
-    nm$p_dw <- 1 - nm$p_up
-    df_m
-    if (match_moments) {
-      if (n1 >= n2) {
-        nm$mu_dw <- (nm$e_x_hat - nm$mu_up*nm$p_up)/(1-nm$p_up)
-        nm$sd_dw <- sqrt((nm$v_x_hat - nm$sd_up^2*nm$p_up)/(1-nm$p_up) - nm$p_up*(nm$mu_up - nm$mu_dw)^2)
-      } else {
-        nm$mu_up <- (nm$e_x_hat - nm$mu_dw*nm$p_dw)/(1-nm$p_dw)
-        nm$sd_up <- sqrt((nm$v_x_hat - nm$sd_dw^2*nm$p_dw)/(1-nm$p_dw) - nm$p_dw*(nm$mu_up - nm$mu_dw)^2)
-      }
-    }
-    # Extract parameters
-    means = c(nm$mu_up, nm$mu_dw)
-    sd = c(nm$sd_up, nm$sd_dw)
-    p = c(nm$p_up, nm$p_dw)
-    # Update log-likelihood
-    pdf <- function(x) dmixnorm(x, means = means, sd = sd, p = p)
-    nm$loss <- sum(log(pdf(df_m$u_tilde)), na.rm = TRUE)
-    nm$nobs <- nrow(df_m)
-    # Update moments
-    nm$e_x <- sum(means*p)
-    nm$v_x <- sum((means^2 + sd^2)*p) - nm$e_x^2
-    # Update data
-    params <- unlist(nm[1,c(2:7)])
-    model <- solarModel_update_GM(model, params, m)
-  }
-  model$log_lik <- solarModel_loglik(model)
-  model
 }
 

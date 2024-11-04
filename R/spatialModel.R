@@ -5,92 +5,36 @@
 #' @export
 spatialModel <- R6::R6Class("spatialModel",
                             public = list(
+                              quiet = FALSE,
                               #' @description
                               #' Initialize the spatial model
-                              #' @param locations A tibble with columns `place`, `lat`, `lon`, `from`, `to`, `nobs`.
+                              #' @param grid A `spatialGrid` object.
                               #' @param models A list of `solarModel` objects
                               #' @param paramsModels A `spatialParameters` object.
                               #' @param beta numeric, used in exponential and power functions.
                               #' @param d0 numeric, used only in exponential function.
                               #' @param quiet logical
-                              initialize = function(locations, models, paramsModels, beta = 2, d0, quiet = FALSE){
-                                private$..locations <- locations
+                              initialize = function(grid, models, paramsModels, quiet = FALSE){
+                                private$..grid <- grid
                                 private$..models <- models
                                 private$..parameters <- paramsModels
-                                private$weight <- IDW(beta, d0)
-                                private$quiet <- quiet
-                              },
-                              #' @description
-                              #' Find the n-closest neighborhoods of a point
-                              #' @param lat numeric, latitude of a point in the grid.
-                              #' @param lon numeric, longitude of a point in the grid.
-                              #' @param n number of neighborhoods
-                              neighborhoods = function(lat, lon, n = 4){
-                                # Extract the neighborhood given a pair of coordinates
-                                nb <- spatialModel_neighborhoods(private$..locations, lat, lon, n = n, weight = private$weight)
-                                # Output
-                                return(nb)
-                              },
-                              #' @description
-                              #' Check if a point is already in the spatial grid
-                              #' @param lat numeric, latitude of a location.
-                              #' @param lon numeric, longitude of a location.
-                              #' @return `TRUE` when the point is a known point and `FALSE` otherwise.
-                              is_known_location = function(lat, lon){
-                                locations <- private$..locations
-                                idx_known_location <- c()
-                                if (self$is_inside_limits(lat, lon)) {
-                                  # Known points in the grid
-                                  known_lat <- round(locations$lat, digits = 3)
-                                  knonw_lon <- round(locations$lon, digits = 3)
-                                  # Check if the point is a known point in the grid
-                                  idx_known_location <- which(rowSums(c(lat, lon) == cbind(known_lat, knonw_lon)) == 2)
-                                }
-                                if (purrr::is_empty(idx_known_location)) {
-                                  return(FALSE)
-                                } else {
-                                  return(TRUE)
-                                }
+                                self$quiet <- quiet
                               },
                               #' @description
                               #' Get a known model in the grid from place or coordinates.
-                              #' @param place character, id of the location.
+                              #' @param id character, id of the location.
                               #' @param lat numeric, latitude of a location.
                               #' @param lon numeric, longitude of a location.
-                              gridModel = function(place, lat, lon){
-                                locations <- private$..locations
-                                if (missing(place)) {
-                                  if (self$is_known_location(lat, lon)) {
-                                    # Known points in the grid
-                                    known_lat <- round(locations$lat, digits = 3)
-                                    knonw_lon <- round(locations$lon, digits = 3)
-                                    # Check if the point is a known point in the grid
-                                    idx_known_location <- which(rowSums(c(lat, lon) == cbind(known_lat, knonw_lon)) == 2)
+                              gridModel = function(id, lat, lon){
+                                grid <- self$grid
+                                if (missing(id)) {
+                                  if (grid$is_known_point(lat, lon)) {
                                     # Get the model place
-                                    place <- locations[idx_known_location,]$place
+                                    id <- grid$known_point(lat, lon)$id
                                   }
                                 }
                                 # Get the model at the location
-                                return(private$..models[[place]])
-                              },
-                              #' @description
-                              #' Check if a point is inside the limits of the spatial grid.
-                              #' @param lat numeric, latitude of a location.
-                              #' @param lon numeric, longitude of a location.
-                              #' @return `TRUE` when the point is inside the limits and `FALSE` otherwise.
-                              is_inside_limits = function(lat, lon){
-                                locations <- private$..locations
-                                # Known points in the grid
-                                known_lat <- round(locations$lat, digits = 3)
-                                knonw_lon <- round(locations$lon, digits = 3)
-                                # Check if the point is outside the limit of the grid
-                                if (lon < min(knonw_lon) || lon > max(knonw_lon) || lat < min(known_lat) || lat > max(known_lat)) {
-                                  msg <- paste0("Point (", lat, ", ", lon, ") outside the limits of the grid ",
-                                                "(", min(known_lat), " - ", max(known_lat), " | ", min(knonw_lon), " - ", max(knonw_lon), ")")
-                                  if(!private$quiet) message(msg)
-                                  return(FALSE)
-                                }
-                                return(TRUE)
+                                return(self$models[[id]])
                               },
                               #' @description
                               #' Perform the bilinear interpolation for a target variable.
@@ -100,17 +44,16 @@ spatialModel <- R6::R6Class("spatialModel",
                               #' @param day_date date for interpolation, if missing all the available dates will be used.
                               #' @param n number of neighborhoods to use for interpolation.
                               interpolator = function(lat, lon, target = "GHI", n = 4, day_date){
-
-                                if (!private$quiet) message("Interpolating ", target, " (Lat: ", lat, " Lon: ", lon, ")\r", appendLF = FALSE)
+                                if (!self$quiet) message("Interpolating ", target, " (Lat: ", lat, " Lon: ", lon, ")\r", appendLF = FALSE)
                                 # Initialize the output dataset
                                 interp_data <- dplyr::tibble(x1 = lat, x2 = lon, x3 = lubridate::as_date(NA), x4 = NA, x5 = FALSE)
                                 colnames(interp_data) <- c("lat", "lon", "date", target, "interpolated")
                                 # Check if the point is outside the limit of the grid
-                                if (!self$is_inside_limits(lat, lon)) {
+                                if (!self$grid$is_inside_bounds(lat, lon)) {
                                   return(interp_data)
                                 }
                                 # Check if the point is a known point in the grid
-                                if (self$is_known_location(lat, lon)){
+                                if (self$grid$is_known_point(lat, lon)){
                                   # Get the data at the location
                                   data <- self$gridModel(lat = lat, lon = lon)$data
                                   # Filter for specific dates
@@ -126,9 +69,9 @@ spatialModel <- R6::R6Class("spatialModel",
                                   return(interp_data)
                                 }
                                 # Detect n-neighborhoods in the grid
-                                nb <- self$neighborhoods(lat, lon, n = n)
+                                nb <- self$grid$neighborhoods(lat, lon, n = n)
                                 # Extract neighborhoods models
-                                nb_models <- private$..models[nb$place]
+                                nb_models <- self$models[nb$id]
                                 # Bilinear interpolation
                                 spatial_interp <- spatialModel_interpolator(nb_models, target = target, n = n, weights = nb$wgt, day_date)
                                 # Add latitudes and longitudes
@@ -142,23 +85,23 @@ spatialModel <- R6::R6Class("spatialModel",
                               #' @param n number of neighborhoods
                               solarModel = function(lat, lon, n = 4){
                                 # Check if the point is outside the limit of the grid
-                                if (!self$is_inside_limits(lat, lon)) {
+                                if (!self$grid$is_inside_bounds(lat, lon)) {
                                   return(invisible(NULL))
                                 }
                                 # Check if the point is a known point in the grid
-                                if (self$is_known_location(lat, lon)) {
+                                if (self$grid$is_known_point(lat, lon)) {
                                   # Get the model at the location
                                   model <- self$gridModel(lat = lat, lon = lon)
                                   return(model)
                                 }
                                 # Detect n-neighborhoods in the grid
-                                nb <- self$neighborhoods(lat, lon, n = n)
+                                nb <- self$grid$neighborhoods(lat, lon, n = n)
                                 # Initialize a model to be updated
-                                model_inter <- private$..models[nb$place][[1]]$clone(deep = TRUE)
+                                model_inter <- self$models[nb$id][[1]]$clone(deep = TRUE)
                                 # Update coordinates
                                 model_inter$coords <- list(lat = lat, lon = lon, alt = NA)
                                 # Update place label
-                                model_inter$place <- paste0(nb$place, collapse = "-")
+                                model_inter$place <- paste0(nb$id, collapse = "-")
                                 # Interpolate the realized GHI
                                 model_inter$.__enclos_env__$private$..data[["GHI"]] <- self$interpolator(lat, lon, target = "GHI", n = n)$GHI
                                 # Interpolate the realized Clearsky
@@ -180,9 +123,9 @@ spatialModel <- R6::R6Class("spatialModel",
                               #' @param nobs.min numeric, minimum number of joint states under which the state is considered with 0 probability.
                               combinations = function(lat, lon, nmonths = 1:12, nobs.min = 3){
                                 # Find the n-closest neighborhoods of a point
-                                nb <- self$neighborhoods(lat, lon, n = 4)
+                                nb <- self$grid$neighborhoods(lat, lon, n = 4)
                                 # Extract neighborhoods models
-                                nb_models <- private$..models[nb$place]
+                                nb_models <- private$..models[nb$id]
                                 # Compute mixture combinations
                                 combinations <- spatialModel_combinations(nb_models, nmonths = nmonths, weights = nb$wgt, nobs.min = nobs.min)
                                 # output
@@ -191,23 +134,21 @@ spatialModel <- R6::R6Class("spatialModel",
                             ),
                             private = list(
                               # Grid of points
-                              ..locations = NA,
+                              ..grid = NA,
                               # Models for each point in the locations grid
                               ..models = NA,
                               # Spatial parameters models
-                              ..parameters = NA,
-                              # Slot for weighting function
-                              weight = NA,
-                              quiet = FALSE
+                              ..parameters = NA
+
                             ),
                             active = list(
                               #' @field models list of `solarModel` objects
                               models = function(){
                                 private$..models
                               },
-                              #' @field locations dataset with all the locations.
-                              locations = function(){
-                                private$..locations
+                              #' @field grid object with the spatial grid
+                              grid = function(){
+                                private$..grid
                               },
                               #' @field parameters `spatialParameters` object
                               parameters = function(){

@@ -11,9 +11,9 @@ dmvsolarGHI(x, Ct, alpha, beta, joint_pdf_Yt)
 
 \item{Ct}{clear sky radiation}
 
-\item{alpha}{parameters `alpha > 0`.}
+\item{alpha}{parameters \code{alpha > 0}.}
 
-\item{beta}{parameters `beta > 0` and `alpha + beta < 1`.}
+\item{beta}{parameters \code{beta > 0} and \code{alpha + beta < 1}.}
 
 \item{joint_pdf_Yt}{joint density of Y1_t, Y2_t.}
 }

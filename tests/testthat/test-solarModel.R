@@ -1,4 +1,7 @@
 library(solarr)
+library(tidyverse)
+
+
 place <- "Bologna"
 target <- "GHI"
 
@@ -13,6 +16,23 @@ test_that('Test: Check model$target, model$place, model$coords...', {
   expect_true(model$place == place)
   expect_true(length(model$coords) == 3)
 })
+
+
+
+test_that('Test: Check methods $update and $filter...', {
+  model_clone <- model$clone(deep = TRUE)
+  params <- model_clone$parameters
+  params$NM_mu_up$mu_up_2 <- -0.58
+
+  model_clone$update(params)
+  model_clone$filter()
+
+  expect_true(model_clone$parameters$NM_mu_up$mu_up_2 == params$NM_mu_up$mu_up_2)
+  expect_true(model$parameters$NM_mu_up$mu_up_2 != params$NM_mu_up$mu_up_2)
+  expect_true(sum(model_clone$NM_model$fitted$B != model_clone$data$B) == 0)
+})
+
+
 
 
 # Locations info

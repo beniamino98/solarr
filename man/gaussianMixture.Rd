@@ -12,21 +12,28 @@ Gaussian mixture
 Fit the parameters of a gaussian mixture with k-components.
 }
 \examples{
-means = c(-3,0,3)
+means = c(0,0.5,2)
 sd = rep(1, 3)
 p = c(0.2, 0.3, 0.5)
-# Density function
-pdf <- dmixnorm(means, sd, p)
-# Distribution function
-cdf <- pmixnorm(means, sd, p)
-# Random numbers
+# Grid
+grid <- seq(-4, 4, 0.01)
+plot(dmixnorm(grid, means, sd, p))
+# Simulated sample
 x <- rmixnorm(5000, means, sd, p)
+# Gaussian mixture model
 gm <- gaussianMixture$new(components=3)
+# Fit the model
 gm$fit(x$X)
-gm$parameters
+# EM-algo
 gm$EM(x$X)
+# Model parameters
 gm$parameters
+# Fitted series
 gm$fitted
+# Theoric moments
+gm$moments
+gm$update(means = c(-2, 0, 2))
+
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -35,19 +42,19 @@ gm$fitted
 
 \item{\code{abstol}}{Numeric, absolute level for convergence.}
 
-\item{\code{components}}{Integer, number of components.}
-
-\item{\code{means}}{Numeric vector of means parameters.}
-
-\item{\code{sd}}{Numeric vector of std. deviation parameters.}
-
-\item{\code{p}}{Numeric vector of probability parameters.}
+\item{\code{components}}{Integer, number of mixture components.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
+\item{\code{means}}{Numeric vector containing the location parameter for each component.}
+
+\item{\code{sd}}{Numeric vector containing the scale parameter for each component.}
+
+\item{\code{p}}{Numeric vector containing the probability for each component.}
+
 \item{\code{parameters}}{named list with mixture parameters.}
 
 \item{\code{model}}{Tibble with mixture parameters, in order means, sd, p.}
@@ -63,19 +70,19 @@ gm$fitted
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
-\item \href{#method-new}{\code{gaussianMixture$new()}}
-\item \href{#method-logLik}{\code{gaussianMixture$logLik()}}
-\item \href{#method-E_step}{\code{gaussianMixture$E_step()}}
-\item \href{#method-classify}{\code{gaussianMixture$classify()}}
-\item \href{#method-fit}{\code{gaussianMixture$fit()}}
-\item \href{#method-EM}{\code{gaussianMixture$EM()}}
-\item \href{#method-update}{\code{gaussianMixture$update()}}
-\item \href{#method-clone}{\code{gaussianMixture$clone()}}
+\item \href{#method-gaussianMixture-new}{\code{gaussianMixture$new()}}
+\item \href{#method-gaussianMixture-logLik}{\code{gaussianMixture$logLik()}}
+\item \href{#method-gaussianMixture-E_step}{\code{gaussianMixture$E_step()}}
+\item \href{#method-gaussianMixture-classify}{\code{gaussianMixture$classify()}}
+\item \href{#method-gaussianMixture-fit}{\code{gaussianMixture$fit()}}
+\item \href{#method-gaussianMixture-EM}{\code{gaussianMixture$EM()}}
+\item \href{#method-gaussianMixture-update}{\code{gaussianMixture$update()}}
+\item \href{#method-gaussianMixture-clone}{\code{gaussianMixture$clone()}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-new"></a>}}
-\if{latex}{\out{\hypertarget{method-new}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-new"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-new}{}}}
 \subsection{Method \code{new()}}{
 Initialize a gaussianMixture object
 \subsection{Usage}{
@@ -87,16 +94,17 @@ Initialize a gaussianMixture object
 \describe{
 \item{\code{components}}{Integer, number of components.}
 
-\item{\code{maxit}}{Numeric, maximum number of iterations.}
+\item{\code{maxit}}{(\code{integer(1)})\cr
+Numeric, maximum number of iterations.}
 
-\item{\code{abstol}}{Numeric, absolute level for convergence.}
+\item{\code{abstol}}{(\code{numeric(1)}) Numeric, absolute level for convergence.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-logLik"></a>}}
-\if{latex}{\out{\hypertarget{method-logLik}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-logLik"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-logLik}{}}}
 \subsection{Method \code{logLik()}}{
 Compute the log-likelihood
 \subsection{Usage}{
@@ -114,8 +122,8 @@ Compute the log-likelihood
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-E_step"></a>}}
-\if{latex}{\out{\hypertarget{method-E_step}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-E_step"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-E_step}{}}}
 \subsection{Method \code{E_step()}}{
 Compute the posterior probabilities (E-step)
 \subsection{Usage}{
@@ -133,8 +141,8 @@ Compute the posterior probabilities (E-step)
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-classify"></a>}}
-\if{latex}{\out{\hypertarget{method-classify}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-classify"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-classify}{}}}
 \subsection{Method \code{classify()}}{
 Classify the time series in its components
 \subsection{Usage}{
@@ -150,8 +158,8 @@ Classify the time series in its components
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-fit"></a>}}
-\if{latex}{\out{\hypertarget{method-fit}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-fit"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-fit}{}}}
 \subsection{Method \code{fit()}}{
 Fit the parameters with mclust package
 \subsection{Usage}{
@@ -164,14 +172,14 @@ Fit the parameters with mclust package
 \item{\code{x}}{vector}
 
 \item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
-When `missing` all the available observations will be used.}
+When \code{missing} all the available observations will be used.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-EM"></a>}}
-\if{latex}{\out{\hypertarget{method-EM}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-EM"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-EM}{}}}
 \subsection{Method \code{EM()}}{
 Fit the parameters with EM-algorithm
 \subsection{Usage}{
@@ -184,16 +192,16 @@ Fit the parameters with EM-algorithm
 \item{\code{x}}{vector}
 
 \item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
-When `missing` all the available observations will be used.}
+When \code{missing} all the available observations will be used.}
 }
 \if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-update"></a>}}
-\if{latex}{\out{\hypertarget{method-update}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-update"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-update}{}}}
 \subsection{Method \code{update()}}{
-Update the responsabilities, means, sd, p and recompute log-likelihood and fitted data.
+Update the responsibilities, means, sd, p and recompute log-likelihood and fitted data.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update(x, weights, means, sd, p)}\if{html}{\out{</div>}}
 }
@@ -204,7 +212,7 @@ Update the responsabilities, means, sd, p and recompute log-likelihood and fitte
 \item{\code{x}}{vector}
 
 \item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
-When `missing` all the available observations will be used.}
+When \code{missing} all the available observations will be used.}
 
 \item{\code{means}}{Numeric vector of means parameters.}
 
@@ -216,8 +224,8 @@ When `missing` all the available observations will be used.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-clone"></a>}}
-\if{latex}{\out{\hypertarget{method-clone}{}}}
+\if{html}{\out{<a id="method-gaussianMixture-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-clone}{}}}
 \subsection{Method \code{clone()}}{
 The objects of this class are cloneable with this method.
 \subsection{Usage}{

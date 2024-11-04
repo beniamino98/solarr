@@ -63,6 +63,7 @@ dsolarGHI  <- function(x, Ct, alpha, beta, pdf_Y, log = FALSE){
   if (log) {
     probs <- base::log(probs)
   }
+  probs[is.nan(probs)] <- 0
   return(probs)
 }
 

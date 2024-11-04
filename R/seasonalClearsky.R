@@ -1,15 +1,17 @@
 #' Control parameters for a `seasonalClearsky` object
 #'
-#' @param method character, method for clear sky estimate, can be `I` or `II`.
-#' @param include.intercept logical. When `TRUE`, the default, the intercept will be included in the model.
-#' @param order numeric, of sine and cosine elements.
-#' @param period numeric, periodicity. The default is `365`.
-#' @param delta0 Value for delta init in the clear sky model.
-#' @param quiet logical. When `FALSE`, the default, the functions displays warning or messages.
+#' @param method Character, method used for estimate clear sky radiation. Can be `I` or `II`.
+#' @param include.intercept Logical, when `TRUE`, the default, the intercept will be included in the clear sky model.
+#' @param order Integer scalar, number of combinations of sines and cosines.
+#' @param period Integer scalar, seasonality period. The default is 365.
+#' @param delta0 Numeric scalar, initial value for delta.
+#' @param quiet Logical, when `FALSE`, the default, the functions displays warning or messages.
 #' @inheritParams clearsky_optimizer
 #' @details The parameters `ntol`, `lower`, `upper` and `by` are used exclusively in \code{\link{clearsky_optimizer}}.
 #' @examples
 #' control = control_seasonalClearsky()
+#' @return Named list of control parameters.
+#'
 #' @rdname control_seasonalClearsky
 #' @export
 control_seasonalClearsky <- function(method = "II", include.intercept = TRUE, order = 1, period = 365, delta0 = 1.4,
@@ -58,14 +60,14 @@ control_seasonalClearsky <- function(method = "II", include.intercept = TRUE, or
 seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                 inherit = seasonalModel,
                                 public = list(
-                                  #' @field control See the function \code{\link{control_seasonalClearsky}} for details.
+                                  #' @field control Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.
                                   control = list(),
                                   #' @field lat latitude of the place considered.
                                   lat = NA_integer_,
                                   #' @method initialize seasonalClearsky
                                   #' @description
-                                  #' Initialize a seasonalClearsky model
-                                  #' @param control See the function \code{\link{control_seasonalClearsky}} for details.
+                                  #' Initialize a `seasonalClearsky` model
+                                  #' @param control Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.
                                   initialize = function(control = control_seasonalClearsky()){
                                     self$control <- control
                                     private$..order <- control$order
@@ -73,11 +75,11 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                   },
                                   #' @method fit seasonalClearsky
                                   #' @description
-                                  #' Fit a seasonal model for clear sky radiation
-                                  #' @param x time series of solar radiation
-                                  #' @param date time series of dates
-                                  #' @param lat reference latitude
-                                  #' @param clearsky optional time series of observed clerasky radiation.
+                                  #' Fit a seasonal model for clear sky radiation.
+                                  #' @param x time series of solar radiation.
+                                  #' @param date time series of dates.
+                                  #' @param lat Numeric, reference latitude.
+                                  #' @param clearsky Numeric, optional time series of observed clerasky radiation.
                                   fit = function(x, date, lat, clearsky){
                                     # Self arguments
                                     control = self$control
@@ -161,11 +163,26 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                     },
                                   #' @method updateH0 seasonalClearsky
                                   #' @description
-                                  #' Update the time series of Extraterrestrial radiation
+                                  #' Update the time series of extraterrestrial radiation for a given latitude.
                                   #' @param lat reference latitude
                                   updateH0 = function(lat){
                                     self$lat <- lat
                                     self$seasonal_data$H0 <- seasonalSolarFunctions$new("spencer")$H0(self$seasonal_data$n, self$lat)
+                                  },
+                                  #' @description
+                                  #' Print method for the class `seasonalClearsky`
+                                  print = function(){
+                                    cat(paste0("----------------------- seasonalClearsky ----------------------- \n"))
+                                    msg_1 <- paste0(" - Order: ", self$order, "\n - Period: ", self$period, "\n")
+                                    n_external_reg <- ncol(self$seasonal_data)-1
+                                    if (n_external_reg == 0) {
+                                      msg_2 <- paste0("- External regressors: ", n_external_reg, "\n")
+                                    } else {
+                                      msg_2 <- paste0("- External regressors: ", n_external_reg, " (", names(self$seasonal_data)[-1], ")\n")
+                                    }
+                                    cat(c(msg_1, msg_2))
+                                    cat(paste0("--------------------------------------------------------------\n"))
+                                    print(self$model)
                                   }
                                 ),
                                 private = list(
@@ -179,14 +196,14 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
 #'
 #' Find the best parameter delta for fitting clear sky radiation.
 #'
-#' @param x vector of realized solar radiation that will be not optimized.
-#' @param Ct vector of clear sky values to be optimized.
-#' @param ntol integer, tolerance for `clearsky > GHI` condition. Maximum number of violations admitted.
-#' @param lower numeric, lower bound for delta grid.
-#' @param upper numeric, upper bound for delta grid.
-#' @param by numeric, step for delta grid.
+#' @param x Numeric vector, realized solar radiation.
+#' @param Ct Numeric vector, clear sky radiation.
+#' @param ntol Integer, tolerance for `clearsky > GHI` condition. Maximum number of violations admitted.
+#' @param lower Numeric scalar, lower bound for delta grid.
+#' @param upper Numeric scalar, upper bound for delta grid.
+#' @param by Numeric scalar, step for delta grid.
 #'
-#' @return the optimal delta
+#' @return Numeric, scalar the optimal delta parameter.
 #'
 #' @name clearsky_optimizer
 #' @rdname clearsky_optimizer
@@ -206,9 +223,10 @@ clearsky_optimizer <- function(x, Ct, lower = 0, upper = 3, by = 0.01, ntol = 30
 #'
 #' Detect and impute outliers with respect to a maximum level of radiation (Ct)
 #'
-#' @param x numeric values to be checked.
-#' @param Ct numeric values of maximum radiation possible.
-#' @param date optional time series of dates. It will be used in the imputation procedure for `NA` for a more precise imputation.
+#' @param x Numeric vector, realized solar radiation.
+#' @param Ct Numeric vector, clear sky radiation.
+#' @param date Vector, optional time series of dates.
+#' It will be used for a more precise imputation when a solar radiation value is `NA`.
 #' @examples
 #' clearsky_outliers(c(1,2,3), 2)
 #'

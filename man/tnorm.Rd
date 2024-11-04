@@ -27,15 +27,15 @@ rtnorm(n, mean = 0, sd = 1, a = -100, b = 100)
 
 \item{b}{upper bound.}
 
-\item{log}{logical; if `TRUE`, probabilities are returned as `log(p)`.}
+\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
 
-\item{log.p}{logical; if `TRUE`, probabilities p are given as `log(p)`.}
+\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
 
-\item{lower.tail}{logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.}
+\item{lower.tail}{logical; if TRUE (default), probabilities are \code{P[X < x]} otherwise, \code{P[X > x]}.}
 
 \item{p}{vector of probabilities.}
 
-\item{n}{number of observations. If `length(n) > 1`, the length is taken to be the number required.}
+\item{n}{number of observations. If \code{length(n) > 1}, the length is taken to be the number required.}
 }
 \description{
 Truncated Normal density, distribution, quantile and random generator.

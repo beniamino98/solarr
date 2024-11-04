@@ -2,7 +2,7 @@
 % Please edit documentation in R/solarModel_internals.R
 \name{solarModel_test_residuals}
 \alias{solarModel_test_residuals}
-\title{Stationarity and distribution test (Gaussian mixture) for a `solarModel`}
+\title{Stationarity and distribution test (Gaussian mixture) for a \code{solarModel}}
 \usage{
 solarModel_test_residuals(
   model,
@@ -14,7 +14,7 @@ solarModel_test_residuals(
 )
 }
 \description{
-Stationarity and distribution test (Gaussian mixture) for a `solarModel`
+Stationarity and distribution test (Gaussian mixture) for a \code{solarModel}
 }
 \examples{
 model <- Bologna

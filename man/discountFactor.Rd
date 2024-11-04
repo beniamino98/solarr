@@ -9,7 +9,7 @@ discountFactor(r = 0.03, discrete = TRUE)
 \arguments{
 \item{r}{level of yearly constant risk-free rate}
 
-\item{discrete}{logical, when `TRUE`, the default, discrete compounding will be used. Otherwise continuous compounding.}
+\item{discrete}{logical, when \code{TRUE}, the default, discrete compounding will be used. Otherwise continuous compounding.}
 }
 \description{
 Discount factor function

@@ -14,11 +14,11 @@ solarScenario_spec(
 )
 }
 \arguments{
-\item{model}{object with the class `solarModel`. See the function \code{\link{solarModel}} for details.}
+\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{from}{character, start Date for simulations in the format `YYYY-MM-DD`.}
+\item{from}{character, start Date for simulations in the format \code{YYYY-MM-DD}.}
 
-\item{to}{character, end Date for simulations in the format `YYYY-MM-DD`.}
+\item{to}{character, end Date for simulations in the format \code{YYYY-MM-DD}.}
 
 \item{theta}{numeric, Esscher parameter.}
 

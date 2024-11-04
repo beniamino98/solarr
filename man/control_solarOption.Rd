@@ -18,9 +18,9 @@ control_solarOption(
 \item{nyears}{numeric vector. Interval of years considered. The first element will be the minimum and the second the maximum years used in
 the computation of the fair payoff.}
 
-\item{K}{numeric, level for the strike with respect to the seasonal mean. The seasonal mean is multiplied by `exp(K)`.}
+\item{K}{numeric, level for the strike with respect to the seasonal mean. The seasonal mean is multiplied by \code{exp(K)}.}
 
-\item{leap_year}{logical, when `FALSE`, the default, the year will be considered of 365 days, otherwise 366.}
+\item{leap_year}{logical, when \code{FALSE}, the default, the year will be considered of 365 days, otherwise 366.}
 
 \item{nsim}{integer, number of simulations used to bootstrap the premium's bounds. See \code{\link{solarOption_historical_bootstrap}}.}
 

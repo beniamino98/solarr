@@ -35,16 +35,16 @@ ks_ts_test(
 
 \item{k}{finite value for approximation of infinite sum.}
 
-\item{plot}{when `TRUE` a plot is returned, otherwise a `tibble`.}
+\item{plot}{when \code{TRUE} a plot is returned, otherwise a \code{tibble}.}
 
 \item{seed}{random seed for two sample test.}
 
 \item{pdf}{a function. The theoric density to use for comparison.}
 }
 \value{
-when `plot = TRUE` a plot is returned, otherwise a `tibble`.
+when \code{plot = TRUE} a plot is returned, otherwise a \code{tibble}.
 }
 \description{
-Test against a specific distribution with `ks_test` and
-perform a two sample invariance test for a time series with `ks_ts_test`
+Test against a specific distribution with \code{ks_test} and
+perform a two sample invariance test for a time series with \code{ks_ts_test}
 }

@@ -2,19 +2,19 @@
 % Please edit documentation in R/solarScenario.R
 \name{solarScenario_residuals}
 \alias{solarScenario_residuals}
-\title{Simulate residuals for a `solarScenario_spec`}
+\title{Simulate residuals for a \code{solarScenario_spec}}
 \usage{
 solarScenario_residuals(simSpec, nsim = 1, seed = 1)
 }
 \arguments{
-\item{simSpec}{object with the class `solarScenario_spec`. See the function \code{\link{solarScenario_spec}} for details.}
+\item{simSpec}{object with the class \code{solarScenario_spec}. See the function \code{\link{solarScenario_spec}} for details.}
 
 \item{nsim}{integer, number of simulations.}
 
 \item{seed}{scalar integer, starting random seed.}
 }
 \description{
-Simulate residuals for a `solarScenario_spec`
+Simulate residuals for a \code{solarScenario_spec}
 }
 \examples{
 model <- Bologna
