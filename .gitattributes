@@ -1,0 +1,6 @@
+*.R linguist-language=R
+*.rda linguist-language=R
+*.Rmd linguist-language=R
+*.Rproj linguist-language=R
+DESCRIPTION linguist-language=R
+NAMESPACE linguist-language=R
