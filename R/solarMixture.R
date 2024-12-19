@@ -122,7 +122,7 @@ solarMixture <-  R6::R6Class("solarMixture",
                                  rownames(means) <- lubridate::month(1:12, label = TRUE)
                                  return(means)
                                },
-                               #' @field means Matrix of std. deviations where a row represents a month and a column a mixture component.
+                               #' @field sd Matrix of std. deviations where a row represents a month and a column a mixture component.
                                sd = function(){
                                  sd <- matrix(0, nrow = 12, ncol = self$components)
                                  for(m in 1:12){
@@ -132,7 +132,7 @@ solarMixture <-  R6::R6Class("solarMixture",
                                  rownames(sd) <- lubridate::month(1:12, label = TRUE)
                                  return(sd)
                                },
-                               #' @field means Matrix of probabilities where a row represents a month and a column a mixture component.
+                               #' @field p Matrix of probabilities where a row represents a month and a column a mixture component.
                                p = function(){
                                  p <- matrix(0, nrow = 12, ncol = self$components)
                                  for(m in 1:12){

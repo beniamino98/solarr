@@ -14,9 +14,7 @@ to model seasonal variations. The periodicity can be customized, and the model c
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{seasonal_data}}{Tibble with externals seasonal regressors used for fitting.}
-
-\item{\code{extra_params}}{Slot that contains eventual extra parameters.}
+\item{\code{extra_params}}{List customizable to contain eventual extra parameters.}
 }
 \if{html}{\out{</div>}}
 }
@@ -24,6 +22,9 @@ to model seasonal variations. The periodicity can be customized, and the model c
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{coefficients}}{A named vector with the fitted coefficients.}
+
+\item{\code{coefficients2}}{A named vector with the coefficients reparametrized
+to obtain a linear combination of only shifted sine functions.}
 
 \item{\code{model}}{A slot with the fitted \code{lm} object.}
 
@@ -39,6 +40,7 @@ to model seasonal variations. The periodicity can be customized, and the model c
 \item \href{#method-seasonalModel-new}{\code{seasonalModel$new()}}
 \item \href{#method-seasonalModel-fit}{\code{seasonalModel$fit()}}
 \item \href{#method-seasonalModel-predict}{\code{seasonalModel$predict()}}
+\item \href{#method-seasonalModel-differential}{\code{seasonalModel$differential()}}
 \item \href{#method-seasonalModel-update}{\code{seasonalModel$update()}}
 \item \href{#method-seasonalModel-print}{\code{seasonalModel$print()}}
 \item \href{#method-seasonalModel-clone}{\code{seasonalModel$clone()}}
@@ -48,7 +50,7 @@ to model seasonal variations. The periodicity can be customized, and the model c
 \if{html}{\out{<a id="method-seasonalModel-new"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalModel-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize an object of the class \code{seasonalModel}.
+Initialize a \code{seasonalModel} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(order = 1, period = 365)}\if{html}{\out{</div>}}
 }
@@ -94,13 +96,35 @@ If not found in data, the variables are taken from environment(formula), typical
 \subsection{Method \code{predict()}}{
 Predict method for the class \code{seasonalModel}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$predict(n)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$predict(n, newdata, dt = 1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{n}}{integer, number of day of the year.}
+
+\item{\code{dt}}{Numeric, time step.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-seasonalModel-differential"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-differential}{}}}
+\subsection{Method \code{differential()}}{
+Compute the differential of the sinusoidal function. It do not consider the differential of
+eventual external regressors.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$differential(n, newdata, dt = 1)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{Integer, number of day of the year.}
+
+\item{\code{dt}}{Numeric, time step.}
 }
 \if{html}{\out{</div>}}
 }

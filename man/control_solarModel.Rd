@@ -16,6 +16,7 @@ control_solarModel(
   mixture.model = list(abstol = 0.001, maxit = 150),
   threshold = 0.01,
   outliers_quantile = 0,
+  garch_variance = TRUE,
   quiet = FALSE
 )
 }

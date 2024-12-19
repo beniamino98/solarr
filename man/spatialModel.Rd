@@ -8,6 +8,13 @@ Spatial model object
 
 Spatial model object
 }
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{quiet}}{logical, when \code{TRUE} the function will not display any message.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

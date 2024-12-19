@@ -8,6 +8,7 @@ solarOption_scenario(
   scenario,
   nmonths = 1:12,
   put = TRUE,
+  measure = "P",
   nsim,
   control_options = control_solarOption()
 )

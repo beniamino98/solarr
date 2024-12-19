@@ -5,6 +5,7 @@
 #' @export
 spatialModel <- R6::R6Class("spatialModel",
                             public = list(
+                              #' @field quiet logical, when `TRUE` the function will not display any message.
                               quiet = FALSE,
                               #' @description
                               #' Initialize the spatial model

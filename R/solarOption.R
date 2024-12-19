@@ -315,7 +315,7 @@ solarOption_historical_bootstrap <- function(model, put = TRUE, control_options 
 #' @rdname solarOption_scenario
 #' @name solarOption_scenario
 #' @export
-solarOption_scenario <- function(scenario, nmonths = 1:12, put = TRUE, nsim, control_options = control_solarOption()){
+solarOption_scenario <- function(scenario, nmonths = 1:12, put = TRUE, measure = "P", nsim, control_options = control_solarOption()){
 
   # Control parameters
   nyears <- control_options$nyears
@@ -340,6 +340,10 @@ solarOption_scenario <- function(scenario, nmonths = 1:12, put = TRUE, nsim, con
   df_payoff <- tidyr::unnest(df_payoff, cols = "data")
   colnames(df_payoff)[colnames(df_payoff) %in% c(target, target_bar)] <- c("Rt", "Rt_bar")
 
+  if(measure == "P"){
+    df_payoff$dQdP = 1
+  }
+
   # Compute simulated payoffs
   df_payoff <- df_payoff %>%
     dplyr::mutate(strike = Rt_bar*exp(K),
@@ -350,12 +354,14 @@ solarOption_scenario <- function(scenario, nmonths = 1:12, put = TRUE, nsim, con
                                               side == "call" & Rt > strike ~ 1),
                   payoff_sim = dplyr::case_when(side == "put" ~ (strike - Rt)*exercise,
                                                 side == "call" ~ (Rt - strike)*exercise)) %>%
+    dplyr::group_by(date) %>%
+    dplyr::mutate(dQdP = mean(dQdP)) %>%
     dplyr::group_by(side, date, Year, Month, Day) %>%
     dplyr::reframe(
-      Rt = mean(Rt),
+      Rt = mean(Rt*dQdP),
       strike = mean(strike),
-      payoff = mean(payoff_sim),
-      exercise = mean(exercise)
+      payoff = mean(payoff_sim*dQdP),
+      exercise = mean(exercise*dQdP)
     ) %>%
     dplyr::ungroup()
 
@@ -455,9 +461,7 @@ solarOption_model <- function(model, nmonths = 1:12, theta = 0, combinations = N
   target_bar <- paste0(model$target, "_bar")
   target_plus <- paste0(model$target, "_plus")
   # AR(2) stationary variance
-  par <- model$AR_model_Yt$coefficients
-  ar_variance <- (1-par[2])/((1 - par[2])*(1 - par[1]^2 - par[2]^2) - 2*par[1]^2*par[2])
-
+  ar_variance <- model$AR_model_Yt$variance
   # Extract seasonal data
   seasonal_data <- model$seasonal_data
   # Filter for the selected months

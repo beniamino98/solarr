@@ -32,9 +32,9 @@ Monthly Gaussian mixture with two components
 
 \item{\code{means}}{Matrix of means where a row represents a month and a column a mixture component.}
 
-\item{\code{means}}{Matrix of std. deviations where a row represents a month and a column a mixture component.}
+\item{\code{sd}}{Matrix of std. deviations where a row represents a month and a column a mixture component.}
 
-\item{\code{means}}{Matrix of probabilities where a row represents a month and a column a mixture component.}
+\item{\code{p}}{Matrix of probabilities where a row represents a month and a column a mixture component.}
 
 \item{\code{model}}{Named List with 12 \code{\link{gaussianMixture}} objects.}
 

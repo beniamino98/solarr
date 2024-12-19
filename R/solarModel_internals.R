@@ -47,7 +47,7 @@ control_solarModel <- function(clearsky = control_seasonalClearsky(),
                                variance.model = rugarch::ugarchspec(variance.model = list(garchOrder = c(1,1)),
                                                                     mean.model = list(armaOrder = c(0, 0), include.mean = FALSE)),
                                mixture.model = list(abstol = 1e-3, maxit = 150),
-                               threshold = 0.01, outliers_quantile = 0, quiet = FALSE){
+                               threshold = 0.01, outliers_quantile = 0, garch_variance = TRUE, quiet = FALSE){
 
   # Seasonal mean model default parameters
   seasonal_mean = list(seasonalOrder = 1, include.H0 = FALSE, include.intercept = TRUE, monthly.mean = TRUE)
@@ -100,6 +100,7 @@ control_solarModel <- function(clearsky = control_seasonalClearsky(),
       mixture.model = mixture_model,
       threshold = threshold,
       outliers_quantile = outliers_quantile,
+      garch_variance = garch_variance,
       quiet = quiet
     ),
     class = c("control", "list")
@@ -370,9 +371,9 @@ solarModel_forecaster <- function(model, date = "2020-01-01", ci = 0.1, uncondit
   grid_x <- seq(lower_bound, upper_bound, length.out = n_points+2)[-c(1,n_points+2)]
   grid <- dplyr::tibble(x = grid_x, label = as.character(date))
   # Density of Yt
-  pdf_Yt <- function(x) dmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p1, 1-df_n$p1))
+  pdf_Yt <- function(x) dmixnorm(x, mean = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), alpha = c(df_n$p1, 1-df_n$p1))
   # Distribution of Yt
-  cdf_Yt <- function(x) pmixnorm(x, means = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), p = c(df_n$p1, 1-df_n$p1))
+  cdf_Yt <- function(x) pmixnorm(x, mean = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), alpha = c(df_n$p1, 1-df_n$p1))
   # Density of GHI
   pdf_Rt <- function(x, pdf_Yt) dsolarGHI(x, df_n$Ct, model$transform$alpha, model$transform$beta, pdf_Yt)
   # Add grid of points
@@ -573,4 +574,42 @@ solarModel_test_residuals <- function(model, nrep = 50, ci = 0.05, min_quantile 
     )
   )
 }
+
+
+#' Long term variance AR process
+#' @param phi AR parameters
+#' @param sigma2 variance
+#' @examples
+#'AR_variance(0.4)
+#'AR_variance(c(0.4, 0.2))
+#'AR_variance(c(0.4, 0.2, 0.1))
+#'AR_variance(c(0.3, 0.2, 0.1, 0.05))
+#' @export
+AR_variance <- function(phi, sigma2 = 1){
+  var <- NA
+  if (length(phi) == 1) {
+    var <- sigma2/(1-phi[1]^2)
+  } else if (length(phi) == 2) {
+    var <- sigma2*(1-phi[2])/((1 - phi[2])*(1 - phi[1]^2 - phi[2]^2) - 2*phi[1]^2*phi[2])
+  } else if (length(phi) == 3) {
+    phi_tilde_1 <- (phi[1] + phi[2]*phi[3])/(1 - phi[2] - phi[3]^2 - phi[1]*phi[3])
+    phi_tilde_2 <- (phi[1] + phi[3])*phi_tilde_1 + phi[2]
+    phi_tilde_3 <- (phi[1]*phi_tilde_2 + phi[2]*phi_tilde_1 + phi[3])
+    phi_tilde_0 <- 1/(1 - phi[1]*phi_tilde_1 - phi[2]*phi_tilde_2 - phi[3]*phi_tilde_3)
+    var <- phi_tilde_0*sigma2
+  } else if (length(phi) == 4) {
+    phi_1 <- (phi[1] + phi[3])/(1 - phi[4])
+    phi_0 <- phi[2]/(1 - phi[4])
+    psi_1 <- (phi_1*phi[3] + phi[1]*phi_0*phi[4]+ phi[1] + phi[3]*phi[4])
+    psi_1 <- psi_1/(1-phi_1*(phi[3] + phi[1]*phi[4]) - phi[2]*(1 + phi[4]) - phi[4]^2)
+    psi_2 <- phi_1*psi_1 + phi_0
+    psi_3 <- phi[1]*psi_2 + phi[2]*psi_1 + phi[4]*psi_1 + phi[3]
+    psi_4 <- phi[1]*psi_3 + phi[2]*psi_2 + phi[3]*psi_1 + phi[4]
+    var <- sigma2/(1 - phi[1]*psi_1 - phi[2]*psi_2 - phi[3]*psi_3 - phi[4]*psi_4)
+  } else {
+    warning("Variance for AR(", length(phi), ") not implemented!")
+  }
+  return(var)
+}
+
 

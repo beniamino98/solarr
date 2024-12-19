@@ -91,12 +91,19 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                     ntol = control$ntol
                                     method = control$method
                                     # Initialize the dataset
-                                    data <- dplyr::tibble(date = as.Date(date), n = number_of_day(date),
-                                                          Month = lubridate::month(date), Day = lubridate::day(date))
+                                    data <- dplyr::tibble(date = as.Date(date),
+                                                          Month = lubridate::month(as.Date(date)),
+                                                          Day = lubridate::day(as.Date(date)),
+                                                          n = number_of_day(date))
                                     # Add target variable
                                     data$x <- x
+                                    # Add the function to compute extraterrestrial radiation
+                                    private$..ssf <- seasonalSolarFunctions$new("spencer")
+                                    # Add reference latitude
+                                    self$lat <- lat[1]
                                     # Add extraterrestrial radiation
-                                    data$H0 <- seasonalSolarFunctions$new("spencer")$H0(data$n, lat)
+                                    data$H0 <- self$H0(data$n)
+
                                     # Add clearsky
                                     if (method == "II") {
                                       if (missing(clearsky)) {
@@ -134,7 +141,6 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                     df_fit$Ct <- self$predict(df_fit$n)
                                     # Optimize the fit
                                     delta <- clearsky_optimizer(df_fit$x, df_fit$Ct*delta0, control$lower, control$upper, control$by, control$ntol)
-
                                     # Control parameters
                                     self$control <- control
                                     # Latitude
@@ -160,36 +166,45 @@ seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                     names(params) <- coefs_names
                                     # Update coefficients
                                     self$update(params)
-                                    },
-                                  #' @method updateH0 seasonalClearsky
+                                  },
                                   #' @description
-                                  #' Update the time series of extraterrestrial radiation for a given latitude.
-                                  #' @param lat reference latitude
-                                  updateH0 = function(lat){
-                                    self$lat <- lat
-                                    self$seasonal_data$H0 <- seasonalSolarFunctions$new("spencer")$H0(self$seasonal_data$n, self$lat)
+                                  #' Compute the extraterrestrial radiation for a given location.
+                                  #' @param n integer, number of day of the year.
+                                  H0 = function(n){
+                                    private$..ssf$H0(n, self$lat)
+                                  },
+                                  #' @method predict seasonalModel
+                                  #' @description
+                                  #' Predict method for the class `seasonalClearsky`.
+                                  #' @param n integer, number of day of the year.
+                                  predict = function(n){
+                                    if (missing(n)) {
+                                      predict.lm(private$..model)
+                                    } else {
+                                      n <- number_of_day(n) %% self$period
+                                      H0 <- self$H0(n)
+                                      newdata <- data.frame(n = n, H0 = H0)
+                                      predict.lm(private$..model, newdata = newdata)
+                                    }
                                   },
                                   #' @description
                                   #' Print method for the class `seasonalClearsky`
                                   print = function(){
                                     cat(paste0("----------------------- seasonalClearsky ----------------------- \n"))
                                     msg_1 <- paste0(" - Order: ", self$order, "\n - Period: ", self$period, "\n")
-                                    n_external_reg <- ncol(self$seasonal_data)-1
-                                    if (n_external_reg == 0) {
-                                      msg_2 <- paste0("- External regressors: ", n_external_reg, "\n")
-                                    } else {
-                                      msg_2 <- paste0("- External regressors: ", n_external_reg, " (", names(self$seasonal_data)[-1], ")\n")
-                                    }
+                                    msg_2 <- paste0("- External regressors: 1 (H0) \n")
                                     cat(c(msg_1, msg_2))
                                     cat(paste0("--------------------------------------------------------------\n"))
                                     print(self$model)
                                   }
                                 ),
+
                                 private = list(
                                   coefficients_orig = NA,
-                                  delta = NA
+                                  delta = NA,
+                                  ..ssf = NA
                                 )
-                              )
+)
 
 
 #' Optimizer for Solar Clear sky

@@ -16,7 +16,8 @@ capture the underlying data behavior.
 }
 \examples{
 # Control list
-control <- control_solarModel(outliers_quantile = 0)
+control <- control_solarModel(outliers_quantile = 0,
+mean.model = list(arOrder = 1), garch_variance = FALSE)
 # Model specification
 spec <- solarModel_spec("Bologna", from="2005-01-01", control_model = control)
 Bologna <- solarModel$new(spec)

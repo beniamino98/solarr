@@ -12,7 +12,8 @@
 #'
 #' @examples
 #' # Control list
-#' control <- control_solarModel(outliers_quantile = 0)
+#' control <- control_solarModel(outliers_quantile = 0,
+#' mean.model = list(arOrder = 1), garch_variance = FALSE)
 #' # Model specification
 #' spec <- solarModel_spec("Bologna", from="2005-01-01", control_model = control)
 #' Bologna <- solarModel$new(spec)
@@ -241,7 +242,7 @@ solarModel <- R6::R6Class("solarModel",
                                   params_names <- c(params_names, "a_extra")
                                 }
                                 if (control$seasonalOrder > 0) {
-                                  base_names <- paste0("a_", c("cos_", "sin_"))
+                                  base_names <- paste0("a_", c("sin_", "cos_"))
                                   params_names <- c(params_names, unlist(purrr::map(1:control$seasonalOrder, ~paste0(base_names, .x))))
                                 }
                                 params <- seasonal_model_Yt$coefficients
@@ -326,6 +327,7 @@ solarModel <- R6::R6Class("solarModel",
                                   coefs_names <- c(coefs_names, paste0("phi_", 1:control$arOrder))
                                 }
                                 names(AR_model_Yt$coefficients) <- coefs_names
+                                AR_model_Yt$variance <- ifelse(control$include.intercept, AR_variance(AR_model_Yt$coefficients[-1]), AR_variance(AR_model_Yt$coefficients))
                                 # **************************************************** #
                                 # Store AR model
                                 private$..AR_model_Yt <- AR_model_Yt
@@ -344,11 +346,11 @@ solarModel <- R6::R6Class("solarModel",
                                 # **************************************************** #
                                 # Train data
                                 data_train <- dplyr::filter(data, isTrain & weights != 0)
-
+                                data_train$eps2 <- data_train$eps^2
                                 # Initialize the seasonal model for eps^2
                                 seasonal_variance <- seasonalModel$new(order = control$seasonalOrder, period = 365)
                                 # Seasonal model for Yt
-                                seasonal_variance$fit(formula = "I(eps^2) ~ 1", data = data_train)
+                                seasonal_variance$fit(formula = "eps2 ~ ", data = data_train)
                                 # Fitted seasonal standard deviation
                                 data$sigma_bar <- sqrt(seasonal_variance$predict(n = data$n))
                                 # Fitted standardized residuals
@@ -366,7 +368,7 @@ solarModel <- R6::R6Class("solarModel",
                                 }
                                 coefs_names <- c("c_0")
                                 if (control$seasonalOrder > 0) {
-                                  base_names <- paste0("c_", rep(c("cos_", "sin_")))
+                                  base_names <- paste0("c_", rep(c("sin_", "cos_")))
                                   coefs_names <- c(coefs_names, unlist(purrr::map(1:control$seasonalOrder, ~paste0(base_names, .x))))
                                 }
                                 params <- seasonal_variance$coefficients
@@ -398,10 +400,17 @@ solarModel <- R6::R6Class("solarModel",
                                 control$variance.model <- GARCH_spec
                                 # Update fitted std. deviation
                                 data$sigma <- rugarch::ugarchfilter(GARCH_spec, data$eps_tilde, out.sample = 0)@filter$sigma
-                                # Compute standardized residuals
-                                data$u <- data$eps_tilde/data$sigma
-                                # Fitted standardized residuals
-                                data$u_tilde <- data$u
+                                if (control$garch_variance) {
+                                  # Compute standardized residuals
+                                  data$u <- data$eps_tilde/data$sigma
+                                  # Fitted standardized residuals
+                                  data$u_tilde <- data$u
+                                } else {
+                                  # Not compute standardized residuals
+                                  data$u <- data$eps_tilde
+                                  # Fitted standardized residuals
+                                  data$u_tilde <- data$u
+                                }
                                 # Initialize a GARCH object
                                 GARCH <- list(coefficients = GARCH_spec@model$fixed.pars, vol = 1, omega = 0, alpha = c(), beta = c(), p = 0, q = 0)
                                 # Intercept
@@ -472,6 +481,12 @@ solarModel <- R6::R6Class("solarModel",
                                 data <- dplyr::left_join(data, GM_model$parameters, by = "Month")
                                 data$z1 <- data$B*(data$u_tilde - data$mu1)/data$sd1
                                 data$z2 <- (1-data$B)*(data$u_tilde - data$mu2)/data$sd2
+                                # Adjust mixture parameters
+                                for(m in 1:12){
+                                  orig_sd <- GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd
+                                  orig_sd <- orig_sd*private$..monthly_data[["sigma_m"]][m]
+                                  GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd <- orig_sd
+                                }
                                 # **************************************************** #
                                 # Store Gaussian Mixture parameters
                                 private$..NM_model <- GM_model
@@ -537,8 +552,17 @@ solarModel <- R6::R6Class("solarModel",
                                 # Update Garch standard deviation
                                 private$..data[["sigma"]] <- rugarch::ugarchfilter(control$variance.model, private$..data[["eps_tilde"]], out.sample = 0)@filter$sigma
                                 # Update fitted standard residuals
-                                private$..data[["u"]] <- private$..data[["eps_tilde"]]/private$..data[["sigma"]]
-                                private$..data[["u_tilde"]] <- private$..data[["u"]]
+                                if (control$garch_variance) {
+                                  # Compute standardized residuals
+                                  private$..data[["u"]] <- private$..data[["eps_tilde"]]/private$..data[["sigma"]]
+                                  # Fitted standardized residuals
+                                  private$..data[["u_tilde"]] <- private$..data[["u"]]
+                                } else {
+                                  # Not compute standardized residuals
+                                  private$..data[["u"]] <- private$..data[["eps_tilde"]]
+                                  # Fitted standardized residuals
+                                  private$..data[["u_tilde"]] <- private$..data[["u"]]
+                                }
                                 # Fit the corrective variance
                                 self$corrective_monthly_variance()
                                 # Update the fitted series of Bernoulli
@@ -546,6 +570,15 @@ solarModel <- R6::R6Class("solarModel",
                                 # Update standardized components
                                 private$..data[["z1"]] <- self$data$B*(self$data$u_tilde - self$data$mu1)/self$data$sd1
                                 private$..data[["z2"]] <- (1-self$data$B)*(self$data$u_tilde - self$data$mu2)/self$data$sd2
+                                # Adjust mixture parameters
+                                GM_model <- self$NM_model
+                                for(m in 1:12){
+                                  orig_sd <- GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd
+                                  orig_sd <- orig_sd*private$..monthly_data[["sigma_m"]][m]
+                                  GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd <- orig_sd
+                                  # Store Gaussian Mixture parameters
+                                  private$..NM_model <- GM_model
+                                }
                                 # Update seasonal data
                                 private$..seasonal_data[["Ct"]] <- self$seasonal_model_Ct$predict(self$seasonal_data$n)
                                 private$..seasonal_data[["Yt_bar"]] <- self$seasonal_model_Yt$predict(self$seasonal_data$n)
@@ -562,6 +595,9 @@ solarModel <- R6::R6Class("solarModel",
                                 # Self arguments
                                 data <- self$data
                                 # **************************************************** #
+                                if (!self$control$garch_variance){
+                                  data$sigma <- 1
+                                }
                                 # Compute conditional moments
                                 data <- dplyr::mutate(data,
                                                       # Conditional expectation Yt

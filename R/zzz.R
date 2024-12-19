@@ -70,7 +70,7 @@ is_leap_year <- function(x){
   if (is.numeric(x)) {
     date_year <- x
   } else {
-    date_year <- lubridate::year(lubridate::as_date(x))
+    date_year <- lubridate::year(as.Date(x))
   }
   return(date_year %% 4 == 0)
 }
@@ -91,54 +91,15 @@ is_leap_year <- function(x){
 #' @return Numeric vector with the number of the day during the year.
 #' @export
 number_of_day <- function(x){
-
-  if (missing(x)) {
-    warning('The argument "x" is missing while it require a number or a character of the form %YYYY-%MM-%DD')
-    return(NULL)
-  }
-  # Check if `x` is already numeric
-  if (is.numeric(x)) {
-    x[x > 365] <- x[x > 365] %% 365
+  if (any(is.numeric(x))){
     return(x)
   }
-
-  # Standard sequence of dates
-  seq_date_year <- seq.Date(as.Date("2010-01-01"), as.Date("2010-12-31"), by = "1 day")
-  seq_date_year_leap <- seq.Date(as.Date("2012-01-01"), as.Date("2012-12-31"), by = "1 day")
-
-  i <- 1
-  n_of_day <- c()
-  day_date <- lubridate::as_date(x)
-  for(i in 1:length(day_date)){
-    day <- day_date[i]
-    # Check if is a valid date
-    if (is.na(day)) {
-      x[i] <- NA_integer_
-      next
-    }
-    # Extract month and day
-    m <- lubridate::month(day)
-    d <- lubridate::day(day)
-    # Check leap year
-    if (is_leap_year(day)) {
-      # Approximation for 29-02
-      if (m == 2 & d == 29){
-        n_of_day[i] <- 59.5
-      } else {
-        day <- as.Date(paste0("2012-", m,"-", d))
-        # Extract the number of the day
-        n_of_day[i] <- which(seq_date_year_leap == day)
-        # Rescale after 29-02 for leap years
-        if (m > 2) {
-          n_of_day[i] <- n_of_day[i]-1
-        }
-      }
-    } else {
-      day <- as.Date(paste0("2010-", m,"-", d))
-      # extract the number of the day
-      n_of_day[i] <- which(seq_date_year == day)
-    }
-  }
-  names(n_of_day) <- day_date
+  n_of_day <- lubridate::yday(x)
+  n_of_day[is_leap_year(x)] <- n_of_day[is_leap_year(x)] - 1
+  n_of_day[lubridate::day(x) == 29 & lubridate::month(x) == 2] <- 59.5
   return(n_of_day)
 }
+
+
+
+

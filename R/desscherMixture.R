@@ -34,7 +34,7 @@ desscherMixture <- function(mean = c(0,0), sd = c(1,1), alpha = c(0.5, 0.5), the
 
   num <- c()
   den <- 0
-  for(k in 1:length(means)){
+  for(k in 1:length(mean)){
     num[k] <- alpha[k]*mgf(mean[k], sd[k], theta)
     den <- den + num[k]
   }
@@ -43,7 +43,7 @@ desscherMixture <- function(mean = c(0,0), sd = c(1,1), alpha = c(0.5, 0.5), the
   # Update means parameters
   mean <- mean + theta*sd^2
   # Mixture pdf
-  pdf <- function(x) dmixnorm(x, mean, sd, alaph)
+  pdf <- function(x) dmixnorm(x, mean, sd, alpha)
   # Esscher pdf
   function(x, log = FALSE){
     probs <- pdf(x)

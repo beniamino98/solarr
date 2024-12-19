@@ -45,7 +45,8 @@ spec$data$Ct <- model$predict(spec$data$n)
 \itemize{
 \item \href{#method-seasonalClearsky-new}{\code{seasonalClearsky$new()}}
 \item \href{#method-seasonalClearsky-fit}{\code{seasonalClearsky$fit()}}
-\item \href{#method-seasonalClearsky-updateH0}{\code{seasonalClearsky$updateH0()}}
+\item \href{#method-seasonalClearsky-H0}{\code{seasonalClearsky$H0()}}
+\item \href{#method-seasonalClearsky-predict}{\code{seasonalClearsky$predict()}}
 \item \href{#method-seasonalClearsky-print}{\code{seasonalClearsky$print()}}
 \item \href{#method-seasonalClearsky-clone}{\code{seasonalClearsky$clone()}}
 }
@@ -53,7 +54,7 @@ spec$data$Ct <- model$predict(spec$data$n)
 \if{html}{\out{
 <details open><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="predict"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-predict'><code>solarr::seasonalModel$predict()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="differential"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-differential'><code>solarr::seasonalModel$differential()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="update"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-update'><code>solarr::seasonalModel$update()</code></a></span></li>
 </ul>
 </details>
@@ -99,18 +100,35 @@ Fit a seasonal model for clear sky radiation.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-seasonalClearsky-updateH0"></a>}}
-\if{latex}{\out{\hypertarget{method-seasonalClearsky-updateH0}{}}}
-\subsection{Method \code{updateH0()}}{
-Update the time series of extraterrestrial radiation for a given latitude.
+\if{html}{\out{<a id="method-seasonalClearsky-H0"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalClearsky-H0}{}}}
+\subsection{Method \code{H0()}}{
+Compute the extraterrestrial radiation for a given location.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$updateH0(lat)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$H0(n)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{lat}}{reference latitude}
+\item{\code{n}}{integer, number of day of the year.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-seasonalClearsky-predict"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalClearsky-predict}{}}}
+\subsection{Method \code{predict()}}{
+Predict method for the class \code{seasonalClearsky}.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$predict(n)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{n}}{integer, number of day of the year.}
 }
 \if{html}{\out{</div>}}
 }

@@ -253,8 +253,8 @@ solarScenario_residuals <- function(simSpec, nsim = 1, seed = 1){
 #'
 #' @examples
 #' model <- Bologna
-#' simSpec <- solarScenario_spec(model, from = "2024-06-01", to = "2024-12-31")
-#' simSpec <- solarScenario_residuals(simSpec, nsim = 1)
+#' simSpec <- solarScenario_spec(model, from = "2023-01-01", to = "2023-12-31")
+#' simSpec <- solarScenario_residuals(simSpec, nsim = 1, seed = 3)
 #' simSpec <- solarScenario_filter(simSpec)
 #' # Empiric data
 #' df_emp <- simSpec$emp
@@ -277,6 +277,7 @@ solarScenario_filter <- function(simSpec){
   # Number of simulations
   nsim <- nrow(simSpec$residuals)
   simulations <- list()
+  j <- 1
   for(j in 1:nsim){
     # Initialize dataset for storing the simulation
     df_sim <- simSpec$sim
@@ -287,6 +288,7 @@ solarScenario_filter <- function(simSpec){
     # Verbose message
     if (!simSpec$quiet) message("Simulation: ", j, "/", nsim, " (", round(j/nsim*100, 4), " %) \r", appendLF = FALSE)
     # Routine
+    i <- i_start
     for(i in i_start:nrow(df_sim)){
       # Simulated GARCH standard deviation
       df_sim$sigma[i] <- simSpec$GARCH_next_step(df_sim$eps_tilde[(i-simSpec$archOrder):(i-1)], df_sim$sigma[(i-simSpec$garchOrder):(i-1)])
@@ -363,5 +365,6 @@ as_solarScenario <- function(simSpec) {
     class = c("solarScenario", "list")
   )
 }
+
 
 
