@@ -5,36 +5,27 @@
 \title{Control parameters for a \code{seasonalClearsky} object}
 \usage{
 control_seasonalClearsky(
-  method = "II",
-  include.intercept = TRUE,
   order = 1,
+  order_H0 = 1,
   period = 365,
+  include.intercept = TRUE,
+  include.trend = FALSE,
   delta0 = 1.4,
   lower = 0,
   upper = 3,
   by = 0.001,
-  ntol = 30,
+  ntol = 0,
   quiet = FALSE
 )
 }
 \arguments{
-\item{method}{Character, method used for estimate clear sky radiation. Can be \code{I} or \code{II}.}
-
-\item{include.intercept}{Logical, when \code{TRUE}, the default, the intercept will be included in the clear sky model.}
-
 \item{order}{Integer scalar, number of combinations of sines and cosines.}
 
 \item{period}{Integer scalar, seasonality period. The default is 365.}
 
+\item{include.intercept}{Logical, when \code{TRUE}, the default, the intercept will be included in the clear sky model.}
+
 \item{delta0}{Numeric scalar, initial value for delta.}
-
-\item{lower}{Numeric scalar, lower bound for delta grid.}
-
-\item{upper}{Numeric scalar, upper bound for delta grid.}
-
-\item{by}{Numeric scalar, step for delta grid.}
-
-\item{ntol}{Integer, tolerance for \code{clearsky > GHI} condition. Maximum number of violations admitted.}
 
 \item{quiet}{Logical, when \code{FALSE}, the default, the functions displays warning or messages.}
 }
@@ -46,6 +37,11 @@ Control parameters for a \code{seasonalClearsky} object
 }
 \details{
 The parameters \code{ntol}, \code{lower}, \code{upper} and \code{by} are used exclusively in \code{\link{clearsky_optimizer}}.
+}
+\note{
+Version 1.0.0
+
+Version 1.0.0
 }
 \examples{
 control = control_seasonalClearsky()

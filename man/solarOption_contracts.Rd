@@ -10,10 +10,7 @@ solarOption_contracts(
   premium = "Q",
   put = TRUE,
   nyear = 2021,
-  tick = 0.06,
-  efficiency = 0.2,
-  n_panels = 2000,
-  pun = 0.06
+  control = control_hedging()
 )
 }
 \arguments{
@@ -23,15 +20,9 @@ solarOption_contracts(
 
 \item{nyear}{integer, actual year. The optimization will be performed excluding the year \code{nyear} and the following.}
 
-\item{tick}{numeric, conversion tick for the monetary payoff of a contract.}
-
-\item{efficiency}{numeric, mean efficiency of the solar panels.}
-
-\item{n_panels}{numeric, number of meters squared of solar panels.}
-
-\item{pun}{numeric, reference electricity price at which the energy is sold for computing the cash-flows.}
-
 \item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
+
+\item{control_hedging}{numeric, list of hedging parameters.}
 }
 \description{
 Compute the optimal number of contracts given a particular setup.

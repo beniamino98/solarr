@@ -2,31 +2,11 @@
 % Please edit documentation in R/seasonalClearsky.R
 \name{seasonalClearsky}
 \alias{seasonalClearsky}
-\title{Clear sky seasonal model}
+\title{R6 implementation for a clear sky seasonal model}
 \description{
-Clear sky seasonal model
+R6 implementation for a clear sky seasonal model
 
-Clear sky seasonal model
-}
-\examples{
-library(ggplot2)
-# Arguments
-place <- "Palermo"
-# solarModel specification
-spec <- solarModel_spec(place, target = "GHI")
-# Extract the required elements
-x <- spec$data$GHI
-date <- spec$data$date
-lat <- spec$coords$lat
-clearsky <- spec$data$clearsky
-
-# Initialize the model
-model <- seasonalClearsky$new()
-# Fit the model
-model$fit(x, date, lat, clearsky)
-# Predict the seasonal values
-spec$data$Ct <- model$predict(spec$data$n)
-
+R6 implementation for a clear sky seasonal model
 }
 \section{Super class}{
 \code{\link[solarr:seasonalModel]{solarr::seasonalModel}} -> \code{seasonalClearsky}
@@ -34,9 +14,9 @@ spec$data$Ct <- model$predict(spec$data$n)
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{control}}{Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.}
+\item{\code{control}}{Named list. Control parameters. See the function \code{\link{control_seasonalClearsky}} for details.}
 
-\item{\code{lat}}{latitude of the place considered.}
+\item{\code{lat}}{Numeric, scalar. Latitude of the location considered.}
 }
 \if{html}{\out{</div>}}
 }
@@ -55,7 +35,9 @@ spec$data$Ct <- model$predict(spec$data$n)
 <details open><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="differential"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-differential'><code>solarr::seasonalModel$differential()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="fit_differential"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-fit_differential'><code>solarr::seasonalModel$fit_differential()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="update"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-update'><code>solarr::seasonalModel$update()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="solarr" data-topic="seasonalModel" data-id="update_std.errors"><a href='../../solarr/html/seasonalModel.html#method-seasonalModel-update_std.errors'><code>solarr::seasonalModel$update_std.errors()</code></a></span></li>
 </ul>
 </details>
 }}
@@ -63,7 +45,7 @@ spec$data$Ct <- model$predict(spec$data$n)
 \if{html}{\out{<a id="method-seasonalClearsky-new"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalClearsky-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a \code{seasonalClearsky} model
+Initialize a \code{seasonalClearsky} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$new(control = control_seasonalClearsky())}\if{html}{\out{</div>}}
 }
@@ -71,7 +53,7 @@ Initialize a \code{seasonalClearsky} model
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{control}}{Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.}
+\item{\code{control}}{Named list. Control parameters. See the function \code{\link{control_seasonalClearsky}} for details.}
 }
 \if{html}{\out{</div>}}
 }
@@ -80,7 +62,7 @@ Initialize a \code{seasonalClearsky} model
 \if{html}{\out{<a id="method-seasonalClearsky-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalClearsky-fit}{}}}
 \subsection{Method \code{fit()}}{
-Fit a seasonal model for clear sky radiation.
+Fit the seasonal model for clear sky radiation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$fit(x, date, lat, clearsky)}\if{html}{\out{</div>}}
 }
@@ -88,13 +70,13 @@ Fit a seasonal model for clear sky radiation.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{time series of solar radiation.}
+\item{\code{x}}{Numeric vector. Time series of solar radiation.}
 
-\item{\code{date}}{time series of dates.}
+\item{\code{date}}{Character or Date vector. Time series of dates.}
 
-\item{\code{lat}}{Numeric, reference latitude.}
+\item{\code{lat}}{Numeric scalar. Reference latitude.}
 
-\item{\code{clearsky}}{Numeric, optional time series of observed clerasky radiation.}
+\item{\code{clearsky}}{Numeric vector. Time series of CAMS clear sky radiation.}
 }
 \if{html}{\out{</div>}}
 }
@@ -103,7 +85,7 @@ Fit a seasonal model for clear sky radiation.
 \if{html}{\out{<a id="method-seasonalClearsky-H0"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalClearsky-H0}{}}}
 \subsection{Method \code{H0()}}{
-Compute the extraterrestrial radiation for a given location.
+Compute the extraterrestrial radiation at a given location.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$H0(n)}\if{html}{\out{</div>}}
 }
@@ -111,7 +93,7 @@ Compute the extraterrestrial radiation for a given location.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{n}}{integer, number of day of the year.}
+\item{\code{n}}{Integer, scalar or vector. Number of day of the year.}
 }
 \if{html}{\out{</div>}}
 }
@@ -120,15 +102,15 @@ Compute the extraterrestrial radiation for a given location.
 \if{html}{\out{<a id="method-seasonalClearsky-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalClearsky-predict}{}}}
 \subsection{Method \code{predict()}}{
-Predict method for the class \code{seasonalClearsky}.
+Predict method for \code{seasonalClearsky} object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$predict(n)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$predict(n, newdata)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{n}}{integer, number of day of the year.}
+\item{\code{n}}{Integer, scalar or vector. number of day of the year.}
 }
 \if{html}{\out{</div>}}
 }
@@ -137,7 +119,7 @@ Predict method for the class \code{seasonalClearsky}.
 \if{html}{\out{<a id="method-seasonalClearsky-print"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalClearsky-print}{}}}
 \subsection{Method \code{print()}}{
-Print method for the class \code{seasonalClearsky}
+Print method for \code{seasonalClearsky} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalClearsky$print()}\if{html}{\out{</div>}}
 }

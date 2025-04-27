@@ -5,7 +5,7 @@
 \alias{qks}
 \title{Kolmogorov distribution and quantile functions}
 \usage{
-pks(x, k = 100)
+pks(x, k = 1000)
 
 qks(p, k = 100)
 }
@@ -21,5 +21,11 @@ A probability, a numeric vector in 0, 1.
 }
 \description{
 Kolmogorov distribution and quantile functions
+}
+\examples{
+pks(0.03, 5000)
+pks(1, 1000)
+pks(2, 1000)
+pks(10, 1000)
 }
 \keyword{internal}

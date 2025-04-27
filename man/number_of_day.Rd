@@ -17,7 +17,7 @@ Compute the number of day of the year given a vector of dates.
 }
 \examples{
 number_of_day("2040-01-31")
-number_of_day(c("2040-01-31", "2023-04-01", "2015-09-02"))
-number_of_day(c("2029-02-28", "2029-03-01", "2020-12-31"))
-number_of_day(c("2020-02-29", "2020-03-01", "2020-12-31"))
+number_of_day(c("2015-03-31", "2016-03-31", "2017-03-31"))
+number_of_day(c("2015-02-28", "2016-02-28", "2017-02-28"))
+number_of_day(c("2015-03-01", "2016-03-01", "2017-03-01"))
 }

@@ -2,67 +2,300 @@
 % Please edit documentation in R/solarModel_internals.R
 \name{control_solarModel}
 \alias{control_solarModel}
-\title{Control parameters for a \code{solarModel} object}
-\usage{
-control_solarModel(
-  clearsky = control_seasonalClearsky(),
-  stochastic_clearsky = FALSE,
-  seasonal.mean = list(seasonalOrder = 1, include.H0 = FALSE, include.intercept = TRUE,
-    monthly.mean = TRUE),
-  mean.model = list(arOrder = 2, include.intercept = FALSE),
-  seasonal.variance = list(seasonalOrder = 1, correction = TRUE, monthly.mean = TRUE),
-  variance.model = rugarch::ugarchspec(variance.model = list(garchOrder = c(1, 1)),
-    mean.model = list(armaOrder = c(0, 0), include.mean = FALSE)),
-  mixture.model = list(abstol = 0.001, maxit = 150),
-  threshold = 0.01,
-  outliers_quantile = 0,
-  garch_variance = TRUE,
-  quiet = FALSE
-)
-}
-\arguments{
-\item{clearsky}{list with control parameters for the clear sky seasonal model. See \code{\link{control_seasonalClearsky}} for details.}
-
-\item{seasonal.mean}{a list of parameters. Available choices are:
-\describe{
-\item{\code{seasonalOrder}}{An integer specifying the order of the seasonal component. The default is \code{1}.}
-\item{\code{include.intercept}}{Logical, when \code{TRUE} the intercept will be included in the seasonal model, otherwise will be omitted. The dafault if \code{TRUE}.}
-\item{\code{include.H0}}{Logical, when \code{TRUE} the extraterrestrial radiation will be included in the seasonal model, otherwise will be omitted. The dafault if \code{FALSE}.}
-\item{\code{monthly.mean}}{Logical, when \code{TRUE} a vector of 12 monthly means is computed on the deseasonalized series and it is subtracted to ensure that it is perfectly centered around zero.}
-}}
-
-\item{mean.model}{a list of parameters for the AR model.
-\describe{
-\item{\code{arOrder}}{An integer specifying the order of the AR component. The default is \code{2}.}
-\item{\code{include.intercept}}{When \code{TRUE} an intercept will be included in the AR equation, otherwise is omitted. The dafault if \code{FALSE}.}
-}}
-
-\item{seasonal.variance}{a list of parameters for the seasonal variance. Available choices are:
-\describe{
-\item{\code{seasonalOrder}}{Integer, it specify the order of the seasonal component in the model. The default is \code{1}.}
-\item{\code{correction}}{Logical, when \code{TRUE} the parameters of seasonal variance are corrected to ensure that the standardize the residuals have exactly a unitary variance.}
-\item{\code{monthly.mean}}{Logical, when \code{TRUE} a vector of 12 monthly std. deviations is computed on the GARCH residuals. Then, they are divided by this quantity to ensure that the monthly variance is one.}
-}}
-
-\item{variance.model}{an \code{ugarchspec} object for GARCH variance. Default is \code{GARCH(1,1)} specification.}
-
-\item{mixture.model}{a list of parameters for the monthly Gaussian mixture model. Available choices are:
-\describe{
-\item{\code{abstol}}{Numeric, absolute level for convergence. The default is \code{1e-3}.}
-\item{\code{maxit}}{Integer, maximum number of iterations. The default is \code{200}.}
-}}
-
-\item{threshold}{numeric, threshold used to estimate the transformation parameters alpha and beta. See \code{\link{solarTransform}} for details.}
-
-\item{outliers_quantile}{quantile for outliers detection. If different from 0, the observations that are below the quantile at confidence levels \code{outliers_quantile} and
-the observation above the quantile at confidence level 1-\code{outliers_quantile} will have a weight equal to zero and will be excluded from estimations.}
-
-\item{quiet}{logical, when \code{TRUE} the function will not display any message.}
-}
+\alias{solarModel_spec}
+\title{Control function for a \code{solarModel} object}
 \description{
-Control function for a solarModel
+Control function for a \code{solarModel} object
+
+Control function for a \code{solarModel} object
+}
+\details{
+Control function for a \code{solarModel} object that contains all the setups used for the estimation.
 }
 \examples{
-control <- control_solarModel()
+control <- control_solarModel$new()
 
+}
+\keyword{control}
+\keyword{internal}
+\keyword{solarModel}
+\section{Methods}{
+\subsection{Public methods}{
+\itemize{
+\item \href{#method-solarModel_spec-new}{\code{solarModel_spec$new()}}
+\item \href{#method-solarModel_spec-specification}{\code{solarModel_spec$specification()}}
+\item \href{#method-solarModel_spec-set_params}{\code{solarModel_spec$set_params()}}
+\item \href{#method-solarModel_spec-set_clearsky}{\code{solarModel_spec$set_clearsky()}}
+\item \href{#method-solarModel_spec-set_seasonal.mean}{\code{solarModel_spec$set_seasonal.mean()}}
+\item \href{#method-solarModel_spec-set_mean.model}{\code{solarModel_spec$set_mean.model()}}
+\item \href{#method-solarModel_spec-set_seasonal.variance}{\code{solarModel_spec$set_seasonal.variance()}}
+\item \href{#method-solarModel_spec-set_variance.model}{\code{solarModel_spec$set_variance.model()}}
+\item \href{#method-solarModel_spec-set_mixture.model}{\code{solarModel_spec$set_mixture.model()}}
+\item \href{#method-solarModel_spec-print}{\code{solarModel_spec$print()}}
+\item \href{#method-solarModel_spec-clone}{\code{solarModel_spec$clone()}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-new"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-new}{}}}
+\subsection{Method \code{new()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$new()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-specification"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-specification}{}}}
+\subsection{Method \code{specification()}}{
+Specification function for a \code{solarModel}
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$specification(
+  place,
+  target = "GHI",
+  min_date,
+  max_date,
+  from,
+  to,
+  CAMS_data = solarr::CAMS_data
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{place}}{Character, name of an element in the \code{CAMS_data} list.}
+
+\item{\code{target}}{Character, target variable to model. Can be \code{GHI} or \code{clearsky}.}
+
+\item{\code{min_date}}{Character. Date in the format \code{YYYY-MM-DD}. Minimum date for the complete data. If \code{missing} will be used the minimum data available.}
+
+\item{\code{max_date}}{Character. Date in the format \code{YYYY-MM-DD}. Maximum date for the complete data. If \code{missing} will be used the maximum data available.}
+
+\item{\code{from}}{Character. Date in the format \code{YYYY-MM-DD}. Starting date to use for training data.
+If \code{missing} will be used the minimum data available after filtering for \code{min_date}.}
+
+\item{\code{to}}{character. Date in the format \code{YYYY-MM-DD}. Ending date to use for training data.
+If \code{missing} will be used the maximum data available after filtering for \code{max_date}.}
+
+\item{\code{CAMS_data}}{named list with radiation data for different locations.
+Generic controls}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-set_params"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-set_params}{}}}
+\subsection{Method \code{set_params()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_params(
+  stochastic_clearsky = FALSE,
+  min_pos = 1,
+  max_pos = 1,
+  transform_delta = 0.05,
+  clearsky_threshold = 1.01,
+  threshold = 0.01,
+  quiet = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{threshold}}{Numeric. Threshold used to estimate the transformation parameters \deqn{\alpha} and \deqn{\beta}.
+The default is \code{0.01}. See \code{\link{solarTransform}} for more details.}
+
+\item{\code{quiet}}{Logical. When \code{TRUE} the function will not display any message. The dafault if \code{TRUE}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-set_clearsky"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-set_clearsky}{}}}
+\subsection{Method \code{set_clearsky()}}{
+List of control parameters for the clear sky model.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_clearsky(control = control_seasonalClearsky())}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{control}}{See \code{\link{control_seasonalClearsky}} for more details.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-set_seasonal.mean"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-set_seasonal.mean}{}}}
+\subsection{Method \code{set_seasonal.mean()}}{
+List of parameters to control the seasonal mean.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_seasonal.mean(
+  order = 1,
+  period = 365,
+  include.trend = FALSE,
+  include.intercept = TRUE,
+  monthly.mean = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{order}}{Integer. Specify the order of the seasonal mean \deqn{\bar{Y}_t}. The default is \code{1}.}
+
+\item{\code{period}}{Integer, seasonal periodicity, the default is \code{365}.}
+
+\item{\code{include.trend}}{Logical. When \code{TRUE} an yearly trend \deqn{t} will be included in the seasonal model, otherwise will be excluded. The default is \code{FALSE}.}
+
+\item{\code{include.intercept}}{Logical. When \code{TRUE} the intercept \deqn{a_0} will be included in the seasonal model, otherwise will be excluded. The default is \code{TRUE}.}
+
+\item{\code{monthly.mean}}{Logical. When \code{TRUE} a vector of 12 monthly means will be computed on the deseasonalized series \deqn{\tilde{Y}_t = Y_t - \bar{Y}_t}
+and it is subtracted to ensure that the time series is centered around zero for all the months. The dafault if \code{TRUE}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-set_mean.model"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-set_mean.model}{}}}
+\subsection{Method \code{set_mean.model()}}{
+List of parameters to control the AR model.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_mean.model(
+  arOrder = 1,
+  maOrder = 0,
+  include.intercept = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{arOrder}}{Integer. An integer specifying the order of the AR component. The default is \code{1}.}
+
+\item{\code{maOrder}}{Integer. An integer specifying the order of the MA component. The default is \code{0}.}
+
+\item{\code{include.intercept}}{Logical. When \code{TRUE} the intercept \deqn{\phi_0} will be included in the seasonal model, otherwise will be excluded. The default is \code{FALSE}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-set_seasonal.variance"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-set_seasonal.variance}{}}}
+\subsection{Method \code{set_seasonal.variance()}}{
+List of parameters to control the seasonal variance.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_seasonal.variance(
+  order = 1,
+  period = 365,
+  include.trend = FALSE,
+  correction = TRUE,
+  monthly.mean = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{order}}{Integer. Specify the order of the seasonality of the seasonal variance. The default is \code{1}.}
+
+\item{\code{period}}{Integer, seasonal periodicity, the default is \code{365}.}
+
+\item{\code{include.trend}}{Logical. When \code{TRUE} an yearly trend \deqn{t} will be included in the seasonal model, otherwise will be excluded. The default is \code{FALSE}.}
+
+\item{\code{correction}}{Logical. When \code{TRUE} the parameters of seasonal variance are corrected to ensure
+that the standardize the residuals have exactly a unitary variance. The dafault if \code{TRUE}.}
+
+\item{\code{monthly.mean}}{Logical. When \code{TRUE} a vector of 12 monthly std. deviations will be computed
+on the standardized residuals  \deqn{\tilde{\varepsilon}_t} and used to standardize the time series
+such that it has unitary variance for all the months. The default if \code{TRUE}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-set_variance.model"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-set_variance.model}{}}}
+\subsection{Method \code{set_variance.model()}}{
+List of parameters for the GARCH model.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_variance.model(
+  archOrder = 1,
+  garchOrder = 1,
+  garch_variance = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{garch_variance}}{Logical. When \code{TRUE} the GARCH model will be used to standardize the residuals otherwise will be excluded. The dafault if \code{TRUE}.}
+
+\item{\code{arOrder}}{Integer. An integer specifying the order of the ARCH component. The default is \code{1}.}
+
+\item{\code{maOrder}}{Integer. An integer specifying the order of the GARCH component. The default is \code{1}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-set_mixture.model"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-set_mixture.model}{}}}
+\subsection{Method \code{set_mixture.model()}}{
+List of parameters for the Gaussian mixture model.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_mixture.model(
+  abstol = 1e-20,
+  match.moments = TRUE,
+  B = 0,
+  method = "mclust",
+  maxit = 5000
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{abstol}}{Numeric. Absolute level for convergence of the EM-algorithm. The default is \code{1e-20}.}
+
+\item{\code{match.moments}}{description}
+
+\item{\code{maxit}}{Integer. Maximum number of iterations for EM-algorithm. The default is \code{100}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-print"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-print}{}}}
+\subsection{Method \code{print()}}{
+Print method for \code{control_solarModel} class.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$print()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-clone"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-clone}{}}}
+\subsection{Method \code{clone()}}{
+The objects of this class are cloneable with this method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$clone(deep = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{deep}}{Whether to make a deep clone.}
+}
+\if{html}{\out{</div>}}
+}
+}
 }

@@ -5,7 +5,7 @@
 \title{Control parameters for a solar option}
 \usage{
 control_solarOption(
-  nyears = c(2005, 2023),
+  nyears = c(2005, 2024),
   K = 0,
   leap_year = FALSE,
   nsim = 200,

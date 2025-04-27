@@ -3,7 +3,7 @@
 \name{desscherMixture}
 \alias{desscherMixture}
 \alias{pesscherMixture}
-\title{Esscher transform of a Gaussian Mixture}
+\title{Density of the Esscher transform of a Gaussian Mixture}
 \usage{
 desscherMixture(mean = c(0, 0), sd = c(1, 1), alpha = c(0.5, 0.5), theta = 0)
 
@@ -19,7 +19,9 @@ pesscherMixture(mean = c(0, 0), sd = c(1, 1), alpha = c(0.5, 0.5), theta = 0)
 \item{theta}{Esscher parameter, the default is zero.}
 }
 \description{
-Esscher transform of a Gaussian Mixture
+Density of the Esscher transform of a Gaussian Mixture
+
+Cdf of the Esscher transform of a Gaussian Mixture
 }
 \examples{
 library(ggplot2)

@@ -1,33 +1,3 @@
-#' Print method for the class `solarModel`
-#'
-#' @param object an object of the class \code{\link{solarModel_spec}}.
-#'
-#' @keywords internal
-#' @noRd
-#' @export
-print.solarModelSpec <- function(object){
-  model_type <- class(object)[1]
-  # Complete data specifications
-  data <- object$dates$data
-  # Train data specifications
-  train <- object$dates$train
-  train$perc <- format(train$perc*100, digits = 4)
-  # Test data specifications
-  test <- object$dates$test
-  test$perc <- format(test$perc*100, digits = 4)
-  msg_0 <- paste0("--------------------- ", model_type, " (", object$place, ") ", "--------------------- \n")
-  msg_1 <- paste0("Target: ", object$target, " \n Lat: ", object$coords$lat, "\n Lon: ", object$coords$lon, "\n Alt: ", object$coords$alt, " \n")
-  msg_1 <- paste0("Target: ", object$target, " \n Coordinates: (Lat: ", object$coords$lat, ", Lon: ", object$coords$lon, ", Alt: ", object$coords$alt, ") \n")
-  msg_2 <- paste0(" Dates: ", data$from, " - ", data$to, "\n Observations: ", data$nobs, "\n")
-  msg_3 <- paste0("---------------------------------------------------------------\n")
-  msg_4 <- paste0("Train dates: ", train$from, " - ", train$to, " (", train$nobs, " points ~ ", train$perc, "%)", "\n")
-  msg_5 <- paste0("Test  dates: ", test$from, " - ", test$to, " (", test$nobs, " points ~ ", test$perc, "%)", "\n")
-  msg_6 <- paste0("---------------------------------------------------------------\n")
-  msg_7 <- paste0("Likelihood: ", format(object$loglik, digits = 8), "\n")
-  cat(paste0(msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7))
-}
-
-
 #' Print method for the class `solarOptionPayoff`
 #'
 #' @param object an object of the class `solarOptionPayoff`.
@@ -98,9 +68,9 @@ print.solarOptionPayoffs <- function(object){
 print.solarOptionBoot <- function(object){
   msg_1 <- paste0("------------------------ \033[1;35mSolar Option Bootstrap\033[0m (", object$payoff_year$side, ") ------------------------ \n")
   msg_2 <- paste0("Yearly payoff: \033[1;31m", format(object$payoff_year$premium, digits = 5), "\033[0m\n")
-  msg_3 <- paste0("Confidence interval ", "(", names(object$payoff_year$premium_dw), ")",
+  msg_3 <- paste0("Quantile ", "(", names(object$payoff_year$premium_dw), ")",
                   "\033[1;31m ", format(object$payoff_year$premium_dw, digits = 5), "\033[0m", "\n",
-                  "Confidence interval ", "(", names(object$payoff_year$premium_up), ")",
+                  "Quantile ", "(", names(object$payoff_year$premium_up), ")",
                   "\033[1;31m ", format(object$payoff_year$premium_up, digits = 5), "\033[0m \n")
 
   format_premiums <- function(premiums){

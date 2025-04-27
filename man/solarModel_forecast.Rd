@@ -4,13 +4,8 @@
 \alias{solarModel_forecast}
 \title{Iterate the forecast on multiple dates}
 \usage{
-solarModel_forecast(model, date, ci = 0.1, unconditional = FALSE)
+solarModel_forecast(model, moments, ci = 0.1, theta = 0)
 }
 \description{
 Iterate the forecast on multiple dates
-}
-\examples{
-model <- Bologna
-dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-01-31"), 1)
-solarModel_forecast(model, date = dates)
 }

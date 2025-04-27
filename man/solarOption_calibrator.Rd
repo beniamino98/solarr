@@ -2,38 +2,49 @@
 % Please edit documentation in R/solarOption.R
 \name{solarOption_calibrator}
 \alias{solarOption_calibrator}
-\title{Calibrator for solar Options}
+\title{Calibrator function for solarOptions
+Recalibrate and adjust the mixture parameters such that the model premium
+matches exactly the historical premium for all the months.}
 \usage{
 solarOption_calibrator(
   model,
   nmonths = 1:12,
+  conditional = TRUE,
   abstol = 1e-04,
   reltol = 1e-04,
   control_options = control_solarOption()
 )
 }
 \arguments{
-\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
+\item{model}{An object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
+\item{nmonths}{Numeric vector. Months in which the payoff should be computed. Can vary from 1 (January) to 12 (December).}
+
+\item{conditional}{Logical. When \code{TRUE} the target will be the option price computed with conditional moments.}
 
 \item{abstol}{The absolute convergence tolerance. Only useful for non-negative functions, as a tolerance for reaching zero.}
 
 \item{reltol}{Relative convergence tolerance. The algorithm stops if it is unable to reduce the value by a factor of reltol * (abs(val) + reltol) at a step.
 Defaults to \code{sqrt(.Machine$double.eps)}, typically about 1e-8.}
 
-\item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
+\item{control_options}{Named list. Control parameters, see \code{\link{control_solarOption}} for more details.}
 }
 \description{
-Calibrator for solar Options
+Calibrator function for solarOptions
+Recalibrate and adjust the mixture parameters such that the model premium
+matches exactly the historical premium for all the months.
 }
 \examples{
 model <- Bologna
-model_cal <- solarOption_calibrator(model, nmonths = 7, reltol=1e-3)
+nmonth <- 5
+model_cal <- solarOption_calibrator(model, nmonths = nmonth, reltol=1e-3)
 # Compare log-likelihoods
 model$loglik
 model_cal$loglik
 # Compare parameters
-model$NM_model$parameters[7,]
-model_cal$NM_model$parameters[7,]
+model$NM_model$coefficients[nmonth,]
+model_cal$NM_model$coefficients[nmonth,]
+# Compare moments
+model$NM_model$moments[nmonth,]
+model_cal$NM_model$moments[nmonth,]
 }

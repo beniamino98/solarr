@@ -8,6 +8,25 @@ Monthly Gaussian mixture with two components
 
 Monthly Gaussian mixture with two components
 }
+\note{
+Version 1.0.0
+}
+\examples{
+# Model fit
+model <- solarModel$new(spec)
+model$fit()
+# Inputs
+x <- model$data$u_tilde
+w <- model$data$weights
+date <- model$data$date
+# Solar Mixture object
+sm <- solarMixture$new()
+sm$fit(x, date, w)
+params <- sm$parameters
+sm$std.errors
+# params[1,]$mu1 <- params[1,]$mu1*0.9
+# sm$update(means = params[,c(2,3)])
+}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
@@ -16,6 +35,16 @@ Monthly Gaussian mixture with two components
 \item{\code{abstol}}{Numeric, absolute level for convergence.}
 
 \item{\code{components}}{Integer, number of components.}
+
+\item{\code{mu1}}{Function, see \code{\link{monthlyParams}}.}
+
+\item{\code{mu2}}{Function, see \code{\link{monthlyParams}}.}
+
+\item{\code{sd1}}{Function, see \code{\link{monthlyParams}}.}
+
+\item{\code{sd2}}{Function, see \code{\link{monthlyParams}}.}
+
+\item{\code{prob}}{Function, see \code{\link{monthlyParams}}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -23,12 +52,11 @@ Monthly Gaussian mixture with two components
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
 \item{\code{data}}{A tibble with the following columns:
-#' \describe{
+\describe{
 \item{date}{Time series of dates.}
 \item{Month}{Vector of Month.}
 \item{x}{Time series used for fitting.}
-\item{w}{Time series of weights.}
-}}
+\item{w}{Time series of weights.}}}
 
 \item{\code{means}}{Matrix of means where a row represents a month and a column a mixture component.}
 
@@ -38,22 +66,27 @@ Monthly Gaussian mixture with two components
 
 \item{\code{model}}{Named List with 12 \code{\link{gaussianMixture}} objects.}
 
+\item{\code{use_empiric}}{logical to denote if empiric parameters are currently used}
+
 \item{\code{loglik}}{Numeric, total log-likelihood.}
 
 \item{\code{fitted}}{A \code{tibble} with the classified series}
 
 \item{\code{moments}}{A \code{tibble} with the theoric moments. It contains:
-#' \describe{
+\describe{
 \item{Month}{Month of the year.}
 \item{mean}{Theoric monthly expected value of the mixture model.}
 \item{variance}{Theoric monthly variance of the mixture model.}
 \item{skewness}{Theoric monthly skewness.}
 \item{kurtosis}{Theoric monthly kurtosis.}
 \item{nobs}{Number of observations used for fitting.}
-\item{loglik}{Monthly log-likelihood.}
-}}
+\item{loglik}{Monthly log-likelihood.}}}
 
-\item{\code{parameters}}{A \code{tibble} with the fitted parameters.}
+\item{\code{coefficients}}{A \code{tibble} with the fitted parameters.}
+
+\item{\code{std.errors}}{A \code{tibble} with the fitted std.errors}
+
+\item{\code{summary}}{A \code{tibble} with the fitted std.errors}
 }
 \if{html}{\out{</div>}}
 }
@@ -63,6 +96,12 @@ Monthly Gaussian mixture with two components
 \item \href{#method-solarMixture-new}{\code{solarMixture$new()}}
 \item \href{#method-solarMixture-fit}{\code{solarMixture$fit()}}
 \item \href{#method-solarMixture-update}{\code{solarMixture$update()}}
+\item \href{#method-solarMixture-update_logLik}{\code{solarMixture$update_logLik()}}
+\item \href{#method-solarMixture-update_empiric_parameters}{\code{solarMixture$update_empiric_parameters()}}
+\item \href{#method-solarMixture-filter}{\code{solarMixture$filter()}}
+\item \href{#method-solarMixture-Hessian}{\code{solarMixture$Hessian()}}
+\item \href{#method-solarMixture-use_empiric_parameters}{\code{solarMixture$use_empiric_parameters()}}
+\item \href{#method-solarMixture-print}{\code{solarMixture$print()}}
 \item \href{#method-solarMixture-clone}{\code{solarMixture$clone()}}
 }
 }
@@ -72,17 +111,13 @@ Monthly Gaussian mixture with two components
 \subsection{Method \code{new()}}{
 Initialize a \code{solarMixture} object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMixture$new(components = 2, maxit = 100, abstol = 1e-14)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$new(components = 2, maxit = 5000, abstol = 1e-08)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{components}}{Integer, number of components.}
-
-\item{\code{maxit}}{Integer, maximum number of iterations.}
-
-\item{\code{abstol}}{Numeric, absolute level for convergence.}
 }
 \if{html}{\out{</div>}}
 }
@@ -93,7 +128,7 @@ Initialize a \code{solarMixture} object
 \subsection{Method \code{fit()}}{
 Fit the parameters with mclust package
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMixture$fit(x, date, weights)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$fit(x, date, weights, B = 50, method = "mixtools")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -113,7 +148,7 @@ When \code{missing} all the available observations will be used.}
 \if{html}{\out{<a id="method-solarMixture-update"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMixture-update}{}}}
 \subsection{Method \code{update()}}{
-Update means, sd, p and recompute log-likelihood and fitted data.
+Update means, sd, p .
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMixture$update(means, sd, p)}\if{html}{\out{</div>}}
 }
@@ -129,6 +164,67 @@ Update means, sd, p and recompute log-likelihood and fitted data.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-update_logLik"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-update_logLik}{}}}
+\subsection{Method \code{update_logLik()}}{
+Apply the \verb{$update_logLik()} method to all the \code{gaussianMixture} models
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$update_logLik()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-update_empiric_parameters"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-update_empiric_parameters}{}}}
+\subsection{Method \code{update_empiric_parameters()}}{
+Apply the \verb{$update_empiric_parameters()} method to all the \code{gaussianMixture} models
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$update_empiric_parameters()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-filter"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-filter}{}}}
+\subsection{Method \code{filter()}}{
+Apply the \verb{$filter()} method to all the \code{gaussianMixture} models
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$filter()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-Hessian"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-Hessian}{}}}
+\subsection{Method \code{Hessian()}}{
+Apply the \verb{$Hessian()} method to all the \code{gaussianMixture} models
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$Hessian()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-use_empiric_parameters"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-use_empiric_parameters}{}}}
+\subsection{Method \code{use_empiric_parameters()}}{
+Substitute the empiric parameters with EM parameters. If evaluated again
+the EM parameters will be substituted back.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$use_empiric_parameters()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-print"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-print}{}}}
+\subsection{Method \code{print()}}{
+Print method for \code{solarMixture} class.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$print()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMixture-clone"></a>}}

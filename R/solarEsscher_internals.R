@@ -7,38 +7,20 @@
 #' @keywords internals
 #' @noRd
 #' @export
-solarEsscher_theta_bounds <- function(theta){
+solarEsscher_bounds <- function(theta){
   # Identify the up and down parameters of Esscher transform
   # dw parameter (positive): theta > 0
   # up parameter (negative): theta < 0
-  i <- 1
-  par <- list()
-  for(i in 1:length(theta)){
-    par[[i]] <- list(up = 0, dw = 0)
-    if (theta[i] >= 0) {
-      par[[i]][["dw"]] <- theta[i]
-      par[[i]][["up"]] <- invertEsscherTheta(theta[i])
-    } else {
-      par[[i]][["dw"]] <- invertEsscherTheta(theta[i])
-      par[[i]][["up"]] <- theta[i]
-    }
-  }
-  return(par)
-}
-
-#' invertEsscherTheta
-#'
-#' @keywords internals
-#' @noRd
-#' @export
-invertEsscherTheta <- function(theta){
-  # dw parameter = positive theta
-  # up parameter = negative theta
+  par <- list(up = 0, bar = 0, dw = 0)
   if (theta >= 0) {
-    -theta/(1+theta)
+    par[["dw"]] <- theta
+    par[["up"]] <- -theta/(1+theta)
   } else {
-    -theta/(1-theta)
+    par[["dw"]] <- -theta/(1-theta)
+    par[["up"]] <- theta
   }
+  par[["bar"]] <- 0.5*(par[["dw"]] + par[["up"]])
+  return(par)
 }
 
 #' Change probability according to Esscher parameters

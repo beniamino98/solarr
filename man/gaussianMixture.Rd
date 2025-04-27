@@ -10,6 +10,13 @@ Gaussian mixture
 }
 \details{
 Fit the parameters of a gaussian mixture with k-components.
+
+Applied after updating the parameters
+
+Applied after updating the parameters
+}
+\note{
+Version 1.0.0
 }
 \examples{
 means = c(0,0.5,2)
@@ -27,13 +34,12 @@ gm$fit(x$X)
 # EM-algo
 gm$EM(x$X)
 # Model parameters
-gm$parameters
+gm$coefficients
 # Fitted series
 gm$fitted
 # Theoric moments
 gm$moments
 gm$update(means = c(-2, 0, 2))
-
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
@@ -55,7 +61,11 @@ gm$update(means = c(-2, 0, 2))
 
 \item{\code{p}}{Numeric vector containing the probability for each component.}
 
-\item{\code{parameters}}{named list with mixture parameters.}
+\item{\code{coefficients}}{named list with mixture coefficients.}
+
+\item{\code{use_empiric}}{logical to denote if empiric parameters are currently used}
+
+\item{\code{std.errors}}{named list with mixture parameters.}
 
 \item{\code{model}}{Tibble with mixture parameters, in order means, sd, p.}
 
@@ -64,6 +74,8 @@ gm$update(means = c(-2, 0, 2))
 \item{\code{fitted}}{fitted series}
 
 \item{\code{moments}}{Tibble with the theoric moments and the number of observations used for fit.}
+
+\item{\code{summary}}{Tibble with estimated parameters, std.errors and statistics}
 }
 \if{html}{\out{</div>}}
 }
@@ -77,6 +89,12 @@ gm$update(means = c(-2, 0, 2))
 \item \href{#method-gaussianMixture-fit}{\code{gaussianMixture$fit()}}
 \item \href{#method-gaussianMixture-EM}{\code{gaussianMixture$EM()}}
 \item \href{#method-gaussianMixture-update}{\code{gaussianMixture$update()}}
+\item \href{#method-gaussianMixture-update_logLik}{\code{gaussianMixture$update_logLik()}}
+\item \href{#method-gaussianMixture-update_empiric_parameters}{\code{gaussianMixture$update_empiric_parameters()}}
+\item \href{#method-gaussianMixture-filter}{\code{gaussianMixture$filter()}}
+\item \href{#method-gaussianMixture-Hessian}{\code{gaussianMixture$Hessian()}}
+\item \href{#method-gaussianMixture-use_empiric_parameters}{\code{gaussianMixture$use_empiric_parameters()}}
+\item \href{#method-gaussianMixture-print}{\code{gaussianMixture$print()}}
 \item \href{#method-gaussianMixture-clone}{\code{gaussianMixture$clone()}}
 }
 }
@@ -86,7 +104,7 @@ gm$update(means = c(-2, 0, 2))
 \subsection{Method \code{new()}}{
 Initialize a gaussianMixture object
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$new(components = 2, maxit = 500, abstol = 1e-09)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$new(components = 2, maxit = 5000, abstol = 1e-08)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -116,7 +134,7 @@ Compute the log-likelihood
 \describe{
 \item{\code{x}}{vector}
 
-\item{\code{params}}{Named list of mixture parameters.}
+\item{\code{params}}{Optional. Named list with mixture parameters.}
 }
 \if{html}{\out{</div>}}
 }
@@ -163,7 +181,7 @@ Classify the time series in its components
 \subsection{Method \code{fit()}}{
 Fit the parameters with mclust package
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$fit(x, weights)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$fit(x, weights, B = 50, method = "mixtools")}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -201,24 +219,87 @@ When \code{missing} all the available observations will be used.}
 \if{html}{\out{<a id="method-gaussianMixture-update"></a>}}
 \if{latex}{\out{\hypertarget{method-gaussianMixture-update}{}}}
 \subsection{Method \code{update()}}{
-Update the responsibilities, means, sd, p and recompute log-likelihood and fitted data.
+Update only the parameters (means, sd and p) inside the object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update(x, weights, means, sd, p)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update(means, sd, p)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{vector}
-
-\item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
-When \code{missing} all the available observations will be used.}
-
 \item{\code{means}}{Numeric vector of means parameters.}
 
 \item{\code{sd}}{Numeric vector of std. deviation parameters.}
 
 \item{\code{p}}{Numeric vector of probability parameters.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gaussianMixture-update_logLik"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-update_logLik}{}}}
+\subsection{Method \code{update_logLik()}}{
+Update the log-likelihood with the current parameters
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update_logLik()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gaussianMixture-update_empiric_parameters"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-update_empiric_parameters}{}}}
+\subsection{Method \code{update_empiric_parameters()}}{
+Compute the parameters on the classified time series.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update_empiric_parameters()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gaussianMixture-filter"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-filter}{}}}
+\subsection{Method \code{filter()}}{
+Update the responsibilities, the log-likelihood, classify again the points and recompute empiric parameters.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$filter()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gaussianMixture-Hessian"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-Hessian}{}}}
+\subsection{Method \code{Hessian()}}{
+Hessian matrix \code{gaussianMixture} class.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$Hessian()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gaussianMixture-use_empiric_parameters"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-use_empiric_parameters}{}}}
+\subsection{Method \code{use_empiric_parameters()}}{
+Substitute the empiric parameters with EM parameters. If evaluated again
+the EM parameters will be substituted back.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$use_empiric_parameters()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gaussianMixture-print"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-print}{}}}
+\subsection{Method \code{print()}}{
+Print method for \code{gaussianMixture} class.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$print(label)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{label}}{Character, optional label.}
 }
 \if{html}{\out{</div>}}
 }

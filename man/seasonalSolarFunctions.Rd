@@ -8,6 +8,9 @@ Solar seasonal functions
 
 Solar seasonal functions
 }
+\note{
+Version 1.0.0
+}
 \examples{
 dates <- seq.Date(as.Date("2022-01-01"), as.Date("2022-12-31"), 1)
 # Seasonal functions object

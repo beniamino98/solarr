@@ -7,15 +7,22 @@
 clearsky_outliers(x, Ct, date, threshold = 1e-04, quiet = FALSE)
 }
 \arguments{
-\item{x}{Numeric vector, realized solar radiation.}
+\item{x}{Numeric vector. Time series of solar radiation.}
 
-\item{Ct}{Numeric vector, clear sky radiation.}
+\item{Ct}{Numeric vector. Time series of clear sky radiation.}
 
-\item{date}{Vector, optional time series of dates.
-It will be used for a more precise imputation when a solar radiation value is \code{NA}.}
+\item{date}{Character or Date vector, optional. Time series of dates.
+Used to precisely impute solar radiation according to the realized values in the same day of the year.}
+
+\item{threshold}{Numeric, scalar. Threshold value used for imputation. Default is \code{0.0001}.}
 }
 \description{
 Detect and impute outliers with respect to a maximum level of radiation (Ct)
+\describe{
+\item{\code{GHI < 0}}{If a value is below 0 for a day it will be imputed to be equal to min(GHI) for that day}.
+\item{\code{GHI > Ct}}{If a value is above the maximum clear sky Ct it will be imputed to be Ct*(1-threshold)}.
+\item{\code{is.na(GHI)}}{If a value is NA it will be imputed to be the average for that day mean(GHI)}.
+}
 }
 \examples{
 clearsky_outliers(c(1,2,3), 2)

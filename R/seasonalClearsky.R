@@ -1,6 +1,5 @@
 #' Control parameters for a `seasonalClearsky` object
 #'
-#' @param method Character, method used for estimate clear sky radiation. Can be `I` or `II`.
 #' @param include.intercept Logical, when `TRUE`, the default, the intercept will be included in the clear sky model.
 #' @param order Integer scalar, number of combinations of sines and cosines.
 #' @param period Integer scalar, seasonality period. The default is 365.
@@ -8,223 +7,220 @@
 #' @param quiet Logical, when `FALSE`, the default, the functions displays warning or messages.
 #' @inheritParams clearsky_optimizer
 #' @details The parameters `ntol`, `lower`, `upper` and `by` are used exclusively in \code{\link{clearsky_optimizer}}.
+#' @note Version 1.0.0
 #' @examples
 #' control = control_seasonalClearsky()
 #' @return Named list of control parameters.
-#'
+#' @note Version 1.0.0
 #' @rdname control_seasonalClearsky
 #' @export
-control_seasonalClearsky <- function(method = "II", include.intercept = TRUE, order = 1, period = 365, delta0 = 1.4,
-                                     lower = 0, upper = 3, by = 0.001, ntol = 30, quiet = FALSE){
+control_seasonalClearsky <- function(order = 1, order_H0 = 1, period = 365, include.intercept = TRUE, include.trend = FALSE,
+                                     delta0 = 1.4, lower = 0, upper = 3, by = 0.001, ntol = 0, quiet = FALSE){
   structure(
     list(
-      method = method,
-      include.intercept = include.intercept,
       order = order,
+      order_H0 = order_H0,
       period = period,
+      include.intercept = include.intercept,
+      include.trend = include.trend,
       delta0 = delta0,
-      ntol = ntol,
       lower = lower,
       upper = upper,
       by = by,
+      ntol = ntol,
       quiet = quiet
     ),
     class = c("control", "list")
   )
 }
 
-#' Clear sky seasonal model
-#'
-#' @examples
-#' library(ggplot2)
-#' # Arguments
-#' place <- "Palermo"
-#' # solarModel specification
-#' spec <- solarModel_spec(place, target = "GHI")
-#' # Extract the required elements
-#' x <- spec$data$GHI
-#' date <- spec$data$date
-#' lat <- spec$coords$lat
-#' clearsky <- spec$data$clearsky
-#'
-#' # Initialize the model
-#' model <- seasonalClearsky$new()
-#' # Fit the model
-#' model$fit(x, date, lat, clearsky)
-#' # Predict the seasonal values
-#' spec$data$Ct <- model$predict(spec$data$n)
+#' R6 implementation for a clear sky seasonal model
 #'
 #' @rdname seasonalClearsky
 #' @name seasonalClearsky
 #' @export
 seasonalClearsky <- R6::R6Class("seasonalClearsky",
                                 inherit = seasonalModel,
+                                # ====================================================================================================== #
+                                #                                             Public slots
+                                # ====================================================================================================== #
                                 public = list(
-                                  #' @field control Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.
+                                  #' @field control Named list. Control parameters. See the function \code{\link{control_seasonalClearsky}} for details.
                                   control = list(),
-                                  #' @field lat latitude of the place considered.
+                                  #' @field lat Numeric, scalar. Latitude of the location considered.
                                   lat = NA_integer_,
-                                  #' @method initialize seasonalClearsky
                                   #' @description
-                                  #' Initialize a `seasonalClearsky` model
-                                  #' @param control Named list of control parameters. See the function \code{\link{control_seasonalClearsky}} for details.
+                                  #' Initialize a `seasonalClearsky` object.
+                                  #' @param control Named list. Control parameters. See the function \code{\link{control_seasonalClearsky}} for details.
                                   initialize = function(control = control_seasonalClearsky()){
+                                    # Store control parameters
                                     self$control <- control
+                                    # Update order
                                     private$..order <- control$order
+                                    # Update period
                                     private$..period <- control$period
                                   },
-                                  #' @method fit seasonalClearsky
                                   #' @description
-                                  #' Fit a seasonal model for clear sky radiation.
-                                  #' @param x time series of solar radiation.
-                                  #' @param date time series of dates.
-                                  #' @param lat Numeric, reference latitude.
-                                  #' @param clearsky Numeric, optional time series of observed clerasky radiation.
+                                  #' Fit the seasonal model for clear sky radiation.
+                                  #' @param x Numeric vector. Time series of solar radiation.
+                                  #' @param date Character or Date vector. Time series of dates.
+                                  #' @param lat Numeric scalar. Reference latitude.
+                                  #' @param clearsky Numeric vector. Time series of CAMS clear sky radiation.
                                   fit = function(x, date, lat, clearsky){
                                     # Self arguments
                                     control = self$control
                                     # Control parameters
                                     include.intercept = control$include.intercept
-                                    order = control$order
-                                    period = control$period
-                                    delta0 = control$delta0
-                                    ntol = control$ntol
-                                    method = control$method
-                                    # Initialize the dataset
-                                    data <- dplyr::tibble(date = as.Date(date),
-                                                          Month = lubridate::month(as.Date(date)),
-                                                          Day = lubridate::day(as.Date(date)),
-                                                          n = number_of_day(date))
-                                    # Add target variable
-                                    data$x <- x
+                                    include.trend = control$include.trend
+                                    # Ensure clearsky is specified
+                                    if (missing(clearsky)) {
+                                      stop('`clearsky` time series must be specified.')
+                                    }
                                     # Add the function to compute extraterrestrial radiation
                                     private$..ssf <- seasonalSolarFunctions$new("spencer")
-                                    # Add reference latitude
+                                    # Store reference latitude
                                     self$lat <- lat[1]
-                                    # Add extraterrestrial radiation
-                                    data$H0 <- self$H0(data$n)
-
-                                    # Add clearsky
-                                    if (method == "II") {
-                                      if (missing(clearsky)) {
-                                        stop('`clearsky` time series must be specified when `method = "II"`')
-                                      } else {
-                                        data$clearsky <- clearsky
+                                    # Initialize the dataset
+                                    data <- dplyr::tibble(date = as.Date(date))
+                                    data <- dplyr::mutate(data,
+                                                          Year = lubridate::year(date),
+                                                          Month = lubridate::month(date),
+                                                          Day = lubridate::day(date),
+                                                          t = Year - max(Year),
+                                                          n = number_of_day(date),
+                                                          Rt = x,
+                                                          H0 = self$H0(n),
+                                                          clearsky = clearsky)
+                                    # Method: Estimate with Extraterrestrial and clear sky radiation
+                                    # ========================================================================
+                                    # 1. Daily maximum clearsky: Ct_max ~ a_0 + a_1 H0 + a_2 cos(.) + a_3 sin(.) + a_4 cos(2*.) + a_5 sin(2*.) + ...
+                                    # ========================================================================
+                                    # Compute maximum clear sky for each day
+                                    base_formula <- "clearsky ~ H0"
+                                    if (control$order_H0 > 1){
+                                      for(i in 2:control$order_H0){
+                                        data[[paste0("H0_", i)]] <- data$H0^i
+                                        base_formula <- paste0(base_formula, " + ", paste0("H0_", i))
                                       }
                                     }
-                                    # Fit dataset
-                                    df_fit <- data
-                                    # Method I: Estimate directly clear sky as function of extraterrestrial radiation
-                                    # 1. LM: Ct ~ a_0 + a_1 H0 + a_2 cos(.) + a_3 sin(.) + a_4 cos(2*.) + a_5 sin(2*.) + ...
-                                    # 2. Optimization: delta0*Ct ~ delta*(a_0 + a_1 H0 + a_2 cos(.) + a_3 sin(.) + a_4 cos(2*.) + a_5 sin(2*.) + ...)
-                                    if (method == "I") {
-                                      formula <- paste0("x ~ H0", ifelse(include.intercept, " + 1", " - 1"))
-                                      # Fit the coefficients of the clear sky max model
-                                      super$fit(formula = formula, data = df_fit)
-                                      # Method II: Estimate with Extraterrestrial and clear sky radiation
-                                      # 1. LM: Ct_max ~ a_0 + a_1 H0 + a_2 cos(.) + a_3 sin(.) + a_4 cos(2*.) + a_5 sin(2*.) + ...
-                                      # 2. Optimization: delta_init*Ct_max ~ delta*(a_0 + a_1 H0 + a_2 cos(.) + a_3 sin(.) + a_4 cos(2*.) + a_5 sin(2*.) + ...)
-                                    } else {
-                                      # Compute maximum clear sky for each day
-                                      df_fit <- dplyr::group_by(df_fit, n)
-                                      df_fit <- dplyr::summarise(df_fit, Ct_max = max(clearsky, na.rm = TRUE), H0 = mean(H0))
-                                      formula <- paste0("Ct_max ~ H0", ifelse(include.intercept, " + 1", " - 1"))
-                                      # Fit the coefficients of the clear sky max model
-                                      super$fit(formula = formula, data = df_fit)
-                                      # Fitted clear sky max
-                                      df_fit$Ct_max_fit <- self$predict(df_fit$n)
-                                      # Optimize the fit
-                                      df_fit <- dplyr::select(df_fit, n, Ct_max, Ct_max_fit)
-                                      df_fit <- dplyr::left_join(data, df_fit, by = c("n"))
-                                    }
-                                    # Fitted clear sky max
-                                    df_fit$Ct <- self$predict(df_fit$n)
+                                    base_formula <- ifelse(include.trend, paste0(base_formula, " + t"), base_formula)
+                                    base_formula <- ifelse(include.intercept, base_formula, paste0(base_formula, "-1"))
+                                    # Fit the coefficients of the clear sky max model
+                                    super$fit(formula = base_formula, data = data)
+                                    # Initial fit average clear sky
+                                    data$Ct_hat <- self$predict(newdata = data)
                                     # Optimize the fit
-                                    delta <- clearsky_optimizer(df_fit$x, df_fit$Ct*delta0, control$lower, control$upper, control$by, control$ntol)
-                                    # Control parameters
-                                    self$control <- control
-                                    # Latitude
-                                    self$lat <- lat
-                                    # Original coefficients
-                                    private$coefficients_orig <- self$coefficients
-                                    # Delta parameter
-                                    private$delta <- delta*delta0
-
+                                    data <- dplyr::select(data, n, t, H0, Rt, Ct_hat)
+                                    # ========================================================================
+                                    # 2. Optimization: delta_init*Ct_max ~ delta*(a_0 + a_1 H0 + a_2 cos(.) + a_3 sin(.) + a_4 cos(2*.) + a_5 sin(2*.) + ...)
+                                    # ========================================================================
+                                    # Optimize the fit
+                                    delta <- clearsky_delta_optimizer(data$Rt, data$Ct_hat*control$delta0, control$lower, control$upper, control$by, control$ntol)
                                     # Standard names for coefficients
                                     coefs_names <- c()
-                                    params <- self$coefficients*delta*delta0
+                                    orig_names <- super$.__enclos_env__$private$..model$coefficients_names
                                     if (include.intercept) {
                                       coefs_names[1] <- "delta_0"
-                                      coefs_names[2] <- "delta_extra"
+                                      orig_names <- orig_names[-c(1)]
+                                      for(i in 1:control$order_H0){
+                                        coefs_names[i+1] <- paste0("delta_extra", i)
+                                        orig_names <- orig_names[-c(1)]
+                                      }
                                     } else {
-                                      coefs_names[1] <- "delta_extra"
+                                      for(i in 1:control$order_H0){
+                                        coefs_names[i] <- paste0("delta_extra", i)
+                                        orig_names <- orig_names[-c(1)]
+                                      }
                                     }
-                                    if (order > 0) {
-                                      base_names <- paste0("delta_", rep(c("sin_", "cos_")))
-                                      coefs_names <- c(coefs_names, unlist(purrr::map(1:order, ~paste0(base_names, .x))))
+                                    if (include.trend) {
+                                      coefs_names <- c(coefs_names, "t")
+                                      orig_names <- orig_names[-c(1)]
                                     }
-                                    names(params) <- coefs_names
-                                    # Update coefficients
-                                    self$update(params)
+                                    if (self$order > 0) {
+                                      coefs_names <- c(coefs_names, paste0("delta_", orig_names))
+                                    }
+                                    # Store original coefficients
+                                    private$coefficients_orig <- self$coefficients
+                                    # Store delta parameter
+                                    private$delta <- delta * control$delta0
+                                    # Update coefficients values and names
+                                    super$.__enclos_env__$private$..model$coefficients <- super$.__enclos_env__$private$..model$coefficients * private$delta
+                                    super$.__enclos_env__$private$..model$coefficients_names <- coefs_names
+                                    # Update std errors values and names
+                                    super$.__enclos_env__$private$..std.errors <- super$.__enclos_env__$private$..std.errors * private$delta
+                                    names(super$.__enclos_env__$private$..std.errors) <- coefs_names
                                   },
                                   #' @description
-                                  #' Compute the extraterrestrial radiation for a given location.
-                                  #' @param n integer, number of day of the year.
+                                  #' Compute the extraterrestrial radiation at a given location.
+                                  #' @param n Integer, scalar or vector. Number of day of the year.
                                   H0 = function(n){
                                     private$..ssf$H0(n, self$lat)
                                   },
-                                  #' @method predict seasonalModel
                                   #' @description
-                                  #' Predict method for the class `seasonalClearsky`.
-                                  #' @param n integer, number of day of the year.
-                                  predict = function(n){
-                                    if (missing(n)) {
-                                      predict.lm(private$..model)
+                                  #' Predict method for `seasonalClearsky` object.
+                                  #' @param n Integer, scalar or vector. number of day of the year.
+                                  predict = function(n, newdata){
+                                    if (missing(newdata)) {
+                                      if (missing(n)) {
+                                        predict.lm(private$..model)
+                                      } else {
+                                        H0 <- self$H0(n)
+                                        newdata <- data.frame(n = n, H0 = H0)
+                                        if (self$control$order_H0 > 1){
+                                          for(i in 2:self$control$order_H0){
+                                            newdata[[paste0("H0_", i)]] <- newdata$H0^i
+                                          }
+                                        }
+                                        predict.lm(private$..model, newdata = newdata)
+                                      }
                                     } else {
-                                      n <- number_of_day(n) %% self$period
-                                      H0 <- self$H0(n)
-                                      newdata <- data.frame(n = n, H0 = H0)
+                                      newdata$H0 <- self$H0(newdata$n)
+                                      if (self$control$order_H0 > 1){
+                                        for(i in 2:self$control$order_H0){
+                                          newdata[[paste0("H0_", i)]] <- newdata$H0^i
+                                        }
+                                      }
                                       predict.lm(private$..model, newdata = newdata)
                                     }
                                   },
                                   #' @description
-                                  #' Print method for the class `seasonalClearsky`
+                                  #' Print method for `seasonalClearsky` object.
                                   print = function(){
                                     cat(paste0("----------------------- seasonalClearsky ----------------------- \n"))
                                     msg_1 <- paste0(" - Order: ", self$order, "\n - Period: ", self$period, "\n")
                                     msg_2 <- paste0("- External regressors: 1 (H0) \n")
-                                    cat(c(msg_1, msg_2))
+                                    msg_3 <- paste0("- Version: ", private$version, "\n")
+                                    cat(c(msg_1, msg_2, msg_3))
                                     cat(paste0("--------------------------------------------------------------\n"))
                                     print(self$model)
                                   }
                                 ),
-
                                 private = list(
+                                  version = "1.0.0",
                                   coefficients_orig = NA,
                                   delta = NA,
                                   ..ssf = NA
                                 )
-)
-
+                              )
 
 #' Optimizer for Solar Clear sky
 #'
 #' Find the best parameter delta for fitting clear sky radiation.
 #'
-#' @param x Numeric vector, realized solar radiation.
-#' @param Ct Numeric vector, clear sky radiation.
-#' @param ntol Integer, tolerance for `clearsky > GHI` condition. Maximum number of violations admitted.
-#' @param lower Numeric scalar, lower bound for delta grid.
-#' @param upper Numeric scalar, upper bound for delta grid.
-#' @param by Numeric scalar, step for delta grid.
+#' @param x Numeric vector. Time series of solar radiation.
+#' @param Ct Numeric vector. Time series of  clear sky radiation.
+#' @param ntol Integer scalar. Tolerance for the maximum number of violations admitted of the condition `clearsky > GHI`. Default is `0`.
+#' @param lower Numeric scalar. Lower bound for grid of delta parameters used for optimization. Default is `0`.
+#' @param upper Numeric scalar. Upper bound for grid of delta parameters used for optimization. Default is `3`.
+#' @param by Numeric scalar, step for the grid. Default is `0.01`.
 #'
 #' @return Numeric, scalar the optimal delta parameter.
 #'
-#' @name clearsky_optimizer
-#' @rdname clearsky_optimizer
+#' @name clearsky_delta_optimizer
+#' @rdname clearsky_delta_optimizer
 #' @keywords internal
 #' @export
-clearsky_optimizer <- function(x, Ct, lower = 0, upper = 3, by = 0.01, ntol = 30){
+clearsky_delta_optimizer <- function(x, Ct, lower = 0, upper = 3, by = 0.01, ntol = 0){
   # Grid of points
   grid <- seq(lower, upper, by = by)
   # Loss
@@ -233,15 +229,48 @@ clearsky_optimizer <- function(x, Ct, lower = 0, upper = 3, by = 0.01, ntol = 30
   delta <- opt[which(opt$loss <= ntol)[1],]$delta
   return(delta)
 }
+#' Optimizer for Solar Clear sky
+#'
+#' @name clearsky_optimizer
+#' @rdname clearsky_optimizer
+#' @keywords internal
+#' @export
+clearsky_optimizer <- function(seasonal_model_Ct, data, ntol = 0){
+  # Clone the model
+  sm <- seasonal_model_Ct$clone(TRUE)
+  # Loss function
+  loss <- function(params, sm, data){
+    sm$update(params)
+    # Prediction
+    pred <- sm$predict(newdata = data)
+    # Violations
+    violations <- ifelse(data$GHI - pred > 0, 1, 0)
+    # Check number of violations lower than ntol
+    mse <- sum((data$GHI - pred)^2) + 1000000*(sum(violations) - ntol)
+    return(mse)
+  }
+  # Optimal parameters
+  opt <- optim(sm$coefficients, loss, sm = sm, data = data)
+  # Update the parameters
+  sm$update(opt$par)
+  return(sm)
+}
+
 
 #' Impute clear sky outliers
 #'
 #' Detect and impute outliers with respect to a maximum level of radiation (Ct)
+#' \describe{
+#' \item{`GHI < 0`}{If a value is below 0 for a day it will be imputed to be equal to min(GHI) for that day}.
+#' \item{`GHI > Ct`}{If a value is above the maximum clear sky Ct it will be imputed to be Ct*(1-threshold)}.
+#' \item{`is.na(GHI)`}{If a value is NA it will be imputed to be the average for that day mean(GHI)}.
+#' }
 #'
-#' @param x Numeric vector, realized solar radiation.
-#' @param Ct Numeric vector, clear sky radiation.
-#' @param date Vector, optional time series of dates.
-#' It will be used for a more precise imputation when a solar radiation value is `NA`.
+#' @param x Numeric vector. Time series of solar radiation.
+#' @param Ct Numeric vector. Time series of clear sky radiation.
+#' @param date Character or Date vector, optional. Time series of dates.
+#' Used to precisely impute solar radiation according to the realized values in the same day of the year.
+#' @param threshold Numeric, scalar. Threshold value used for imputation. Default is `0.0001`.
 #' @examples
 #' clearsky_outliers(c(1,2,3), 2)
 #'
@@ -255,7 +284,8 @@ clearsky_outliers <- function(x, Ct, date, threshold = 0.0001, quiet = FALSE){
   data <- dplyr::tibble(Ct = Ct, x = x)
   # Eventually add a date for non-stationary data
   if (!missing(date)){
-    data <- dplyr::mutate(data, date = as.Date(date),
+    data <- dplyr::mutate(data,
+                          date = as.Date(date),
                           Month = lubridate::month(date),
                           Day = lubridate::day(date))
   }
@@ -281,7 +311,7 @@ clearsky_outliers <- function(x, Ct, date, threshold = 0.0001, quiet = FALSE){
     # Impute outliers
     for (i in idx_outliers) {
       df_n <- data[i,]
-      if (!missing(date)){
+      if (!missing(date)) {
         # Data for the same day and month (without outliers)
         df_day <- dplyr::filter(data_no_outliers, Month == df_n$Month & Day == df_n$Day & date != df_n$date)
       } else {
@@ -292,11 +322,11 @@ clearsky_outliers <- function(x, Ct, date, threshold = 0.0001, quiet = FALSE){
         # Outlier is an NA
         data_clean[i,]$x <- mean(df_day$x, na.rm = TRUE)
       } else if (i %in% outliers_lo) {
-        # Outlier is under minum value for the day
+        # Outlier is under minimum value for the day
         data_clean[i,]$x <- min(df_day$x, na.rm = TRUE)
-      } else {
+      } else if (i %in% outliers_hi) {
         # Outlier is above maximum value for the day
-        data_clean[i,]$x <- data_clean$Ct[i]*(1-threshold)
+        data_clean[i,]$x <- data_clean$Ct[i] * (1-threshold)
       }
     }
   }
@@ -332,5 +362,6 @@ clearsky_outliers <- function(x, Ct, date, threshold = 0.0001, quiet = FALSE){
     )
   )
 }
+
 
 

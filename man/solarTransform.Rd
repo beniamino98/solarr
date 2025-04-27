@@ -12,12 +12,19 @@ st <- solarTransform$new()
 st$GHI(0.4, 3)
 st$GHI(st$iGHI(0.4, 3), 3)
 }
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{epsilon}}{Numeric, \eqn{\epsilon} transformation parameter.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{alpha}}{Numeric, the first transformation parameter.}
+\item{\code{alpha}}{Numeric, \eqn{\alpha} transformation parameter.}
 
-\item{\code{beta}}{Numeric, the second transformation parameter.}
+\item{\code{beta}}{Numeric, \eqn{\beta} transformation parameter.}
 }
 \if{html}{\out{</div>}}
 }
@@ -30,6 +37,8 @@ st$GHI(st$iGHI(0.4, 3), 3)
 \item \href{#method-solarTransform-iGHI}{\code{solarTransform$iGHI()}}
 \item \href{#method-solarTransform-Y}{\code{solarTransform$Y()}}
 \item \href{#method-solarTransform-iY}{\code{solarTransform$iY()}}
+\item \href{#method-solarTransform-ieta}{\code{solarTransform$ieta()}}
+\item \href{#method-solarTransform-eta}{\code{solarTransform$eta()}}
 \item \href{#method-solarTransform-fit}{\code{solarTransform$fit()}}
 \item \href{#method-solarTransform-bounds}{\code{solarTransform$bounds()}}
 \item \href{#method-solarTransform-update}{\code{solarTransform$update()}}
@@ -41,7 +50,7 @@ st$GHI(st$iGHI(0.4, 3), 3)
 \if{html}{\out{<a id="method-solarTransform-new"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a solarTransform object.
+Initialize a \code{solarTransform} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$new(alpha = 0, beta = 1)}\if{html}{\out{</div>}}
 }
@@ -49,9 +58,9 @@ Initialize a solarTransform object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{alpha}}{Numeric, transformation parameter.}
+\item{\code{alpha}}{Numeric, \eqn{\alpha} transformation parameter.}
 
-\item{\code{beta}}{Numeric, transformation parameter.}
+\item{\code{beta}}{Numeric, \eqn{\beta} transformation parameter.}
 }
 \if{html}{\out{</div>}}
 }
@@ -60,7 +69,7 @@ Initialize a solarTransform object.
 \if{html}{\out{<a id="method-solarTransform-GHI"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-GHI}{}}}
 \subsection{Method \code{GHI()}}{
-Solar radiation function
+Map the risk driver X in solar radiation
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$GHI(x, Ct)}\if{html}{\out{</div>}}
 }
@@ -87,7 +96,7 @@ Numeric values in \eqn{C_t(1-\alpha-\beta, 1-\alpha)}.
 \if{html}{\out{<a id="method-solarTransform-GHI_y"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-GHI_y}{}}}
 \subsection{Method \code{GHI_y()}}{
-Solar radiation function in terms of y
+Map the transformed variable Y in solar radiation
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$GHI_y(y, Ct)}\if{html}{\out{</div>}}
 }
@@ -114,7 +123,7 @@ Numeric values in \eqn{[C_t(1-\alpha-\beta), C_t(1-\alpha)]}.
 \if{html}{\out{<a id="method-solarTransform-iGHI"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-iGHI}{}}}
 \subsection{Method \code{iGHI()}}{
-Compute the risk driver process
+Map the solar radiation in the risk driver X
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$iGHI(x, Ct)}\if{html}{\out{</div>}}
 }
@@ -141,7 +150,7 @@ Numeric values in \eqn{[\alpha,\alpha+\beta]}.
 \if{html}{\out{<a id="method-solarTransform-Y"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-Y}{}}}
 \subsection{Method \code{Y()}}{
-Transformation function from X to Y
+Map the risk driver X in the transformed variable Y
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$Y(x)}\if{html}{\out{</div>}}
 }
@@ -166,7 +175,7 @@ Numeric values in \eqn{[-\infty, \infty]}.
 \if{html}{\out{<a id="method-solarTransform-iY"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-iY}{}}}
 \subsection{Method \code{iY()}}{
-Inverse transformation from Y to X.
+Map the transformed variable Y in the risk driver X.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$iY(y)}\if{html}{\out{</div>}}
 }
@@ -188,12 +197,63 @@ Numeric values in \eqn{[\alpha, \alpha + \beta]}.
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarTransform-ieta"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-ieta}{}}}
+\subsection{Method \code{ieta()}}{
+Map the risk driver X in the normalized variable Z.
+Transformation function from X to Y
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$ieta(x)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{numeric vector in \eqn{[\alpha, \alpha+\beta]}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function computes:
+\deqn{\eta^{-1}(x) = \frac{x - \alpha}{\beta}}
+}
+
+\subsection{Returns}{
+Numeric values in \eqn{[0, 1]}.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarTransform-eta"></a>}}
+\if{latex}{\out{\hypertarget{method-solarTransform-eta}{}}}
+\subsection{Method \code{eta()}}{
+Map the normalized variable Z in the risk driver X.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$eta(z)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{z}}{numeric vector in \eqn{[0, 1]}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Details}{
+The function computes:
+\deqn{\eta(z) = \alpha + \beta \cdot z}
+}
+
+\subsection{Returns}{
+Numeric values in \eqn{[\alpha, \alpha + \beta]}.
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarTransform-fit"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-fit}{}}}
 \subsection{Method \code{fit()}}{
-Fit the best parameters from a time series
+Fit the best parameters \eqn{\alpha} and \eqn{\beta} from a given time series
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarTransform$fit(x, threshold = 0.01)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarTransform$fit(x, epsilon = 0.01, min_pos = 1, max_pos = 1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -201,18 +261,18 @@ Fit the best parameters from a time series
 \describe{
 \item{\code{x}}{time series of solar risk drivers in \eqn{(0, 1)}.}
 
-\item{\code{threshold}}{for minimum}
+\item{\code{epsilon}}{Numeric,}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Details}{
 Return a list that contains:
 \describe{
-\item{alpha}{Numeric, first transformation parameter.}
-\item{beta}{Numeric, second transformation parameter.}
+\item{alpha}{Numeric, \eqn{\alpha} transformation parameter.}
+\item{beta}{Numeric, \eqn{\beta} transformation parameter.}
 \item{epsilon}{Numeric, threshold used for fitting.}
-\item{Xt_min}{Numeric, minimum value of the supplied time series.}
-\item{Xt_min}{Numeric, maximum value of the supplied time series.}
+\item{Xt_min}{Numeric, minimum value of the time series.}
+\item{Xt_min}{Numeric, maximum value of the time series.}
 }
 }
 
@@ -234,9 +294,9 @@ Compute the bounds for the transformed variables.
 \describe{
 \item{\code{target}}{target variable. Available choices are:
 \describe{
-\item{Xt}{Solar risk driver, the bounds returned are \eqn{[\alpha, \alpha + \beta]}.}
-\item{Kt}{Clearness index, the bounds returned are \eqn{[1-\alpha-\beta, 1-\alpha]}.}
-\item{Yt}{Solar transform, the bounds returned are \eqn{[-\infty, \infty]}.}
+\item{\code{"Xt"}}{Solar risk driver, the bounds returned are \eqn{[\alpha, \alpha + \beta]}.}
+\item{\code{"Kt"}}{Clearness index, the bounds returned are \eqn{[1-\alpha-\beta, 1-\alpha]}.}
+\item{\code{"Yt"}}{Solar transform, the bounds returned are \eqn{[-\infty, \infty]}.}
 }}
 }
 \if{html}{\out{</div>}}
@@ -249,7 +309,7 @@ A numeric vector where the first element is the lower bound and the second the u
 \if{html}{\out{<a id="method-solarTransform-update"></a>}}
 \if{latex}{\out{\hypertarget{method-solarTransform-update}{}}}
 \subsection{Method \code{update()}}{
-Update the transformation parameters
+Update the transformation parameters \eqn{\alpha} and \eqn{\beta}.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarTransform$update(alpha, beta)}\if{html}{\out{</div>}}
 }

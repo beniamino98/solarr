@@ -11,26 +11,27 @@
 #' clearsky model, compute risk drivers, detect outliers, and apply time-series models.
 #'
 #' @examples
-#' # Control list
-#' control <- control_solarModel(outliers_quantile = 0,
-#' mean.model = list(arOrder = 1), garch_variance = FALSE)
+#'
 #' # Model specification
-#' spec <- solarModel_spec("Bologna", from="2005-01-01", control_model = control)
-#' Bologna <- solarModel$new(spec)
+#' spec <- solarModel_spec$new()
+#' spec$set_mean.model(arOrder = 1, maOrder = 1)
+#' spec$specification("Bologna")
 #' # Model fit
+#' Bologna <- solarModel$new(spec)
 #' Bologna$fit()
-#' # save(Bologna, file = "data/Bologna.RData")
+#' # save(spec, file = "data/Bologna.RData")
 #'
 #' # Extract and update the parameters
-#' params <- sm$parameters
-#' sm$update(params)
-#' sm$filter()
+#' model <- Bologna$clone(TRUE)
+#' params <- model$coefficients
+#' model$update(params)
+#' model$filter()
 #'
 #' # Fit a model with the realized clear sky
 #' spec$control$stochastic_clearsky <- TRUE
 #' # Initialize a new model
 #' model <- solarModel$new(spec)
-#' #' # Model fit
+#' # Model fit
 #' model$fit()
 #'
 #' # Fit a model for the clearsky
@@ -39,796 +40,871 @@
 #' spec_Ct$target <- "clearsky"
 #' # Initialize a new model
 #' model <- solarModel$new(spec)
-#' #' # Model fit
+#' # Model fit
 #' model$fit()
+#'
 #' @rdname solarModel
 #' @name solarModel
+#' @note Version 1.0.0
 #' @export
 solarModel <- R6::R6Class("solarModel",
-                            public = list(
-                              #' @field place Character, optional name of the location considered.
-                              place = NA_character_,
-                              #' @field target Character, name of the target variable to model. Can be `GHI` or `clearsky`.
-                              target = NA_character_,
-                              #' @field dates A named list, with the range of dates used in the model.
-                              dates = list(),
-                              #' @field coords A named list with the coordinates of the location considered. Contains:
-                              #' \describe{
-                              #'  \item{lat}{Numeric, reference latitude in degrees.}
-                              #'  \item{lon}{Numeric, reference longitude in degrees.}
-                              #'  \item{alt}{Numeric, reference altitude in metres.}
-                              #'}
-                              coords = list(lat = NA, lon = NA, alt = NA),
-                              #' @description
-                              #' Initialize a `solarModel`
-                              #' @param spec an object with class `solarModelSpec`. See the function \code{\link{solarModel_spec}} for details.
-                              initialize = function(spec){
-                                # **************************************************** #
-                                # Seasonal data by month and day for an year with 366 days
-                                dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "1 day")
-                                seasonal_data <- dplyr::tibble(date = dates)
-                                seasonal_data <- dplyr::mutate(seasonal_data,
-                                                               Month = lubridate::month(date),
-                                                               Day = lubridate::day(date),
-                                                               n = number_of_day(date))
-                                seasonal_data <- dplyr::select(seasonal_data, -date)
-                                seasonal_data <- dplyr::arrange(seasonal_data, Month, Day)
-                                # **************************************************** #
-                                # Public components
-                                self$place <- spec$place
-                                self$target <- spec$target
-                                self$dates <- spec$dates
-                                self$coords <- spec$coord
+                          # ====================================================================================================== #
+                          #                                             Public slots
+                          # ====================================================================================================== #
+                          public = list(
+                            #' @field place Character, optional name of the location considered.
+                            place = NA_character_,
+                            #' @field target Character, name of the target variable to model. Can be `"GHI"` or `"clearsky"`.
+                            target = NA_character_,
+                            #' @field dates A named list, with the range of dates used in the model. Output of \code{\link{solarModel_spec}}.
+                            dates = list(),
+                            #' @field coords A named list with the coordinates of the location considered. Contains:
+                            #' \describe{
+                            #'  \item{lat}{Numeric, reference latitude in degrees.}
+                            #'  \item{lon}{Numeric, reference longitude in degrees.}
+                            #'  \item{alt}{Numeric, reference altitude in metres.}
+                            #'}
+                            coords = list(lat = NA, lon = NA, alt = NA),
+                            #' @description
+                            #' Initialize a `solarModel`
+                            #' @param spec an object with class `solarModelSpec`. See the function \code{\link{solarModel_spec}} for details.
+                            initialize = function(spec){
+                              # Seasonal data by month and day for an year with 366 days
+                              dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "1 day")
+                              seasonal_data <- dplyr::tibble(date = dates)
+                              seasonal_data <- dplyr::mutate(seasonal_data,
+                                                             Month = lubridate::month(date),
+                                                             Day = lubridate::day(date),
+                                                             n = number_of_day(date))
+                              seasonal_data <- dplyr::select(seasonal_data, -date)
+                              seasonal_data <- dplyr::arrange(seasonal_data, Month, Day)
+                              # **************************************************** #
+                              # Public components
+                              self$place <- spec$place    # Location
+                              self$target <- spec$target  # Target variable
+                              self$dates <- spec$dates    # Training dates
+                              self$coords <- spec$coords   # Coordinates
+                              # **************************************************** #
+                              # Private components
+                              private$..data <- dplyr::select(spec$data, -H0)
+                              private$..data$loglik <- 0
+                              private$..seasonal_data <- seasonal_data
+                              private$..monthly_data <- dplyr::tibble(Month = 1:12, Yt_tilde_uncond = 0, sigma_uncond = 1)
+                              private$..loglik <- NA
+                              private$..spec <- spec
+                              private$..transform <- solarTransform$new(0, 1)
+                            },
+                            # ***************************************************************************** #
+                            #' @description
+                            #' Initialize and fit a \code{\link{solarModel}} object given the specification contained in `$control`.
+                            fit = function(){
+                              # 1) Clearsky
+                              self$fit_seasonal_model_Ct()
+                              # 2) Risk-driver
+                              self$compute_risk_drivers()
+                              # 3) Solar transform
+                              self$fit_transform()
+                              # 4) Seasonal mean
+                              self$fit_seasonal_model_Yt()
+                              #    Center the mean to be exactly equal to zero
+                              self$fit_monthly_mean()
+                              # 5) ARMA model
+                              self$fit_ARMA()
+                              # 6) Seasonal variance
+                              self$fit_seasonal_variance()
+                              # 7) GARCH variance
+                              self$fit_GARCH()
+                              # 8) Mixture model
+                              self$fit_NM_model()
+                              self$update_NM_classification()
+                              # Update the moments
+                              self$update_moments()
+                              # Update the log-likelihoods
+                              self$update_logLik()
+                            },
+                            #' @description
+                            #' Initialize and fit a \code{\link{seasonalClearsky}} model given the specification contained in `$control`.
+                            fit_seasonal_model_Ct = function(){
+                              # Control
+                              control <- self$spec$clearsky
+                              # Arguments
+                              data <- dplyr::filter(private$..data, isTrain & weights != 0)
+                              # **************************************************** #
+                              # Initialize a seasonal model for clear sky radiation
+                              seasonal_model_Ct <- seasonalClearsky$new(control = control)
+                              # Fit the seasonal model
+                              seasonal_model_Ct$fit(data[[self$target]],
+                                                    data[["date"]],
+                                                    self$coords$lat,
+                                                    data[["clearsky"]])
+                              # Optimize the parameters
+                              #seasonal_model_Ct <- clearsky_optimizer(seasonal_model_Ct, private$..data, control$ntol)
+                              # **************************************************** #
+                              # Private components
+                              # Add seasonal clear sky max to seasonal data
+                              private$..data[["Ct"]] <- seasonal_model_Ct$predict(newdata = self$data)
+                              # Store the model
+                              private$..seasonal_model_Ct <- seasonal_model_Ct$clone(deep = TRUE)
+                            },
+                            #' @description
+                            #' Compute the risk drivers and impute the observation that are greater or equal to the clear sky level.
+                            compute_risk_drivers = function(){
+                              # Arguments
+                              target <- self$target
+                              control <- self$spec
+                              data <- self$data
+                              # **************************************************** #
+                              if (control$stochastic_clearsky) {
+                                # Risk driver
+                                data$Xt <- self$transform$iGHI(data[[target]], data$clearsky)
+                                # Detect and impute outliers
+                                outliers <- clearsky_outliers(data[["GHI"]], data$clearsky, date = data$date, quiet = control$quiet)
+                                # Update GHI
+                                data[["GHI"]] <- outliers$x
+                                # Risk driver
+                                data[["Xt"]] <- self$transform$iGHI(data[["GHI"]], data$clearsky)
+                              } else {
+                                # Detect and impute outliers
+                                outliers <- clearsky_outliers(data[["GHI"]], data$Ct, date = data$date, quiet = control$quiet)
+                                # Update GHI
+                                data[["GHI"]] <- outliers$x
+                                # Add computed risk driver in data
+                                data[["Xt"]] <- self$transform$iGHI(data[["GHI"]], data$Ct)
+                              }
+                              # **************************************************** #
+                              # Add computed risk driver in data
+                              private$..data[["Xt"]] <- data$Xt
+                              # Store outliers data
+                              private$outliers <- outliers
+                              # private$..data$weights[outliers$index] <- 0
+                            },
+                            #' @description
+                            #' Fit the parameters of the \code{\link{solarTransform}} object.
+                            fit_transform = function(){
+                              # Arguments
+                              control <- self$spec
+                              data <- dplyr::filter(private$..data, isTrain & weights != 0)
+                              outliers <- private$outliers
+                              # **************************************************** #
+                              # Transformation parameters
+                              params <- self$transform$fit(data$Xt, control$threshold, control$min_pos, control$max_pos)
+                              # Update transform parameters
+                              private$..transform$update(params$alpha, params$beta)
+
+                              data <- private$..data
+                              # Rescale the minimum to avoid that extreme values
+                              # breaks the ARMA-GARCH routines (especially the minimum)
+                              idx_Xt_min <- which(data$Xt <= params$Xt_min)
+                              data$Xt[idx_Xt_min] <- params$Xt_min*(1+control$transform_delta)
+                              # Rescale also the maximum
+                              idx_Xt_max <- which(data$Xt >= params$Xt_max)
+                              data$Xt[idx_Xt_max] <- params$Xt_max*(1-control$transform_delta)
+                              # Store the index of the imputed values
+                              outliers$index_type$transform <- c(idx_Xt_min, idx_Xt_max)
+                              # Update outliers index and dates
+                              outliers$index <- unique(c(outliers$index, outliers$index_type$transform))
+                              outliers$date <- data$date[outliers$index]
+                              # **************************************************** #
+                              # Compute the transformed variable
+                              data$Yt <- self$transform$Y(data[["Xt"]])
+                              # Add Yt to private data
+                              private$..data[["Yt"]] <- data$Yt
+                              # Store the updated outliers
+                              private$outliers <- outliers
+                            },
+                            #' @description
+                            #' Fit a \code{\link{seasonalModel}} the transformed variable (`Yt`) and compute deseasonalized series (`Yt_tilde`).
+                            fit_seasonal_model_Yt = function(){
+                              # Arguments
+                              target <- self$target
+                              control <- self$spec$seasonal.mean
+                              data <- private$..data
+                              # **************************************************** #
+                              # Train data
+                              data_train <- dplyr::filter(data, isTrain & weights != 0)
+                              # Custom formula
+                              formula_Yt <- ifelse(control$include.intercept, "Yt ~ 1", "Yt ~ -1")
+                              formula_Yt <- ifelse(control$include.trend, paste0(formula_Yt, " + t"), formula_Yt)
+                              # Initialize the seasonal model for Yt
+                              seasonal_model_Yt <- seasonalModel$new(order = control$order, period = control$period)
+                              seasonal_model_Yt$fit(as.formula(formula_Yt), data = data_train)
+                              # Optimization
+                              #opt <- seasonalGHI_optimizer(seasonal_model_Yt, self$transform, data_train)
+                              #seasonal_model_Yt$update(opt$params)
+                              # Compute Yt_bar
+                              data$Yt_bar <- seasonal_model_Yt$predict(newdata = data)
+                              # Compute Yt_tilde
+                              data$Yt_tilde <- data$Yt - data$Yt_bar
+                              # Update parameters names
+                              coefs_names <- c()
+                              orig_names <- seasonal_model_Yt$model$coefficients_names
+                              if(control$include.intercept) {
+                                coefs_names <- c("a_0")
+                                orig_names <- orig_names[-c(1)]
+                              }
+                              if (control$include.trend) {
+                                coefs_names <- c(coefs_names, "t")
+                                orig_names <- orig_names[-c(1)]
+                               }
+                              if (length(control$order) > 1 || control$order > 0) {
+                                coefs_names <- c(coefs_names, paste0("a_", orig_names))
+                              }
+                              # Update parameters name inside the R6 object
+                              seasonal_model_Yt$.__enclos_env__$private$..model$coefficients_names <- coefs_names
+                              names(seasonal_model_Yt$.__enclos_env__$private$..std.errors) <- coefs_names
+                              # **************************************************** #
+                              # Private components
+                              # Store seasonal model for Yt
+                              private$..seasonal_model_Yt <- seasonal_model_Yt$clone(deep = TRUE)
+                              # Add Yt_tilde to data
+                              private$..data[["Yt_tilde"]] <- data$Yt_tilde
+                              # Add Yt_bar to data
+                              private$..data[["Yt_bar"]] <- self$seasonal_model_Yt$predict(newdata = data)
+                              # Add GHI_bar to data
+                              private$..data[[paste0(target, "_bar")]] <- self$transform$GHI_y(self$data$Yt_bar, self$data$Ct)
+                            },
+                            #' @description
+                            #' Correct the deseasonalized series (`Yt_tilde`) by subtracting its monthly mean (`Yt_tilde_uncond`).
+                            fit_monthly_mean = function(){
+                              control <- self$spec
+                              # Unconditional mean for Yt_tilde
+                              if (control$seasonal.mean$monthly.mean) {
+                                data <- private$..data
+                                # Train data
+                                train_data <- dplyr::filter(data, isTrain & weights != 0)
+                                # Compute monthly unconditional mean
+                                monthly_mean <- train_data %>%
+                                  dplyr::group_by(Month) %>%
+                                  dplyr::summarise(Yt_tilde_uncond = mean(Yt_tilde)) %>%
+                                  dplyr::ungroup()
+                                # Add unconditional mean to the dataset
+                                data <- dplyr::left_join(data, monthly_mean, by = c("Month"))
+                                # Update Yt_tilde
+                                data$Yt_tilde <- data$Yt_tilde - data$Yt_tilde_uncond
                                 # **************************************************** #
                                 # Private components
-                                private$..data <- dplyr::select(spec$data, -H0)
-                                private$..seasonal_data <- seasonal_data
-                                private$..monthly_data <- dplyr::tibble(Month = 1:12, Yt_tilde_uncond = 0, sigma_m = 1)
-                                private$..loglik <- dplyr::tibble(Month = 1:12, loglik = 0)
-                                # private$dates <- spec$dates
-                                private$..control <- spec$control
-                                private$..transform <- solarTransform$new(0, 1)
-                              },
-                              # ***************************************************************************** #
-                              #' @description
-                              #' Initialize and fit a \code{\link{solarModel}} object given the specification contained in `$control`.
-                              fit = function(){
-                                self$fit_clearsky_model()
-                                self$compute_risk_drivers()
-                                self$fit_solar_transform()
-                                self$detect_outliers_Yt()
-                                self$fit_seasonal_mean()
-                                self$corrective_monthly_mean()
-                                self$fit_AR_model()
-                                self$fit_seasonal_variance()
-                                self$fit_GARCH_model()
-                                self$corrective_monthly_variance()
-                                self$fit_mixture_model()
-                                # Compute moments
-                                self$conditional_moments()
-                                self$unconditional_moments()
-                                # Compute log-likelihood
-                                self$logLik()
-                              },
-                              #' @description
-                              #' Initialize and fit a \code{\link{seasonalClearsky}} model given the specification contained in `$control`.
-                              fit_clearsky_model = function(){
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # Initialize a seasonal model for clear sky radiation
-                                seasonal_model_Ct <- seasonalClearsky$new(control = self$control$clearsky)
-                                # Fit the seasonal model
-                                seasonal_model_Ct$fit(data[[self$target]], data[["date"]], self$coords$lat, data[["clearsky"]])
-                                # **************************************************** #
-                                # Add seasonal clearsky max to seasonal data
-                                private$..seasonal_data$Ct <- seasonal_model_Ct$predict(private$..seasonal_data$n)
-                                # Store the model
-                                private$..seasonal_model_Ct <- seasonal_model_Ct$clone(deep = TRUE)
-                              },
-                              #' @description
-                              #' Compute the risk drivers and impute the observation that are greater or equal to the clearsky level.
-                              compute_risk_drivers = function(){
-                                # Self Arguments
-                                target <- self$target
-                                control <- self$control
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # Compute risk drivers
-                                if (control$stochastic_clearsky) {
-                                  data$clearsky <- data$clearsky*1.01
-                                  # Detect and impute outliers
-                                  outliers <- clearsky_outliers(data[[target]], data$clearsky, date = data$date, quiet = control$quiet)
-                                  # Update GHI
-                                  data[[target]] <- outliers$x
-                                  data$Xt <- self$transform$iGHI(data[[target]], data$clearsky)
-                                } else {
-                                  # Predict seasonal clearsky
-                                  data$Ct <- self$seasonal_model_Ct$predict(data$n)
-                                  # Detect and impute outliers
-                                  outliers <- clearsky_outliers(data[[target]], data$Ct, date = data$date, quiet = control$quiet)
-                                  # Update GHI
-                                  data[[target]] <- outliers$x
-                                  data$Xt <- self$transform$iGHI(data[[target]], data$Ct)
-                                }
-                                # **************************************************** #
-                                # Update target in data
-                                private$..data[[target]] <- data[[target]]
-                                # Update clearsky in data
-                                private$..data[["clearsky"]] <- data$clearsky
-                                # Add computed risk driver in data
-                                private$..data[["Xt"]] <- data$Xt
-                                # Store outliers data
-                                private$outliers <- outliers
-                              },
-                              #' @description
-                              #' Fit the parameters of the \code{\link{solarTransform}} object.
-                              fit_solar_transform = function(){
-                                # Private arguments
-                                data <- private$..data
-                                outliers <- private$outliers
-                                # **************************************************** #
-                                # Transformation parameters
-                                params <- self$transform$fit(data$Xt, self$control$threshold)
-                                self$transform$update(params$alpha, params$beta)
-                                # Remove minimum and maximum of Xt from computations
-                                outliers$index_type$transform <- c(which.min(data$Xt), which.max(data$Xt))
-                                # Update outliers index and dates
-                                outliers$index <- unique(c(outliers$index, outliers$index_type$transform))
-                                outliers$date <- data$date[outliers$index]
-                                # **************************************************** #
-                                # Update outliers
-                                private$outliers <- outliers
-                              },
-                              #' @description
-                              #' Detect and assign a zero weight to the outliers to exclude them from the fit. The threshold to be outlier is specified
-                              #' with the control function.
-                              detect_outliers_Yt = function(){
-                                # Private arguments
-                                data <- private$..data
-                                outliers <- private$outliers
-                                # **************************************************** #
-                                # Compute Yt
-                                data$Yt <- self$transform$Y(data$Xt)
-                                # Exclude outliers from computations
-                                idx_outliers_l <- which(data$Yt <= quantile(data$Yt, probs = self$control$outliers_quantile, na.rm = TRUE))
-                                idx_outliers_r <- which(data$Yt >= quantile(data$Yt, probs = 1-self$control$outliers_quantile, na.rm = TRUE))
-                                # Update outliers index and dates
-                                outliers$index_type$threshold <- unique(c(idx_outliers_l, idx_outliers_r))
-                                outliers$index <- unique(c(outliers$index, outliers$index_type$threshold))
-                                outliers$date <- data$date[outliers$index]
-                                # Rescale weights
-                                if (!purrr::is_empty(outliers$index)) {
-                                  data$weights[outliers$index] <- 0
-                                  data$weights <- data$weights/sum(data$weights)
-                                }
-                                # **************************************************** #
-                                # Update outliers
-                                private$outliers <- outliers
-                                # Update weights
-                                private$..data$weights <- data$weights
-                              },
-                              #' @description
-                              #' Fit a \code{\link{seasonalModel}} the transformed variable (`Yt`) and compute deseasonalized series (`Yt_tilde`).
-                              fit_seasonal_mean = function(){
-                                # Self Arguments
-                                target <- self$target
-                                control <- self$control$seasonal.mean
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # Compute Yt
-                                data$Yt <- self$transform$Y(data$Xt)
-                                # Train data
-                                data_train <- dplyr::filter(data, isTrain & weights != 0)
-                                # Custom formula
-                                formula_Yt <- ifelse(control$include.intercept, "Yt ~ 1", "Yt ~ -1")
-                                formula_Yt <- paste0(formula_Yt, ifelse(control$include.H0, "+ H0", ""))
-                                # Initialize the seasonal model for Yt
-                                seasonal_model_Yt <- seasonalModel$new(order = control$seasonalOrder, period = 365)
-                                # Seasonal model for Yt
-                                seasonal_model_Yt$fit(formula = formula_Yt, data = data_train)
-                                # Compute Yt_bar
-                                data$Yt_bar <- seasonal_model_Yt$predict(data$n)
-                                # Compute Yt_tilde
-                                data$Yt_tilde <- data$Yt - data$Yt_bar
-                                # Standardize parameters names
-                                params_names <- c()
-                                if (control$include.intercept) {
-                                  params_names[1] <- "a_0"
-                                }
-                                if (control$include.H0) {
-                                  params_names <- c(params_names, "a_extra")
-                                }
-                                if (control$seasonalOrder > 0) {
-                                  base_names <- paste0("a_", c("sin_", "cos_"))
-                                  params_names <- c(params_names, unlist(purrr::map(1:control$seasonalOrder, ~paste0(base_names, .x))))
-                                }
-                                params <- seasonal_model_Yt$coefficients
-                                names(params) <- params_names
-                                seasonal_model_Yt$update(params)
-                                # **************************************************** #
-                                # Store seasonal model for Yt
-                                private$..seasonal_model_Yt <- seasonal_model_Yt$clone(deep = TRUE)
-                                # Add Yt to data
-                                private$..data[["Yt"]] <- data$Yt
+                                # Add unconditional mean to monthly data
+                                private$..monthly_data[["Yt_tilde_uncond"]] <- monthly_mean$Yt_tilde_uncond
                                 # Add Yt_tilde to data
                                 private$..data[["Yt_tilde"]] <- data$Yt_tilde
-                                # Add Yt_bar to seasonal data
-                                private$..seasonal_data[["Yt_bar"]] <- private$..seasonal_model_Yt$predict(private$..seasonal_data$n)
-                                # Add impled seasonal mean of the target to seasonal data
-                                private$..seasonal_data[[paste0(target, "_bar")]] <- self$transform$GHI_y(private$..seasonal_data$Yt_bar, private$..seasonal_data$Ct)
-                              },
-                              #' @description
-                              #' Correct the deseasonalized series (`Yt_tilde`) by subtracting its monthly mean (`Yt_tilde_uncond`).
-                              corrective_monthly_mean = function(){
-                                # Self Arguments
-                                control <- self$control$seasonal.mean
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # Unconditional mean for Yt_tilde
-                                if (control$monthly.mean) {
-                                  # Train data
-                                  train_data <- dplyr::filter(data, isTrain)
-                                  # Compute monthly unconditional mean
-                                  monthly_data <- train_data %>%
-                                    dplyr::group_by(Month) %>%
-                                    dplyr::summarise(Yt_tilde_uncond = sum(Yt_tilde*weights, na.rm = TRUE)/sum(weights, na.rm = TRUE)) %>%
-                                    dplyr::ungroup()
-                                  # Add unconditional mean to the dataset
-                                  data <- dplyr::left_join(data, monthly_data, by = c("Month"))
-                                  # Update Yt_tilde
-                                  data$Yt_tilde <- data$Yt_tilde - data$Yt_tilde_uncond
-                                  # **************************************************** #
-                                  # Add unconditional mean to monthly data
-                                  private$..monthly_data[["Yt_tilde_uncond"]] <- monthly_data$Yt_tilde_uncond
-                                  # Add Yt_tilde to data
-                                  private$..data[["Yt_tilde"]] <- data$Yt_tilde
-                                }
-                              },
-                              #' @description
-                              #' Fit an AR model (`Yt_tilde`) and compute AR residuals (`eps`).
-                              fit_AR_model = function(){
-                                # Self arguments
-                                control <- self$control$mean.model
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
+                              }
+                            },
+                            #' @description
+                            #' Fit an AR model (`Yt_tilde`) and compute AR residuals (`eps`).
+                            fit_ARMA = function(){
+                              # Arguments
+                              control <- self$spec$mean.model
+                              data <- private$..data
+                              # **************************************************** #
+                              # Train data
+                              data_train <- dplyr::filter(data, isTrain)# & weights != 0)
+                              # Initialize an AR model
+                              ARMA <- ARMA_modelR6$new(control$arOrder, control$maOrder, control$include.intercept)
+                              # Fitted AR model
+                              ARMA$fit(data_train$Yt_tilde)
+                              # Fitted values
+                              eps0 <- c()
+                              if (ARMA$order[2] > 0){
+                                eps0 <- ARMA$model$residuals[1:ARMA$order[2]]
+                              }
+                              # Fitted Yt_tilde
+                              data$Yt_tilde_hat <- ARMA$filter(data$Yt_tilde, eps0 = eps0)$fitted
+                              # Fitted residuals
+                              data$eps <- data$Yt_tilde - data$Yt_tilde_hat
+                              # **************************************************** #
+                              # Private components
+                              # Store ARMA model
+                              private$..ARMA <- ARMA$clone(TRUE)
+                              # Add fitted Yt_tilde
+                              private$..data[["Yt_tilde_hat"]] <- data$Yt_tilde_hat
+                              # Add fitted residuals
+                              private$..data[["eps"]] <- data$eps
+                            },
+                            #' @description
+                            #' Fit a \code{\link{seasonalModel}} on AR squared residuals (`eps`) and compute deseasonalized residuals `eps_tilde`.
+                            fit_seasonal_variance = function(){
+                              # Control
+                              control <- self$spec$seasonal.variance
+                              # Dataset
+                              data <- private$..data
+                              # **************************************************** #
+                              # Train data
+                              data_train <- dplyr::filter(data, isTrain & weights != 0)
+                              # Squared residuals
+                              data_train$eps2 <- data_train$eps^2
+                              # Custom formula
+                              formula <- ifelse(control$include.trend, "eps2 ~ 1 + t", "eps2 ~ 1")
+                              # Initialize the seasonal model for eps2
+                              seasonal_variance <- seasonalModel$new(order = control$order, period = control$period)
+                              seasonal_variance$fit(formula = as.formula(formula), data = data_train)
+                              # Fitted seasonal standard deviation
+                              private$..data[["sigma_bar"]] <- sqrt(seasonal_variance$predict(newdata = data))
+                              # Compute standardized residuals
+                              private$..data[["eps_tilde"]] <- private$..data[["eps"]] / private$..data[["sigma_bar"]]
+                              # Update parameters names
+                              coefs_names <- c("c_0")
+                              orig_names <- seasonal_variance$model$coefficients_names[-1]
+                              if (control$include.trend) {
+                                coefs_names <- c(coefs_names, "t")
+                                orig_names <- orig_names[-c(1)]
+                              }
+                              if (control$order > 0) {
+                                coefs_names <- c(coefs_names, paste0("c_", orig_names))
+                              }
+                              # Update parameters name inside the R6 object
+                              seasonal_variance$.__enclos_env__$private$..model$coefficients_names <- coefs_names
+                              names(seasonal_variance$.__enclos_env__$private$..std.errors) <- coefs_names
+                              # **************************************************** #
+                              # Store seasonal variance model
+                              private$..seasonal_variance <- seasonal_variance$clone(deep = TRUE)
+                              # **************************************************** #
+                              # Compute monthly corrective variance to ensure unitary monthly variance
+                              self$fit_monthly_variance()
+                              # Correction of the parameters to ensure unitary variance
+                              self$correct_seasonal_variance()
+                            },
+                            #' @description
+                            #' Correct the standardized series (`eps_tilde`) by subtracting its monthly mean (`sigma_uncond`).
+                            fit_monthly_variance = function(){
+                              # Arguments
+                              control <- self$spec$seasonal.variance
+                              data <- private$..data
+                              # **************************************************** #
+                              # Unconditional variance for eps_tilde
+                              if (control$monthly.mean) {
                                 # Train data
-                                data_train <- dplyr::filter(data, isTrain)
-                                # AR with flexible formula for multiple orders
-                                AR_formula_Yt <- "I(Yt_tilde) ~ "
-                                if (control$arOrder > 0){
-                                  for(i in 1:control$arOrder){
-                                    AR_formula_Yt <- paste0(AR_formula_Yt, " + I(dplyr::lag(Yt_tilde,", i, "))")
-                                  }
-                                }
-                                # Custom formula for intercept
-                                AR_formula_Yt <- paste0(AR_formula_Yt, ifelse(control$include.intercept, "", "-1"))
-                                # Fitted AR model
-                                AR_model_Yt <- lm(formula = as.formula(AR_formula_Yt), data = data_train, weights = data_train$weights)
-                                # Fitted Yt_tilde
-                                data$Yt_tilde_hat <- predict.lm(AR_model_Yt, newdata = data)
-                                # Set the initial values as the real ones
-                                if (control$arOrder > 0) {
-                                  data$Yt_tilde_hat[1:control$arOrder] <- data$Yt_tilde[1:control$arOrder]
-                                }
-                                # Fitted AR residuals
-                                data$eps <- data$Yt_tilde - data$Yt_tilde_hat
-                                # Standardize parameters names
-                                params <- AR_model_Yt$coefficients
-                                coefs_names <- c()
-                                if (control$include.intercept) {
-                                  coefs_names[1] <- "phi_0"
-                                }
-                                if (control$arOrder > 0){
-                                  coefs_names <- c(coefs_names, paste0("phi_", 1:control$arOrder))
-                                }
-                                names(AR_model_Yt$coefficients) <- coefs_names
-                                AR_model_Yt$variance <- ifelse(control$include.intercept, AR_variance(AR_model_Yt$coefficients[-1]), AR_variance(AR_model_Yt$coefficients))
-                                # **************************************************** #
-                                # Store AR model
-                                private$..AR_model_Yt <- AR_model_Yt
-                                # Add fitted Yt_tilde
-                                private$..data[["Yt_tilde_hat"]] <- data$Yt_tilde_hat
-                                # Add fitted residuals
-                                private$..data[["eps"]] <- data$eps
-                              },
-                              #' @description
-                              #' Fit a \code{\link{seasonalModel}} on AR squared residuals (`eps`) and compute deseasonalized residuals `eps_tilde`.
-                              fit_seasonal_variance = function(){
-                                # Self arguments
-                                control <- self$control$seasonal.variance
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # Train data
+                                train_data <- dplyr::filter(data, isTrain & weights != 0)
+                                # Compute monthly unconditional mean
+                                monthly_data <- train_data %>%
+                                  dplyr::group_by(Month) %>%
+                                  dplyr::summarise(sigma_uncond = sd(eps_tilde, na.rm = TRUE)) %>%
+                                  dplyr::ungroup()
+                                # Add unconditional variance to monthly data
+                                private$..monthly_data[["sigma_uncond"]] <- monthly_data$sigma_uncond
+                                # Updated standardized residuals
+                                private$..data[["eps_tilde"]] <- private$..data[["eps"]] / (self$data$sigma_bar * self$data$sigma_uncond)
+                              }
+                            },
+                            #' @description
+                            #' Correct the parameters of the seasonal variance to ensure a unitary variance
+                            correct_seasonal_variance = function(){
+                              # Control
+                              control <- self$spec$seasonal.variance
+                              # Dataset with all the parameters
+                              data <- self$data
+                              # **************************************************** #
+                              # Initialize a slot to store monthly correction
+                              private$..seasonal_variance$extra_params$correction <- 1
+                              # Correction to ensure unitary variance
+                              if (control$correction) {
+                                seasonal_variance <- private$..seasonal_variance$clone(TRUE)
+                                # Update train data
                                 data_train <- dplyr::filter(data, isTrain & weights != 0)
-                                data_train$eps2 <- data_train$eps^2
-                                # Initialize the seasonal model for eps^2
-                                seasonal_variance <- seasonalModel$new(order = control$seasonalOrder, period = 365)
-                                # Seasonal model for Yt
-                                seasonal_variance$fit(formula = "eps2 ~ ", data = data_train)
-                                # Fitted seasonal standard deviation
-                                data$sigma_bar <- sqrt(seasonal_variance$predict(n = data$n))
+                                # Store correction factor
+                                seasonal_variance$extra_params$correction <- var(data_train$eps / (data_train$sigma_bar * data_train$sigma_uncond))
+                                # Correct parameters to ensure unitary variance
+                                std.errors <- seasonal_variance$std.errors
+                                seasonal_variance$update(seasonal_variance$coefficients * seasonal_variance$extra_params$correction)
+                                seasonal_variance$update_std.errors(seasonal_variance$extra_params$correction * std.errors)
+                                # Update sigma_bar into the seasonal data
+                                private$..data[["sigma_bar"]] <- sqrt(seasonal_variance$predict(newdata = private$..data))
+                                # Updated standardized residuals
+                                private$..data[["eps_tilde"]] <- private$..data[["eps"]] / (private$..data[["sigma_bar"]] * self$data$sigma_uncond)
+                                # Update seasonal variance model
+                                private$..seasonal_variance <- seasonal_variance$clone(TRUE)
+                              }
+                            },
+                            #' @description
+                            #' Fit a `GARCH` model on the deseasonalized residuals (`eps_tilde`).
+                            #' Compute the standardized (`u`) and monthly deseasonalized residuals (`u_tilde`).
+                            fit_GARCH = function(){
+                              # Arguments
+                              control <- self$spec
+                              data <- private$..data
+                              # **************************************************** #
+                              # Train data
+                              data_train <- dplyr::filter(data, isTrain & weights != 0)
+                              # GARCH specification
+                              GARCH_spec <- control$variance.model
+                              # Initialize the model
+                              GARCH_model <- GARCH_modelR6$new(GARCH_spec, data_train$eps_tilde, data_train$weights, sigma20 = 1)
+                              # Control for garch variance
+                              if (control$garch_variance) {
+                                # Fit the model
+                                GARCH_model$fit()
+                                # Fitted std. deviation
+                                data$sigma <- GARCH_model$filter(data$eps_tilde)$sigma
                                 # Fitted standardized residuals
-                                data$eps_tilde <- data$eps/data$sigma_bar
-                                # Correction to ensure unitary variance
-                                if (control$correction) {
-                                  # Update train data
-                                  data_train <- dplyr::filter(data, isTrain & weights != 0)
-                                  # Correct parameters to ensure unitary variance
-                                  seasonal_variance$update(seasonal_variance$coefficients*mean(data_train$eps_tilde^2, na.rm = TRUE))
-                                  # Fitted seasonal standard deviation
-                                  data$sigma_bar <- sqrt(seasonal_variance$predict(n = data$n))
-                                  # Updated standardized residuals
-                                  data$eps_tilde <- data$eps/data$sigma_bar
+                                data$u_tilde <- data$eps_tilde / data$sigma
+                              } else {
+                                # Fitted std. deviation
+                                data$sigma <- 1
+                                # Not compute standardized residuals
+                                data$u_tilde <- data$eps_tilde
+                              }
+                              # **************************************************** #
+                              # Store GARCH parameters
+                              private$..GARCH <- GARCH_model$clone(TRUE)
+                              # Fitted GARCH std. deviation residuals
+                              private$..data[["sigma"]] <- data$sigma
+                              # Fitted standardized residuals
+                              private$..data[["u_tilde"]] <- data$u_tilde
+                            },
+                            #' @description
+                            #' Initialize and fit a `solarMixture` object.
+                            fit_NM_model = function(){
+                              # Arguments
+                              control <- self$spec$mixture.model
+                              outliers <- private$outliers
+                              # Train data
+                              data_train <- dplyr::filter(private$..data, isTrain & weights != 0)
+                              # **************************************************** #
+                              # Gaussian Mixture fitted only on train data
+                              NM_model <- solarMixture$new(components = 2, abstol = control$abstol, maxit = control$maxit)
+                              NM_model$fit(x = data_train$u_tilde, date = data_train$date, weights = data_train$weights,
+                                           method = control$method, B = control$B)
+                              # Ensure moments matching
+                              if (control$match.moments) {
+                                # Target moments
+                                sk_target <- NM_model$moments$skewness
+                                kt_target <- NM_model$moments$kurtosis
+                                e_target <- rep(0, 12)
+                                if (!self$spec$seasonal.mean$monthly.mean) {
+                                  #e_target <- (data_train %>% group_by(Month) %>% summarise(x = mean(u_tilde)))$x
                                 }
-                                coefs_names <- c("c_0")
-                                if (control$seasonalOrder > 0) {
-                                  base_names <- paste0("c_", rep(c("sin_", "cos_")))
-                                  coefs_names <- c(coefs_names, unlist(purrr::map(1:control$seasonalOrder, ~paste0(base_names, .x))))
+                                v_target <- rep(1, 12)
+                                if (!self$spec$seasonal.variance$monthly.mean) {
+                                  #e_target <- (data_train %>% group_by(Month) %>% summarise(x = mean(u_tilde)))$x
+                                  v_target <- (data_train %>% group_by(Month) %>% summarise(x = var(u_tilde)))$x
+                                  #sk_target <- rep(NA, 12) #(self$data %>% group_by(Month) %>% summarise(x = mean((u_tilde - mean(u_tilde))^3)))$x
+                                  #kt_target <- rep(NA, 12) #(self$data %>% group_by(Month) %>% summarise(x = mean((u_tilde - mean(u_tilde))^4)))$x
                                 }
-                                params <- seasonal_variance$coefficients
-                                names(params) <- coefs_names
-                                seasonal_variance$update(params)
-                                # **************************************************** #
-                                # Store seasonal variance model
-                                private$..seasonal_variance <- seasonal_variance$clone(deep = TRUE)
-                                # Add fitted deseasonalized residuals
-                                private$..data[["eps_tilde"]] <- data$eps_tilde
-                                # Add Yt_bar to seasonal data
-                                private$..seasonal_data[["sigma_bar"]] <- sqrt(seasonal_variance$predict(private$..seasonal_data$n))
-                              },
-                              #' @description
-                              #' Fit a `GARCH` model on the deseasonalized residuals (`eps_tilde`).
-                              #' Compute the standardized (`u`) and monthly deseasonalized residuals (`u_tilde`).
-                              fit_GARCH_model = function(){
-                                # Self arguments
-                                control <- self$control
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # Train data
-                                data_train <- dplyr::filter(data, isTrain)
-                                # GARCH specification
-                                GARCH_spec <- control$variance.model
-                                # Fitted model
-                                GARCH_spec <- ugarchfit_fp(GARCH_spec, data_train$eps_tilde, data_train$weights, sigma0 = 1)
-                                control$variance.model <- GARCH_spec
-                                # Update fitted std. deviation
-                                data$sigma <- rugarch::ugarchfilter(GARCH_spec, data$eps_tilde, out.sample = 0)@filter$sigma
-                                if (control$garch_variance) {
-                                  # Compute standardized residuals
-                                  data$u <- data$eps_tilde/data$sigma
-                                  # Fitted standardized residuals
-                                  data$u_tilde <- data$u
-                                } else {
-                                  # Not compute standardized residuals
-                                  data$u <- data$eps_tilde
-                                  # Fitted standardized residuals
-                                  data$u_tilde <- data$u
+
+                                # Time series for log-likelihood
+                                x <- purrr::map(NM_model$model, ~.x$.__enclos_env__$private$x)
+                                # Optimize the parameters
+                                coefficients <- solarMixture_moments_match(NM_model$coefficients[,-c(1,7)],
+                                                                           e_target, v_target, sk_target, kt_target, x)
+                                # Update the coefficients
+                                NM_model$update(coefficients[,c(1,2)], coefficients[,c(3,4)])
+                                NM_model$filter()
+                                NM_model$update_logLik()
+                              }
+                              # **************************************************** #
+                              # Private components
+                              # Store Gaussian Mixture parameters
+                              private$..NM_model <- NM_model$clone(TRUE)
+                            },
+                            #' @description
+                            #' Update the parameters inside object
+                            #' @param params List of parameters. See the slot `$coefficients` for a template.
+                            update = function(params){
+                              if (!missing(params)) {
+                                if (!is.list(params)) {
+                                  params <- solarModel_match_params(params, self$coefficients)
                                 }
-                                # Initialize a GARCH object
-                                GARCH <- list(coefficients = GARCH_spec@model$fixed.pars, vol = 1, omega = 0, alpha = c(), beta = c(), p = 0, q = 0)
-                                # Intercept
-                                GARCH$omega <- GARCH$coefficients[names(GARCH$coefficients) == "omega"]
-                                # ARCH parameters
-                                GARCH$alpha <- GARCH$coefficients[stringr::str_detect(names(GARCH$coefficients), "alpha")]
-                                # ARCH order
-                                GARCH$p <- max(c(length(GARCH$alpha), 0))
-                                # GARCH parameters
-                                GARCH$beta <- GARCH$coefficients[stringr::str_detect(names(GARCH$coefficients), "beta")]
-                                # GARCH order
-                                GARCH$q <- max(c(length(GARCH$beta), 0))
-                                # **************************************************** #
-                                # Store GARCH specification
-                                private$..control$variance.model <- GARCH_spec
-                                # Store GARCH parameters
-                                private$..GARCH <- GARCH
-                                # Add fitted GARCH std. deviation
-                                private$..data[["sigma"]] <- data$sigma
-                                # Add fitted standardized residuals
-                                private$..data[["u"]] <- data$u
-                                # Add fitted standardized and monthly deseasonalized residuals
-                                private$..data[["u_tilde"]] <- data$u_tilde
-                              },
-                              #' @description
-                              #' Correct the standardized GARCH residuals (`u`) by dividing them by the monthly std. deviation (`sigma_m`).
-                              #' @return Update the slots `$data$u_tilde` and `$monthly_data$sigma_m`.
-                              corrective_monthly_variance = function(){
-                                # Self arguments
-                                control <- self$control
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # Monthly correction
-                                if (control$seasonal.variance$monthly.mean) {
-                                  monthly_data <- dplyr::filter(data, isTrain & weights != 0) %>%
-                                    dplyr::group_by(Month) %>%
-                                    dplyr::summarise(sigma_m = sd(u)) %>%
-                                    dplyr::ungroup()
-                                  # Add unconditional variance to the dataset
-                                  data <- dplyr::left_join(data, monthly_data, by = c("Month"))
-                                  # Fitted standardized residuals
-                                  data$u_tilde <- data$eps_tilde/(data$sigma*data$sigma_m)
-                                  # Remove unconditional mean to the dataset
-                                  data <- dplyr::select(data, -sigma_m)
-                                  # **************************************************** #
-                                  # Add fitted standardized and monthly deseasonalized residuals
-                                  private$..data[["u_tilde"]] <- data$u_tilde
-                                  # Add corrective std. deviation to monthly data
-                                  private$..monthly_data[["sigma_m"]] <- monthly_data$sigma_m
-                                }
-                              },
-                              #' @description
-                              #' Initialize and fit a `solarMixture` object.
-                              fit_mixture_model = function(){
-                                # Self arguments
-                                control <- self$control$mixture.model
-                                # Private arguments
-                                data <- private$..data
-                                # **************************************************** #
-                                # 4) Gaussian Mixture
-                                GM_model <- solarMixture$new(components = 2, maxit = control$maxit, abstol = control$abstol)
-                                GM_model$fit(data$u_tilde, date = data$date, weights = data$weights)
-                                # Add the fitted series of Bernoulli
-                                data <- data[, !(colnames(data) %in% c("B", "z1", "z2", "uncertanty"))]
-                                data <- dplyr::left_join(data, GM_model$fitted, by = c("date"))
-                                # Compute standardized components
-                                data <- dplyr::left_join(data, GM_model$parameters, by = "Month")
-                                data$z1 <- data$B*(data$u_tilde - data$mu1)/data$sd1
-                                data$z2 <- (1-data$B)*(data$u_tilde - data$mu2)/data$sd2
-                                # Adjust mixture parameters
-                                for(m in 1:12){
-                                  orig_sd <- GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd
-                                  orig_sd <- orig_sd*private$..monthly_data[["sigma_m"]][m]
-                                  GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd <- orig_sd
-                                }
-                                # **************************************************** #
-                                # Store Gaussian Mixture parameters
-                                private$..NM_model <- GM_model
-                                # Add fitted series of bernoulli and of standardized components
-                                private$..data[["B"]] <- data$B
-                                private$..data[["z1"]] <- data$z1
-                                private$..data[["z2"]] <- data$z2
-                              },
-                              # ***************************************************************************** #
-                              #' @description
-                              #' Update the parameters inside object
-                              #' @param params List of parameters. See the slot `$parameters` for a template.
-                              update = function(params){
+                                # Update transform parameters
+                                private$..transform$update(params$params$alpha, params$params$beta)
                                 # Update clear sky model
                                 private$..seasonal_model_Ct$update(unlist(params$seasonal_model_Ct))
-                                # Update seasonal model
+                                # Update seasonal mean model
                                 private$..seasonal_model_Yt$update(unlist(params$seasonal_model_Yt))
-                                # Update AR model
-                                private$..AR_model_Yt$coefficients <- unlist(params$AR_model_Yt)
-                                # Update seasonal variance
+                                # Update AR mean model
+                                private$..ARMA$update(unlist(params$ARMA))
+                                # Update seasonal variance model
                                 private$..seasonal_variance$update(unlist(params$seasonal_variance))
-                                # Update GARCH variance
-                                private$..GARCH$coefficients <- unlist(params$GARCH)
-                                private$..GARCH$vol <- sqrt(private$..GARCH$coefficients[1]/(1-sum(private$..GARCH$coefficients[-1])))
-                                private$..control$variance.model@model$fixed.pars <- unlist(params$GARCH)
-                                # Update Gaussian Mixture
+                                # Update GARCH variance model
+                                private$..GARCH$update(unlist(params$GARCH))
+                                # ***************** Update Gaussian Mixture model *****************
                                 means <- cbind(mu1 = unlist(params$NM_mu_up), mu2 = unlist(params$NM_mu_dw))
                                 sd <- cbind(sd1 = unlist(params$NM_sd_up), sd2 = unlist(params$NM_sd_dw))
-                                p <- cbind(p1 = unlist(params$NM_p_up), p2 = 1-unlist(params$NM_p_up))
+                                p <- cbind(p1 = unlist(params$NM_p_up), p2 = 1 - unlist(params$NM_p_up))
                                 private$..NM_model$update(means = means, sd = sd, p = p)
                                 # Set Log-likelihood to NA
-                                private$..loglik$loglik <- rep(NA, 12)
-                              },
-                              #' @description
-                              #' Filter the time series when new parameters are supplied in the method `$update(params)`.
-                              #' @return Update the slots `$data`, `$seasonal_data`, `$monthly_data`, `$moments$conditional`,
-                              #' `$moments$unconditional` and `$loglik`.
-                              filter = function(){
-                                # Self arguments
-                                control <- self$control
-                                target <- self$target
-                                # **************************************************** #
-                                # Update risk driver
-                                self$compute_risk_drivers()
-                                # Update solar transform
-                                self$fit_solar_transform()
-                                # Update Yt
-                                private$..data[["Yt"]] <- self$transform$Y(private$..data[["Xt"]])
-                                # Update Yt_tilde
-                                private$..data[["Yt_tilde"]] <- private$..data[["Yt"]] - self$seasonal_model_Yt$predict(private$..data$n)
-                                # Fit the corrective mean
-                                self$corrective_monthly_mean()
-                                # Update Yt_tilde_hat
-                                private$..data[["Yt_tilde_hat"]] <-  predict.lm(self$AR_model_Yt, newdata = private$..data)
-                                # Initial values as the real ones
-                                if (control$mean.model$arOrder > 0) {
-                                  private$..data[["Yt_tilde_hat"]][1:control$mean.model$arOrder] <- private$..data[["Yt_tilde"]][1:control$mean.model$arOrder]
-                                }
-                                # Update AR residuals
-                                private$..data[["eps"]] <- private$..data[["Yt_tilde"]] - private$..data[["Yt_tilde_hat"]]
-                                # Fitted standardized residuals
-                                private$..data[["eps_tilde"]] <- private$..data[["eps"]]/sqrt(self$seasonal_variance$predict(private$..data$n))
-                                # Update Garch standard deviation
-                                private$..data[["sigma"]] <- rugarch::ugarchfilter(control$variance.model, private$..data[["eps_tilde"]], out.sample = 0)@filter$sigma
-                                # Update fitted standard residuals
-                                if (control$garch_variance) {
-                                  # Compute standardized residuals
-                                  private$..data[["u"]] <- private$..data[["eps_tilde"]]/private$..data[["sigma"]]
-                                  # Fitted standardized residuals
-                                  private$..data[["u_tilde"]] <- private$..data[["u"]]
+                                private$..loglik <- NA
+                              } else {
+                                message("`params` is missing nothing to update!")
+                              }
+                            },
+                            #' @description
+                            #' Update the moments inside object
+                            update_moments = function(){
+                              # Update conditional moments
+                              private$..moments$conditional <- solarModel_conditional_moments(self$data, self$spec)
+                              # Update unconditional moments
+                              private$..moments$unconditional <- solarModel_unconditional_moments(self$data, self$ARMA, self$GARCH)
+                              private$..moments$unconditional <-dplyr::bind_cols(date = self$data$date, Year = self$data$Year,
+                                                                                 private$..moments$unconditional)
+                            },
+                            #' @description
+                            #' Update the log-likelihood inside object
+                            update_logLik = function(){
+                              # Update the log-likelihoods
+                              private$..data[["loglik"]] <- self$logLik()
+                              # Update total log-likelihood
+                              private$..loglik <- sum(self$data$loglik)
+                            },
+                            #' @description
+                            #' Update the clear sky and risk drivers
+                            update_risk_drivers = function(){
+                              # Update clear sky
+                              private$..data[["Ct"]] <- self$seasonal_model_Ct$predict(newdata = self$data)
+                              # Update risk driver
+                              self$compute_risk_drivers()
+                              # Update solar transform and compute Yt
+                              self$fit_transform()
+                            },
+                            #' @description
+                            #' Update the classification of the Bernoulli random variable.
+                            update_NM_classification = function(filter = FALSE){
+                              if (filter) {
+                                # Update mixture classification
+                                private$..NM_model$filter()
+                              }
+                              # Complete data
+                              data <- private$..data
+                              # **************************************************** #
+                              # Ensure that no columns with B name are included
+                              data <- data[, !(colnames(data) %in% c("B", "z1","z2"))]
+                              # Classify the series
+                              df_m <- list()
+                              for(nmonth in 1:12){
+                                df_m[[nmonth]] <- dplyr::filter(data, Month == nmonth)
+                                df_nm <- private$..NM_model$model[[nmonth]]$classify(df_m[[nmonth]]$u_tilde)
+                                df_m[[nmonth]]$B <- df_nm$B1
+                                df_m[[nmonth]]$z1 <- df_nm$z1
+                                df_m[[nmonth]]$z2 <- df_nm$z2
+                              }
+                              # Add the data
+                              df_m <- dplyr::select(dplyr::bind_rows(df_m), date, B, z1, z2)
+                              data <- dplyr::left_join(data, df_m, by = "date")
+                              # **************************************************** #
+                              # Private components
+                              # Update fitted series of Bernoulli
+                              private$..data[["B"]] <- data$B
+                              # Update fitted series of Gaussians components
+                              private$..data[["z1"]] <- data$z1
+                              private$..data[["z2"]] <- data$z2
+                            },
+                            # ***************************************************************************** #
+                            #' @description
+                            #' Filter the time series when new parameters are supplied in the method `$update(params)`.
+                            #' @return Update the slots `$data`, `$seasonal_data`, `$monthly_data`
+                            filter = function(){
+                              # Arguments
+                              control <- self$spec
+                              target <- self$target
+                              # **************************************************** #
+                              # Update seasonal mean of Yt
+                              private$..data[["Yt_bar"]] <- self$seasonal_model_Yt$predict(newdata = private$..data)
+                              # Update seasonal mean of target variable
+                              private$..data[[paste0(target, "_bar")]] <- self$transform$GHI_y(private$..data[["Yt_bar"]], self$data[["Ct"]])
+                              # Update Yt_tilde
+                              private$..data[["Yt_tilde"]] <- private$..data[["Yt"]] - private$..data$Yt_bar
+                              # Fit the corrective mean
+                              self$fit_monthly_mean()
+                              # Update Yt_tilde_hat
+                              eps0 <- c()
+                              if (self$ARMA$order[2] > 0) {
+                                eps0 <- self$ARMA$model$residuals[1:self$ARMA$order[2]]
+                              }
+                              private$..data[["Yt_tilde_hat"]] <- self$ARMA$filter(private$..data[["Yt_tilde"]], eps0 = eps0)$fitted
+                              # Update ARMA residuals
+                              private$..data[["eps"]] <- private$..data[["Yt_tilde"]] - private$..data[["Yt_tilde_hat"]]
+                              # **************************************************** #
+                              # Update seasonal std. deviation
+                              private$..data[["sigma_bar"]] <- sqrt(self$seasonal_variance$predict(newdata = private$..data))
+                              # Update standardized residuals
+                              private$..data[["eps_tilde"]] <- private$..data[["eps"]] / private$..data[["sigma_bar"]]
+                              # Compute corrective monthly variance
+                              self$fit_monthly_variance()
+                              # Correct the seasonal variance
+                              self$correct_seasonal_variance()
+                              # **************************************************** #
+                              # Update Garch standard deviation
+                              if (self$spec$garch_variance) {
+                                private$..data[["sigma"]] <- self$GARCH$filter(private$..data[["eps_tilde"]])$sigma
+                              } else {
+                                private$..data[["sigma"]] <- 1
+                              }
+                              # Fitted standardized residuals
+                              private$..data[["u_tilde"]] <- private$..data[["eps_tilde"]] / private$..data[["sigma"]]
+                            },
+                            #' @description
+                            #' Compute the conditional moments
+                            #' @param t_now Character date. Today date.
+                            #' @param t_hor Character date. Horizon date.
+                            #' @param quiet Logical for verbose messages.
+                            Moments = function(t_now, t_hor, quiet = FALSE){
+                              purrr::map_df(t_hor, ~solarModel_moments(t_now, .x, self$data, self$ARMA,
+                                                                       self$GARCH, self$NM_model, self$transform, quiet = quiet))
+                            },
+                            #' @description
+                            #' Value at Risk for a `solarModel`
+                            #' @param moments moments dataset
+                            #' @param t_now Character date. Today date.
+                            #' @param t_hor Character date. Horizon date.
+                            #' @param ci Confidence interval (one tail).
+                            VaR = function(moments, t_now, t_hor, theta = 0, ci = 0.05){
+                              # Moments
+                              if (missing(moments)) {
+                                t_seq <- seq.Date(as.Date(t_now), as.Date(t_hor), 1)[-1]
+                                moments <- purrr::map_df(t_seq, ~self$Moments(t_now, .x, quiet = FALSE))
+                              }
+                              # Add realized GHI
+                              moments <- dplyr::left_join(moments, self$data[,c("date", "GHI")], by = "date")
+                              # Initialize the VaR
+                              moments$VaR <- NA
+                              for(i in 1:nrow(moments)){
+                                df_n <- moments[i,]
+                                if (theta == 0){
+                                  cdf_Yt <- function(x) pmixnorm(x, mean = c(df_n$M_Y1, df_n$M_Y0), sd = c(df_n$S_Y1, df_n$S_Y0), alpha = c(df_n$p1, 1-df_n$p1))
                                 } else {
-                                  # Not compute standardized residuals
-                                  private$..data[["u"]] <- private$..data[["eps_tilde"]]
-                                  # Fitted standardized residuals
-                                  private$..data[["u_tilde"]] <- private$..data[["u"]]
+                                  cdf_Yt <- pesscherMixture(mean = c(df_n$M_Y1, df_n$M_Y0), sd = c(df_n$S_Y1, df_n$S_Y0), alpha = c(df_n$p1, 1-df_n$p1),
+                                                            theta = theta)
                                 }
-                                # Fit the corrective variance
-                                self$corrective_monthly_variance()
-                                # Update the fitted series of Bernoulli
-                                private$..data <- dplyr::left_join(dplyr::select(private$..data, -B), self$NM_model$fitted, by = "date")
-                                # Update standardized components
-                                private$..data[["z1"]] <- self$data$B*(self$data$u_tilde - self$data$mu1)/self$data$sd1
-                                private$..data[["z2"]] <- (1-self$data$B)*(self$data$u_tilde - self$data$mu2)/self$data$sd2
-                                # Adjust mixture parameters
-                                GM_model <- self$NM_model
-                                for(m in 1:12){
-                                  orig_sd <- GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd
-                                  orig_sd <- orig_sd*private$..monthly_data[["sigma_m"]][m]
-                                  GM_model$.__enclos_env__$private$..model[[m]]$.__enclos_env__$private$..sd <- orig_sd
-                                  # Store Gaussian Mixture parameters
-                                  private$..NM_model <- GM_model
+                                # Add VaR
+                                moments$VaR[i] <- qsolarGHI(ci, df_n$Ct, df_n$alpha, df_n$beta, cdf_Yt)
+                              }
+                              # Violations of VaR
+                              moments$et <- ifelse(moments$GHI < moments$VaR, 1, 0)
+                              # Select only relevant variables
+                              moments <- dplyr::select(moments, date, Year, Month, Day, GHI, VaR, et)
+                              return(moments)
+                            },
+                            #' @description
+                            #' Compute the log-likelihood of the model and update the slot `$loglik`.
+                            #' @param moments Dataset containing the moments to use for computation.
+                            #' @param target Character. Target variable to use "Yt" or "GHI".
+                            logLik = function(moments, target = "Yt"){
+                              # Default argument
+                              if (missing(moments)) {
+                                moments <- self$moments$conditional
+                              }
+                              # Add Yt and weights
+                              moments <- dplyr::left_join(moments, private$..data[, c("date", target, "weights")], by = "date")
+                              # **************************************************** #
+                              # Compute log-likelihood
+                              moments$loglik <- 0
+                              for(i in 1:nrow(moments)){
+                                df_n <- moments[i,]
+                                if (df_n$weights == 0) {
+                                  moments$loglik[i] <- 0
+                                  next
                                 }
-                                # Update seasonal data
-                                private$..seasonal_data[["Ct"]] <- self$seasonal_model_Ct$predict(self$seasonal_data$n)
-                                private$..seasonal_data[["Yt_bar"]] <- self$seasonal_model_Yt$predict(self$seasonal_data$n)
-                                private$..seasonal_data[[paste0(target, "_bar")]] <- self$transform$GHI_y(private$..seasonal_data[["Yt_bar"]], private$..seasonal_data[["Ct"]])
-                                private$..seasonal_data[["sigma_bar"]] <- sqrt(self$seasonal_variance$predict(self$seasonal_data$n))
-                                # Update log-likelihood and conditional moments
-                                self$conditional_moments()
-                                self$unconditional_moments()
-                                self$logLik()
-                              },
-                              #' @description
-                              #' Compute the conditional moments and update the slot `$moments$conditional`.
-                              conditional_moments = function(){
-                                # Self arguments
-                                data <- self$data
-                                # **************************************************** #
-                                if (!self$control$garch_variance){
-                                  data$sigma <- 1
-                                }
-                                # Compute conditional moments
-                                data <- dplyr::mutate(data,
-                                                      # Conditional expectation Yt
-                                                      e_Yt = Yt_bar + Yt_tilde_hat + Yt_tilde_uncond,
-                                                      # Conditional std. deviation Yt
-                                                      sd_Yt = sigma*sigma_bar*sigma_m,
-                                                      # Conditional moments Yt (state up)
-                                                      e_Yt_up = e_Yt + sd_Yt*mu1,
-                                                      sd_Yt_up = sd_Yt*sd1,
-                                                      # Conditional moments Yt (state dw)
-                                                      e_Yt_dw = e_Yt + sd_Yt*mu2,
-                                                      sd_Yt_dw = sd_Yt*sd2)
-                                # Store only relevant variables
-                                data <- dplyr::select(data, date, Year, Month, Day, e_Yt, sd_Yt, e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw)
-                                # **************************************************** #
-                                private$..moments$conditional <- data
-                              },
-                              #' @description
-                              #' Compute the unconditional seasonal moments and update the slot `$moments$unconditional`.
-                              unconditional_moments = function(){
-                                # Self arguments
-                                data <- self$seasonal_data
-                                # **************************************************** #
-                                # Compute unconditional moments
-                                data <- dplyr::mutate(data,
-                                                      # Unconditional expectation Yt
-                                                      e_Yt = Yt_bar + Yt_tilde_uncond,
-                                                      # Unconditional std. deviation Yt
-                                                      sd_Yt = sigma_bar*sigma_m,
-                                                      # Unconditional moments Yt (state up)
-                                                      e_Yt_up = e_Yt + sd_Yt*mu1,
-                                                      sd_Yt_up = sd_Yt*sd1,
-                                                      # Unconditional moments Yt (state dw)
-                                                      e_Yt_dw = e_Yt + sd_Yt*mu2,
-                                                      sd_Yt_dw = sd_Yt*sd2)
-                                # Store only relevant variables
-                                data <- dplyr::select(data, Month, Day, e_Yt, sd_Yt, e_Yt_up, sd_Yt_up, e_Yt_dw, sd_Yt_dw)
-                                # **************************************************** #
-                                private$..moments$unconditional <- data
-                              },
-                              #' @description
-                              #' Compute the log-likelihood of the model and update the slot `$loglik`.
-                              logLik = function(){
-                                # Self arguments
-                                moments <- dplyr::left_join(private$..moments$conditional, private$..data[, c("date", "Yt")], by = "date")
-                                moments <- dplyr::left_join(moments, self$NM_model$parameters[, c("Month", "p1")], by = "Month")
-                                # Add weights
-                                moments$weights <- self$data$weights
-                                # **************************************************** #
-                                # Compute log-likelihood
-                                moments$loglik <- 0
-                                for(i in 1:nrow(moments)){
-                                  df_n <- moments[i,]
-                                  if (df_n$weights == 0){
-                                    moments$loglik[i] <- 0
-                                    next
-                                  }
-                                  # Conditional mixture Pdf
-                                  pdf_Yt <- function(x) dmixnorm(x, mean = c(df_n$e_Yt_up, df_n$e_Yt_dw), sd = c(df_n$sd_Yt_up, df_n$sd_Yt_dw), alpha = c(df_n$p1, 1-df_n$p1))
+                                # Conditional mixture Pdf
+                                pdf_Yt <- function(x) dmixnorm(x, mean = c(df_n$M_Y1, df_n$M_Y0), sd = c(df_n$S_Y1, df_n$S_Y0), alpha = c(df_n$p1, 1-df_n$p1))
+                                if (target == "GHI") {
+                                  moments$loglik[i] <- log(dsolarGHI(df_n$GHI, df_n$Ct, df_n$alpha, df_n$beta, pdf_Yt))
+                                } else {
                                   moments$loglik[i] <- log(pdf_Yt(df_n$Yt))
                                 }
-                                # Aggregate log-likelihood by month
-                                moments <- moments %>%
-                                  dplyr::group_by(Month) %>%
-                                  dplyr::summarise(loglik = sum(loglik, na.rm = TRUE))
-                                # **************************************************** #
-                                # Update log-likelihood
-                                private$..loglik$loglik <- moments$loglik
-                              },
-                              #' @description
-                              #' Print method for `solarModel` class.
-                              print = function(){
-                                # Complete data specifications
-                                data <- self$dates$data
-                                # Train data specifications
-                                train <- self$dates$train
-                                train$perc <- format(train$perc*100, digits = 4)
-                                # Test data specifications
-                                test <- self$dates$test
-                                test$perc <- format(test$perc*100, digits = 4)
-                                msg_0 <- paste0("--------------------- ", "solarModel", " (", self$place, ") ", "--------------------- \n")
-                                msg_1 <- paste0("Target: ", self$target, " \n Lat: ", self$coords$lat, "\n Lon: ", self$coords$lon, "\n Alt: ", self$coords$alt, " \n")
-                                msg_1 <- paste0("Target: ", self$target, " \n Coordinates: (Lat: ", self$coords$lat, ", Lon: ", self$coords$lon, ", Alt: ", self$coords$alt, ") \n")
-                                msg_2 <- paste0(" Dates: ", data$from, " - ", data$to, "\n Observations: ", data$nobs, "\n")
-                                msg_3 <- paste0("---------------------------------------------------------------\n")
-                                msg_4 <- paste0("Train dates: ", train$from, " - ", train$to, " (", train$nobs, " points ~ ", train$perc, "%)", "\n")
-                                msg_5 <- paste0("Test  dates: ", test$from, " - ", test$to, " (", test$nobs, " points ~ ", test$perc, "%)", "\n")
-                                msg_6 <- paste0("---------------------------------------------------------------\n")
-                                msg_7 <- paste0("Likelihood: ", format(self$loglik, digits = 8), "\n")
-                                msg_8 <- paste0("Interpolated: ", private$interpolated, "\n")
-                                cat(paste0(msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8))
                               }
-                            ),
-                            # ***************************************************************************** #
-                            private = list(
-                              ..data = NA,
-                              ..seasonal_data = NA,
-                              ..monthly_data = NA,
-                              ..coords = NA,
-                              ..control = NA,
-                              ..transform = NA,
-                              ..combinations = NA,
-                              interpolated = FALSE,
-                              outliers = NA,
-                              ..seasonal_model_Ct = NA,
-                              ..seasonal_model_Yt = NA,
-                              ..AR_model_Yt = NA,
-                              ..seasonal_variance = NA,
-                              ..GARCH = NA,
-                              ..NM_model = NA,
-                              ..loglik = NA,
-                              ..moments = list(conditional = NA, unconditional = NA)
-                            ),
-                            # ***************************************************************************** #
-                            active = list(
-                              #' @field data A data frame with the fitted data, and the seasonal and monthly parameters.
-                              data = function(){
-                                dplyr::left_join(private$..data, dplyr::select(self$seasonal_data, -n), by = c("Month", "Day"))
-                              },
-                              #' @field seasonal_data A data frame containing seasonal and monthly parameters.
-                              seasonal_data = function(){
-                                dplyr::left_join(private$..seasonal_data, self$monthly_data, by = "Month")
-                              },
-                              #' @field monthly_data A data frame that contains monthly parameters.
-                              monthly_data = function(){
-                                dplyr::left_join(private$..monthly_data, self$NM_model$parameters, by = "Month")
-                              },
-                              #' @field loglik The log-likelihood computed on train data.
-                              loglik = function(){
-                                sum(private$..loglik)
-                              },
-                              #' @field control A list of control parameters that govern the behavior of the model's fitting process.
-                              control = function(){
-                                private$..control
-                              },
-                              #' @field location A data frame with coordinates of the location considered.
-                              location = function(){
-                                dplyr::bind_cols(place = self$place, target = self$target, dplyr::bind_rows(self$coords))
-                              },
-                              #' @field transform A \code{\link{solarTransform}} object with the transformation functions applied to the data.
-                              transform = function(){
-                                private$..transform
-                              },
-                              #' @field seasonal_model_Ct The fitted model for clear sky radiation, used for predict the maximum radiation available.
-                              seasonal_model_Ct = function(){
-                                private$..seasonal_model_Ct
-                              },
-                              #' @field seasonal_model_Yt The fitted seasonal model for the target variable.
-                              seasonal_model_Yt = function(){
-                                private$..seasonal_model_Yt
-                              },
-                              #' @field AR_model_Yt The fitted Autoregressive (AR) model for the target variable.
-                              AR_model_Yt = function(){
-                                private$..AR_model_Yt
-                              },
-                              #' @field seasonal_variance The fitted model for seasonal variance.
-                              seasonal_variance = function(){
-                                private$..seasonal_variance
-                              },
-                              #' @field GARCH A model object representing the GARCH model fitted to the residuals.
-                              GARCH = function(){
-                                private$..GARCH
-                              },
-                              #' @field NM_model A model object representing the Gaussian Mixture model fitted to the standardized residuals.
-                              NM_model = function(){
-                                private$..NM_model
-                              },
-                              #' @field moments Get a list containing the conditional and unconditional moments.
-                              moments = function(){
-                                private$..moments
-                              },
-                              #' @field combinations mixture combination moments.
-                              combinations = function(){
-                                private$..combinations
-                              },
-                              #' @field parameters Get the model parameters as a named list.
-                              parameters = function(){
-                                # 1. Clears sky seasonal model
-                                coefs_names <- c()
-                                seasonal_model_Ct <- as.list(self$seasonal_model_Ct$coefficients)
-                                # 2. Seasonal model Yt
-                                seasonal_model_Yt <- as.list(self$seasonal_model_Yt$coefficients)
-                                # 3. AR model
-                                AR_model_Yt <- as.list(self$AR_model_Yt$coefficients)
-                                # 4. Seasonal variance model
-                                seasonal_variance <- as.list(self$seasonal_variance$coefficients)
-                                # 5. GARCH(1,1) variance model
-                                GARCH <- as.list(self$GARCH$coefficients)
-                                # 6. Gaussian mixture model
-                                NM_mu_up <- self$NM_model$parameters$mu1
-                                names(NM_mu_up) <- paste0("mu_up_", 1:12)
-                                NM_mu_dw <- self$NM_model$parameters$mu2
-                                names(NM_mu_dw) <- paste0("mu_dw_", 1:12)
-                                NM_sd_up <- self$NM_model$parameters$sd1
-                                names(NM_sd_up) <- paste0("sd_up_", 1:12)
-                                NM_sd_dw <- self$NM_model$parameters$sd2
-                                names(NM_sd_dw) <- paste0("sd_dw_", 1:12)
-                                NM_p_up <- self$NM_model$parameters$p1
-                                names(NM_p_up) <- paste0("p_", 1:12)
-
-                                # Output list of parameter for each model
-                                params <- list(
-                                  location = self$location,
-                                  params = dplyr::bind_cols(alpha = self$transform$alpha, beta = self$transform$beta),
-                                  seasonal_model_Ct = dplyr::bind_cols(seasonal_model_Ct),
-                                  seasonal_model_Yt = dplyr::bind_cols(seasonal_model_Yt),
-                                  AR_model_Yt = dplyr::bind_cols(AR_model_Yt),
-                                  seasonal_variance = dplyr::bind_cols(seasonal_variance),
-                                  GARCH = dplyr::bind_cols(GARCH),
-                                  NM_mu_up = dplyr::bind_rows(NM_mu_up),
-                                  NM_mu_dw = dplyr::bind_rows(NM_mu_dw),
-                                  NM_sd_up = dplyr::bind_rows(NM_sd_up),
-                                  NM_sd_dw = dplyr::bind_rows(NM_sd_dw),
-                                  NM_p_up = dplyr::bind_rows(NM_p_up)
-                                )
-                                # Eventually add correlation (stochastic clearsky models)
-                                check_rho_up <- suppressWarnings(!is.null(self$NM_model$rho_up[1]))
-                                if (check_rho_up) {
-                                  NM_rho_up <- self$NM_model$parameters$rho_up
-                                  names(NM_rho_up) <- paste0("rho_up_", 1:12)
-                                  params <- append(params, values = list(rho_up = dplyr::bind_rows(NM_rho_up)))
-                                }
-                                # Eventually add correlation (stochastic clearsky models)
-                                check_rho_dw <- suppressWarnings(!is.null(self$NM_model$parameters$rho_dw[1]))
-                                if (check_rho_dw) {
-                                  NM_rho_dw <- self$NM_model$rho_dw
-                                  names(NM_rho_dw) <- paste0("rho_dw_", 1:12)
-                                  params <- append(params, values = list(rho_dw = dplyr::bind_rows(NM_rho_dw)))
-                                }
-                                return(params)
+                              # **************************************************** #
+                              return(moments$loglik)
+                            },
+                            #' @description
+                            #' Convert solar radiation Rt into the transformed variable Yt for a given day of the year.
+                            #' @param Rt Numeric, solar radiation.
+                            #' @param t_now Character, today date.
+                            #' @return Transformed variable on date t_now.
+                            R_to_Y = function(Rt, t_now){
+                              n <- number_of_day(t_now)
+                              # Cloudiness index
+                              Xt <- self$transform$iGHI(Rt, self$seasonal_model_Ct$predict(n))
+                              # Transformed variable
+                              self$transform$Y(Xt)
+                            },
+                            #' @description
+                            #' Convert the transformed variable Yt into solar radiation Rt for a given day of the year.
+                            #' @param Yt Numeric, transformed variable.
+                            #' @param t_now Character, today date.
+                            #' @return Solar radiation Rt on date t_now.
+                            Y_to_R = function(Yt, t_now){
+                              n <- number_of_day(t_now)
+                              self$transform$GHI_y(Yt, self$seasonal_model_Ct$predict(n))
+                            },
+                            #' @description
+                            #' Print method for `solarModel` class.
+                            print = function(){
+                              # Complete data specifications
+                              data <- self$dates$data
+                              # Train data specifications
+                              train <- self$dates$train
+                              train$perc <- format(train$perc*100, digits = 4)
+                              # Test data specifications
+                              test <- self$dates$test
+                              test$perc <- format(test$perc*100, digits = 4)
+                              cat(paste0("--------------------- ", "solarModel", " (", "\033[1;35m", self$place, "\033[0m", ") ", "--------------------- \n"))
+                              cat(paste0("Model: ", "ARMA", "(", self$ARMA$order[1], ", ", self$ARMA$order[2], ")-GARCH", "(", self$GARCH$order[1], ", ", self$GARCH$order[2], ")\n"))
+                              cat(paste0("Target: ", self$target, " \n Coordinates: (Lat: ", self$coords$lat, ", Lon: ", self$coords$lon, ", Alt: ", self$coords$alt, ") \n"))
+                              cat(paste0(" Dates: ", data$from, " - ", data$to, "\n Observations: ", data$nobs, "\n"))
+                              cat(paste0("---------------------------------------------------------------\n"))
+                              cat(paste0("Train dates: ", train$from, " - ", train$to, " (", train$nobs, " points ~ ", train$perc, "%)", "\n"))
+                              cat(paste0(" Test dates: ", test$from, " - ", test$to, " (", test$nobs, " points ~ ", test$perc, "%)", "\n"))
+                              cat(paste0("---------------------------------------------------------------\n"))
+                              cat(paste0("Log-Likelihood: ", format(self$loglik, digits = 8), "\n"))
+                              cat(paste0("Empiric Mixture Parameters: ", ifelse(is.null(self$NM_model$use_empiric), "FALSE",
+                                                                                self$NM_model$use_empiric), "\n"))
+                              cat(paste0("Interpolated: ", private$interpolated, "\n"))
+                              cat(paste0("Version: ", private$version, "\n"))
+                            }
+                          ),
+                          # ====================================================================================================== #
+                          #                                             Private slots
+                          # ====================================================================================================== #
+                          private = list(
+                            version = "1.0.0",
+                            ..data = NA,
+                            ..seasonal_data = NA,
+                            ..monthly_data = NA,
+                            ..coords = NA,
+                            ..spec = NA,
+                            ..transform = NA,
+                            interpolated = FALSE,
+                            outliers = NA,
+                            ..seasonal_model_Ct = NA,
+                            ..seasonal_model_Yt = NA,
+                            ..ARMA = list(),
+                            ..seasonal_variance = NA,
+                            ..GARCH = list(),
+                            ..NM_model = list(),
+                            ..loglik = NA,
+                            ..moments = list(conditional = NA, unconditional = NA)
+                          ),
+                          # ====================================================================================================== #
+                          #                                             Active slots
+                          # ====================================================================================================== #
+                          active = list(
+                            #' @field data A data frame with the fitted data, and the seasonal and monthly parameters.
+                            data = function(){
+                              # Seasonal data
+                              seasonal_data <- dplyr::select(self$seasonal_data, -n)
+                              dplyr::left_join(private$..data, seasonal_data, by = c("Month", "Day"))
+                            },
+                            #' @field seasonal_data A data frame containing seasonal and monthly parameters.
+                            seasonal_data = function(){
+                              dplyr::left_join(private$..seasonal_data, self$monthly_data, by = "Month")
+                            },
+                            #' @field monthly_data A data frame that contains monthly parameters.
+                            monthly_data = function(){
+                              if (!purrr::is_empty(self$NM_model)) {
+                                dplyr::left_join(private$..monthly_data, self$NM_model$coefficients, by = "Month")
+                              } else {
+                                private$..monthly_data
                               }
-                            )
+                            },
+                            #' @field loglik The log-likelihood computed on train data.
+                            loglik = function(){
+                              private$..loglik
+                            },
+                            #' @field spec A list with the specification that govern the behavior of the model's fitting process.
+                            spec = function(){
+                              private$..spec
+                            },
+                            #' @field location A data frame with coordinates of the location considered.
+                            location = function(){
+                              dplyr::bind_cols(place = self$place, target = self$target, dplyr::bind_rows(self$coords))
+                            },
+                            #' @field transform A \code{\link{solarTransform}} object with the transformation functions applied to the data.
+                            transform = function(){
+                              private$..transform
+                            },
+                            #' @field seasonal_model_Ct The fitted model for clear sky radiation, used for predict the maximum radiation available.
+                            seasonal_model_Ct = function(){
+                              private$..seasonal_model_Ct
+                            },
+                            #' @field seasonal_model_Yt The fitted seasonal model for the target variable.
+                            seasonal_model_Yt = function(){
+                              private$..seasonal_model_Yt
+                            },
+                            #' @field ARMA The fitted ARMA model for the target variable.
+                            ARMA = function(){
+                              private$..ARMA
+                            },
+                            #' @field seasonal_variance The fitted model for seasonal variance.
+                            seasonal_variance = function(){
+                              private$..seasonal_variance
+                            },
+                            #' @field GARCH A model object representing the GARCH model fitted to the residuals.
+                            GARCH = function(){
+                              private$..GARCH
+                            },
+                            #' @field NM_model A model object representing the Gaussian Mixture model fitted to the standardized residuals.
+                            NM_model = function(){
+                              private$..NM_model
+                            },
+                            #' @field moments Get a list containing the conditional and unconditional moments.
+                            moments = function(){
+                              moments <- private$..moments
+                              # Extra data to add
+                              data_extra <- dplyr::select(self$data, date, GHI_bar, Ct, p1)
+                              data_extra <- dplyr::mutate(data_extra, alpha = self$transform$alpha, beta = self$transform$beta)
+                              # Conditional moments
+                              if (length(moments$conditional) != 1) {
+                                moments$conditional <- dplyr::left_join(moments$conditional, data_extra, by = c("date"))
+                              }
+                              # Unconditional moments
+                              if (length(moments$unconditional) != 1) {
+                                moments$unconditional <- dplyr::left_join(moments$unconditional, data_extra, by = c("date"))
+                              }
+                              return(moments)
+                            },
+                            #' @field coefficients Get the model parameters as a named list.
+                            coefficients = function(){
+                              # 1. Clear sky seasonal model
+                              coefs_names <- c()
+                              seasonal_model_Ct <- as.list(self$seasonal_model_Ct$coefficients)
+                              # 2. Seasonal model Yt
+                              seasonal_model_Yt <- as.list(self$seasonal_model_Yt$coefficients)
+                              # 3. AR model
+                              ARMA <- as.list(self$ARMA$coefficients)
+                              # 4. Seasonal variance model
+                              seasonal_variance <- as.list(self$seasonal_variance$coefficients)
+                              # 5. GARCH variance model
+                              GARCH <- as.list(self$GARCH$coefficients)
+                              # 6. Gaussian mixture model
+                              NM_mu_up <- self$NM_model$coefficients$mu1
+                              names(NM_mu_up) <- paste0("mu_up_", 1:12)
+                              NM_mu_dw <- self$NM_model$coefficients$mu2
+                              names(NM_mu_dw) <- paste0("mu_dw_", 1:12)
+                              NM_sd_up <- self$NM_model$coefficients$sd1
+                              names(NM_sd_up) <- paste0("sd_up_", 1:12)
+                              NM_sd_dw <- self$NM_model$coefficients$sd2
+                              names(NM_sd_dw) <- paste0("sd_dw_", 1:12)
+                              NM_p_up <- self$NM_model$coefficients$p1
+                              names(NM_p_up) <- paste0("p_", 1:12)
+                              # Output list of parameter for each model
+                              params <- list(
+                                location = self$location,
+                                params = dplyr::bind_cols(alpha = self$transform$alpha, beta = self$transform$beta),
+                                seasonal_model_Ct = dplyr::bind_cols(seasonal_model_Ct),
+                                seasonal_model_Yt = dplyr::bind_cols(seasonal_model_Yt),
+                                ARMA = dplyr::bind_cols(ARMA),
+                                seasonal_variance = dplyr::bind_cols(seasonal_variance),
+                                GARCH = dplyr::bind_cols(GARCH),
+                                NM_mu_up = dplyr::bind_rows(NM_mu_up),
+                                NM_mu_dw = dplyr::bind_rows(NM_mu_dw),
+                                NM_sd_up = dplyr::bind_rows(NM_sd_up),
+                                NM_sd_dw = dplyr::bind_rows(NM_sd_dw),
+                                NM_p_up = dplyr::bind_rows(NM_p_up)
+                              )
+                              # Eventually add correlation (stochastic clearsky models)
+                              check_rho_up <- suppressWarnings(!is.null(self$NM_model$rho_up[1]))
+                              if (check_rho_up) {
+                                NM_rho_up <- self$NM_model$coefficients$rho_up
+                                names(NM_rho_up) <- paste0("rho_up_", 1:12)
+                                params <- append(params, values = list(rho_up = dplyr::bind_rows(NM_rho_up)))
+                              }
+                              # Eventually add correlation (stochastic clearsky models)
+                              check_rho_dw <- suppressWarnings(!is.null(self$NM_model$coefficients$rho_dw[1]))
+                              if (check_rho_dw) {
+                                NM_rho_dw <- self$NM_model$rho_dw
+                                names(NM_rho_dw) <- paste0("rho_dw_", 1:12)
+                                params <- append(params, values = list(rho_dw = dplyr::bind_rows(NM_rho_dw)))
+                              }
+                              return(params)
+                            }
                           )
+)
 

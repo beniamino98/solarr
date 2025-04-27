@@ -11,6 +11,9 @@ Kernel regression
 \details{
 Fit a kernel regression.
 }
+\note{
+Version 1.0.0
+}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

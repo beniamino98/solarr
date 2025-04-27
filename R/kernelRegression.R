@@ -4,6 +4,7 @@
 #'
 #' @rdname kernelRegression
 #' @name kernelRegression
+#' @note Version 1.0.0
 #' @export
 kernelRegression <- R6::R6Class("kernelRegression",
                                 public = list(
@@ -30,6 +31,7 @@ kernelRegression <- R6::R6Class("kernelRegression",
                                   }
                                 ),
                                 private = list(
+                                  version = "1.0.0",
                                   ..model = NA
                                 ),
                                 active = list(

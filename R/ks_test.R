@@ -4,24 +4,31 @@
 #' @param p vector of probabilities.
 #' @param k finite value for approximation of infinite sum.
 #' @return A probability, a numeric vector in 0, 1.
+#' @examples
+#' pks(0.03, 5000)
+#' pks(1, 1000)
+#' pks(2, 1000)
+#' pks(10, 1000)
 #' @rdname pks
 #' @aliases qks
 #' @keywords internal
-pks <- function(x, k = 100){
+pks <- function(x, k = 1000){
   # Infinite sum function
   # k: approximation for infinity
   inf_sum <- function(x, k = 100){
     isum <- 0
     for(i in 1:k){
-      isum <- isum + 2*(-1)^(i-1)*exp(-2*(x^2)*(i^2))
+      isum <- isum + (-1)^(i-1)*exp(-2*(x^2)*(i^2))
     }
+    isum <- 2 * isum
     isum
   }
   # Compute probability
   p <- c()
   for(i in 1:length(x)){
-    p[i] <- 1-inf_sum(x[i], k = k)
+    p[i] <- 1 - inf_sum(x[i], k = k)
   }
+  p[p<0] <- 0
   p
 }
 
@@ -40,8 +47,7 @@ qks <- function(p, k = 100){
 
 #' Kolmogorov Smirnov test for a distribution
 #'
-#' Test against a specific distribution with `ks_test` and
-#' perform a two sample invariance test for a time series with `ks_ts_test`
+#' Test against a specific distribution
 #'
 #' @param x a vector.
 #' @param pdf a function. The theoric density to use for comparison.
@@ -60,7 +66,6 @@ qks <- function(p, k = 100){
 #' @aliases ks_ts_test
 #' @export
 ks_test <- function(x, cdf, ci = 0.05, min_quantile = 0.015, max_quantile = 0.985, k = 1000, plot = FALSE){
-
   # number of observations
   n <- length(x)
   # Set the interval values for upper and lower band
@@ -71,6 +76,8 @@ ks_test <- function(x, cdf, ci = 0.05, min_quantile = 0.015, max_quantile = 0.98
   ks_stat <- sqrt(n)*max(abs(cdf_x(grid) - cdf(grid)))
   # Compute the rejection level
   rejection_lev <- qks(1-ci, k = k)
+  # Compute the p-value
+  p.value <- 1-pks(ks_stat, k = k)
 
   # ========================== Plot ==========================
   if (plot) {
@@ -97,23 +104,37 @@ ks_test <- function(x, cdf, ci = 0.05, min_quantile = 0.015, max_quantile = 0.98
       alpha = paste0(format(ci*100, digits = 3), "%"),
       KS = ks_stat,
       rejection_lev = rejection_lev,
-      H0 = ifelse(KS > rejection_lev, "Rejected", "Non-Rejected"))  %>%
-      dplyr::mutate_if(is.numeric, format, digits = 4, scientific = FALSE)
+      p.value = p.value,
+      H0 = ifelse(KS > rejection_lev, "Rejected", "Non-Rejected"))
+    class(kab) <- c("ks_test", class(kab))
     return(kab)
   }
 }
 
-
-# Two sample Kolmogorov Smirnov test for a time series
-#' @rdname ks_test
+#' Method `tidy` for Kolmogorov Smirnov test
+#' @rdname tidy.ks_test
+#' @param x An object of the class `ks_test`.
+#' @noRd
 #' @export
-ks_ts_test <- function(x, ci = 0.05, min_quantile = 0.015, max_quantile = 0.985, seed = 1, plot = FALSE){
+tidy.ks_test <- function(x, ...){
+  dplyr::tibble(statistic = x$KS, p.value = x$p.value, parameter = x$n, method = "Kolmogorov Smirnov Test")
+}
+
+#' Two sample Kolmogorov Smirnov test for a time series
+#'
+#' Perform a two sample invariance test for a time series.
+#'
+#' @rdname ks_test_ts
+#' @inheritParams ks_test
+#' @param idx_split Index used for splitting the time series. If `missing` will be random sampled.
+#' @export
+ks_test_ts <- function(x, ci = 0.05, idx_split, min_quantile = 0.015, max_quantile = 0.985, seed = 1, plot = FALSE){
   # Random seed
   set.seed(seed)
   # number of observations
   n <- length(x)
   # Random split of the time series
-  idx_split <- sample(n, 1)
+  idx_split <- ifelse(missing(idx_split), sample(n, 1), idx_split)
   x1 <- x[1:idx_split]
   x2 <- x[(idx_split+1):n]
   # Number of elements for each sub sample
@@ -122,12 +143,15 @@ ks_ts_test <- function(x, ci = 0.05, min_quantile = 0.015, max_quantile = 0.985,
   # Grid of values for KS-statistic
   grid <- seq(quantile(x, min_quantile), quantile(x, max_quantile), 0.01)
   # Empiric cdfs
-  cdf_1 <- ecdf(x1)
-  cdf_2 <- ecdf(x2)
+  cdf_n1 <- ecdf(x1)
+  cdf_n2 <- ecdf(x2)
   # KS-statistic
-  ks_stat <- max(abs(cdf_1(grid) - cdf_2(grid)))
+  ks_stat <- max(abs(cdf_n1(grid) - cdf_n2(grid)))
   # Rejection level
-  rejection_lev <- sqrt(-0.5*log(ci/2))*sqrt((n1+n2)/(n1*n2))
+  # Equivalent: sqrt(-log(ci / 2) * (1 + n2/n1) / (2*n2))
+  rejection_lev <- sqrt(-0.5 * log(ci / 2)) * sqrt((n1+n2)/(n1*n2))
+  # P-value
+  p.value <- 2 * exp(- 2 * n2 / (1 + n1/n2) * ks_stat^2)
 
   # ========================== Plot ==========================
   if (plot) {
@@ -155,9 +179,20 @@ ks_ts_test <- function(x, ci = 0.05, min_quantile = 0.015, max_quantile = 0.985,
       n1 = n1,
       n2 = n2,
       KS = ks_stat,
+      p.value = p.value,
       rejection_lev = rejection_lev,
       H0 = ifelse(KS > rejection_lev, "Rejected", "Non-Rejected")
     )
+    class(kab) <- c("ks_test_ts", class(kab))
     return(kab)
   }
+}
+
+#' Method `tidy` for Kolmogorov Smirnov test for a time series
+#' @rdname tidy.ks_test_ts
+#' @param x An object of the class `ks_test_ts`.
+#' @noRd
+#' @export
+tidy.ks_test_ts <- function(x, ...){
+  dplyr::tibble(statistic = x$KS, p.value = x$p.value, parameter = x$idx_split, method = "Kolmogorov Smirnov Test Time Series")
 }

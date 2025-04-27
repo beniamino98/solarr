@@ -4,25 +4,9 @@
 \alias{clearsky_optimizer}
 \title{Optimizer for Solar Clear sky}
 \usage{
-clearsky_optimizer(x, Ct, lower = 0, upper = 3, by = 0.01, ntol = 30)
-}
-\arguments{
-\item{x}{Numeric vector, realized solar radiation.}
-
-\item{Ct}{Numeric vector, clear sky radiation.}
-
-\item{lower}{Numeric scalar, lower bound for delta grid.}
-
-\item{upper}{Numeric scalar, upper bound for delta grid.}
-
-\item{by}{Numeric scalar, step for delta grid.}
-
-\item{ntol}{Integer, tolerance for \code{clearsky > GHI} condition. Maximum number of violations admitted.}
-}
-\value{
-Numeric, scalar the optimal delta parameter.
+clearsky_optimizer(seasonal_model_Ct, data, ntol = 0)
 }
 \description{
-Find the best parameter delta for fitting clear sky radiation.
+Optimizer for Solar Clear sky
 }
 \keyword{internal}

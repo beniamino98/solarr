@@ -11,11 +11,11 @@ solarOption_historical_bootstrap(
 )
 }
 \arguments{
-\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
+\item{model}{An object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
+\item{put}{Logical. When \code{TRUE}, the default, will be computed the price for a \code{put} contract, otherwise for a \code{call} contract.}
 
-\item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
+\item{control_options}{Named list. Control parameters, see \code{\link{control_solarOption}} for more details.}
 }
 \value{
 An object of the class \code{solarOptionBoot}.
@@ -25,6 +25,6 @@ Bootstrap a fair premium from historical data
 }
 \examples{
 model <- Bologna
-solarOption_historical_bootstrap(model)
+solarOption_historical_bootstrap(model, control_options = control_solarOption(ci = 0.4, nsim = 1000))
 
 }

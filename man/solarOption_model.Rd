@@ -2,45 +2,53 @@
 % Please edit documentation in R/solarOption.R
 \name{solarOption_model}
 \alias{solarOption_model}
-\title{Pricing function under the solar model}
+\title{Compute the price of a \code{solarOptionPortfolio}}
 \usage{
 solarOption_model(
   model,
+  moments,
+  portfolio,
   nmonths = 1:12,
   theta = 0,
-  combinations = NA,
   implvol = 1,
   put = TRUE,
-  target.Yt = TRUE,
   control_options = control_solarOption()
 )
 }
 \arguments{
-\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
+\item{model}{An object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
+\item{moments}{description}
 
-\item{theta}{Esscher parameter}
+\item{portfolio}{A list of objects of the class \code{solarOptionPortfolio}.}
 
-\item{combinations}{list of 12 elements with gaussian mixture components.}
+\item{nmonths}{Numeric vector. Months in which the payoff should be computed. Can vary from 1 (January) to 12 (December).}
 
-\item{implvol}{implied unconditional GARCH variance, the default is \code{1}.}
+\item{put}{Logical. When \code{TRUE}, the default, will be computed the price for a \code{put} contract, otherwise for a \code{call} contract.}
 
-\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
-
-\item{target.Yt}{logical, when \code{TRUE}, the default, the computations will consider the pdf of \code{Yt} otherwise the pdf of solar radiation.}
-
-\item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
-}
-\value{
-An object of the class \code{solarOptionPayoff}.
+\item{control_options}{Named list. Control parameters, see \code{\link{control_solarOption}} for more details.}
 }
 \description{
-Pricing function under the solar model
+Compute the price of a \code{solarOptionPortfolio}
 }
 \examples{
-model <- Bologna
-solarOption_model(model, put=FALSE)
-solarOption_model(model, put=TRUE)
-
+# Model
+model <- Bologna$clone(TRUE)
+# Pricing without portfolio
+moments <- model$moments$unconditional
+# Premium
+premium_Vt <- solarOption_model(model, moments, theta = 0.0, put = TRUE)
+# Pricing date
+t_now <- as.Date("2021-12-31")
+# Inception date
+t_init <- as.Date("2022-01-01")
+# Maturity date
+t_hor <- as.Date("2022-12-31")
+# SoRad portfolio
+portfolio <- SoRadPorfolio(model, t_now, t_init, t_hor)
+# Moments
+moments <- purrr::map_df(portfolio, ~model$Moments(t_now, .x$t_hor))
+# Premium
+premium_Vt <- solarOption_model(model, moments, portfolio, theta = 0.0, put = TRUE)
+premium_Vt$payoff_year$premium
 }

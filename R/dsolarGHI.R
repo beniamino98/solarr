@@ -111,6 +111,7 @@ qsolarGHI  <- function(p, Ct, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TR
   quantile_numeric <- Quantile(cdf, interval = interval)
   # Quantiles
   x <- quantile_numeric(p)
+
   return(x)
 }
 

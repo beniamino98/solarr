@@ -9,12 +9,26 @@ This model is designed to capture periodic effects in time series data, particul
 }
 \details{
 The seasonal model is fitted using a specified formula, which allows for the inclusion of external regressors along with sine and cosine terms
-to model seasonal variations. The periodicity can be customized, and the model can be updated with new coefficients after fitting.
+to model seasonal variations. The periodicity can be customized, and the model can be updated with new coefficients after the initial fit.
+}
+\note{
+Version 1.0.0
+}
+\examples{
+sm <- seasonalModel$new(1, 365)
+formula <- "Yt ~ 1"
+data = data.frame(Yt = rnorm(1000), n = 1:1000)
+sm$fit(formula, data = data)
+sm
+sm$coefficients
+sm$update(sm$coefficients*3)
+sm$predict(20)
+
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{extra_params}}{List customizable to contain eventual extra parameters.}
+\item{\code{extra_params}}{List to contain custom extra parameters.}
 }
 \if{html}{\out{</div>}}
 }
@@ -31,6 +45,10 @@ to obtain a linear combination of only shifted sine functions.}
 \item{\code{period}}{Integer, the seasonality period.}
 
 \item{\code{order}}{Integer, number of combinations of sines and cosines.}
+
+\item{\code{std.errors}}{Numeric vector. Parameters std. errors}
+
+\item{\code{tidy}}{Method tidy for the estimated parameters}
 }
 \if{html}{\out{</div>}}
 }
@@ -39,9 +57,11 @@ to obtain a linear combination of only shifted sine functions.}
 \itemize{
 \item \href{#method-seasonalModel-new}{\code{seasonalModel$new()}}
 \item \href{#method-seasonalModel-fit}{\code{seasonalModel$fit()}}
+\item \href{#method-seasonalModel-fit_differential}{\code{seasonalModel$fit_differential()}}
 \item \href{#method-seasonalModel-predict}{\code{seasonalModel$predict()}}
 \item \href{#method-seasonalModel-differential}{\code{seasonalModel$differential()}}
 \item \href{#method-seasonalModel-update}{\code{seasonalModel$update()}}
+\item \href{#method-seasonalModel-update_std.errors}{\code{seasonalModel$update_std.errors()}}
 \item \href{#method-seasonalModel-print}{\code{seasonalModel$print()}}
 \item \href{#method-seasonalModel-clone}{\code{seasonalModel$clone()}}
 }
@@ -91,6 +111,15 @@ If not found in data, the variables are taken from environment(formula), typical
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-seasonalModel-fit_differential"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-fit_differential}{}}}
+\subsection{Method \code{fit_differential()}}{
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$fit_differential(formula, data, ...)}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-seasonalModel-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalModel-predict}{}}}
 \subsection{Method \code{predict()}}{
@@ -103,6 +132,8 @@ Predict method for the class \code{seasonalModel}.
 \if{html}{\out{<div class="arguments">}}
 \describe{
 \item{\code{n}}{integer, number of day of the year.}
+
+\item{\code{newdata}}{An optional data frame in which to look for variables with which to predict. If omitted, the fitted values are used.}
 
 \item{\code{dt}}{Numeric, time step.}
 }
@@ -124,6 +155,8 @@ eventual external regressors.
 \describe{
 \item{\code{n}}{Integer, number of day of the year.}
 
+\item{\code{newdata}}{An optional data frame in which to look for variables with which to predict. If omitted, the fitted values are used.}
+
 \item{\code{dt}}{Numeric, time step.}
 }
 \if{html}{\out{</div>}}
@@ -133,7 +166,7 @@ eventual external regressors.
 \if{html}{\out{<a id="method-seasonalModel-update"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalModel-update}{}}}
 \subsection{Method \code{update()}}{
-Update the parameters inside the model.
+Update the parameters inside the object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$update(coefficients)}\if{html}{\out{</div>}}
 }
@@ -145,6 +178,16 @@ Update the parameters inside the model.
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-seasonalModel-update_std.errors"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-update_std.errors}{}}}
+\subsection{Method \code{update_std.errors()}}{
+Update the std. errors of the parameters.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$update_std.errors(std.errors)}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-seasonalModel-print"></a>}}

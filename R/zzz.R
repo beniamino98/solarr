@@ -83,9 +83,9 @@ is_leap_year <- function(x){
 #'
 #' @examples
 #' number_of_day("2040-01-31")
-#' number_of_day(c("2040-01-31", "2023-04-01", "2015-09-02"))
-#' number_of_day(c("2029-02-28", "2029-03-01", "2020-12-31"))
-#' number_of_day(c("2020-02-29", "2020-03-01", "2020-12-31"))
+#' number_of_day(c("2015-03-31", "2016-03-31", "2017-03-31"))
+#' number_of_day(c("2015-02-28", "2016-02-28", "2017-02-28"))
+#' number_of_day(c("2015-03-01", "2016-03-01", "2017-03-01"))
 #' @name number_of_day
 #' @rdname number_of_day
 #' @return Numeric vector with the number of the day during the year.
@@ -95,11 +95,31 @@ number_of_day <- function(x){
     return(x)
   }
   n_of_day <- lubridate::yday(x)
-  n_of_day[is_leap_year(x)] <- n_of_day[is_leap_year(x)] - 1
-  n_of_day[lubridate::day(x) == 29 & lubridate::month(x) == 2] <- 59.5
+  #n_of_day[is_leap_year(x)] <- n_of_day[is_leap_year(x)] - 1
+  #n_of_day[lubridate::day(x) == 29 & lubridate::month(x) == 2] <- 59.5
   return(n_of_day)
 }
 
-
-
+#' Power of a matrix
+#'
+#' Compute the power of a matrix
+#' @param x Matrix
+#' @param n power, if zero will return the identity matrix.
+#' @rdname pow_matrix
+#' @name pow_matrix
+#' @export
+pow_matrix <- function(x, n = 0){
+  M <- x
+  # Case power == 0
+  if (n == 0) {
+    M <- diag(1, nrow(M), ncol(M))
+  } else if(n > 1) {
+    M_pow <- M
+    for(i in 2:n){
+      M_pow <- M_pow %*% M
+    }
+    M <- M_pow
+  }
+  return(M)
+}
 

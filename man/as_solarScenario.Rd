@@ -4,10 +4,12 @@
 \alias{as_solarScenario}
 \title{Extract and structure simulations from a \code{solarScenarioSpec}}
 \usage{
-as_solarScenario(simSpec)
+as_solarScenario(simSpec, by)
 }
 \arguments{
 \item{simSpec}{object with the class \code{solarScenario_spec}. See the function \code{\link{solarScenario_spec}} for details.}
+
+\item{by}{Optional character. Represent the steps used for multiple scenarios.}
 }
 \description{
 Extract and structure simulations from a \code{solarScenarioSpec}

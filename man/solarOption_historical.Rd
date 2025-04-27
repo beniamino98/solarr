@@ -12,13 +12,13 @@ solarOption_historical(
 )
 }
 \arguments{
-\item{model}{object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
+\item{model}{An object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
 
-\item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
+\item{nmonths}{Numeric vector. Months in which the payoff should be computed. Can vary from 1 (January) to 12 (December).}
 
-\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
+\item{put}{Logical. When \code{TRUE}, the default, will be computed the price for a \code{put} contract, otherwise for a \code{call} contract.}
 
-\item{control_options}{control list, see \code{\link{control_solarOption}} for more details.}
+\item{control_options}{Named list. Control parameters, see \code{\link{control_solarOption}} for more details.}
 }
 \value{
 An object of the class \code{solarOptionPayoff}.

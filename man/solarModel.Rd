@@ -14,27 +14,31 @@ detecting outliers, performing transformations, and applying time-series models 
 is specifically designed to predict solar radiation data, and it uses seasonal and Gaussian Mixture models to
 capture the underlying data behavior.
 }
+\note{
+Version 1.0.0
+}
 \examples{
-# Control list
-control <- control_solarModel(outliers_quantile = 0,
-mean.model = list(arOrder = 1), garch_variance = FALSE)
+
 # Model specification
-spec <- solarModel_spec("Bologna", from="2005-01-01", control_model = control)
-Bologna <- solarModel$new(spec)
+spec <- solarModel_spec$new()
+spec$set_mean.model(arOrder = 1, maOrder = 1)
+spec$specification("Bologna")
 # Model fit
+Bologna <- solarModel$new(spec)
 Bologna$fit()
-# save(Bologna, file = "data/Bologna.RData")
+# save(spec, file = "data/Bologna.RData")
 
 # Extract and update the parameters
-params <- sm$parameters
-sm$update(params)
-sm$filter()
+model <- Bologna$clone(TRUE)
+params <- model$coefficients
+model$update(params)
+model$filter()
 
 # Fit a model with the realized clear sky
 spec$control$stochastic_clearsky <- TRUE
 # Initialize a new model
 model <- solarModel$new(spec)
-#' # Model fit
+# Model fit
 model$fit()
 
 # Fit a model for the clearsky
@@ -43,17 +47,18 @@ spec_Ct$control$stochastic_clearsky <- FALSE
 spec_Ct$target <- "clearsky"
 # Initialize a new model
 model <- solarModel$new(spec)
-#' # Model fit
+# Model fit
 model$fit()
+
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
 \item{\code{place}}{Character, optional name of the location considered.}
 
-\item{\code{target}}{Character, name of the target variable to model. Can be \code{GHI} or \code{clearsky}.}
+\item{\code{target}}{Character, name of the target variable to model. Can be \code{"GHI"} or \code{"clearsky"}.}
 
-\item{\code{dates}}{A named list, with the range of dates used in the model.}
+\item{\code{dates}}{A named list, with the range of dates used in the model. Output of \code{\link{solarModel_spec}}.}
 
 \item{\code{coords}}{A named list with the coordinates of the location considered. Contains:
 \describe{
@@ -75,7 +80,7 @@ model$fit()
 
 \item{\code{loglik}}{The log-likelihood computed on train data.}
 
-\item{\code{control}}{A list of control parameters that govern the behavior of the model's fitting process.}
+\item{\code{spec}}{A list with the specification that govern the behavior of the model's fitting process.}
 
 \item{\code{location}}{A data frame with coordinates of the location considered.}
 
@@ -85,7 +90,7 @@ model$fit()
 
 \item{\code{seasonal_model_Yt}}{The fitted seasonal model for the target variable.}
 
-\item{\code{AR_model_Yt}}{The fitted Autoregressive (AR) model for the target variable.}
+\item{\code{ARMA}}{The fitted ARMA model for the target variable.}
 
 \item{\code{seasonal_variance}}{The fitted model for seasonal variance.}
 
@@ -95,9 +100,7 @@ model$fit()
 
 \item{\code{moments}}{Get a list containing the conditional and unconditional moments.}
 
-\item{\code{combinations}}{mixture combination moments.}
-
-\item{\code{parameters}}{Get the model parameters as a named list.}
+\item{\code{coefficients}}{Get the model parameters as a named list.}
 }
 \if{html}{\out{</div>}}
 }
@@ -106,22 +109,28 @@ model$fit()
 \itemize{
 \item \href{#method-solarModel-new}{\code{solarModel$new()}}
 \item \href{#method-solarModel-fit}{\code{solarModel$fit()}}
-\item \href{#method-solarModel-fit_clearsky_model}{\code{solarModel$fit_clearsky_model()}}
+\item \href{#method-solarModel-fit_seasonal_model_Ct}{\code{solarModel$fit_seasonal_model_Ct()}}
 \item \href{#method-solarModel-compute_risk_drivers}{\code{solarModel$compute_risk_drivers()}}
-\item \href{#method-solarModel-fit_solar_transform}{\code{solarModel$fit_solar_transform()}}
-\item \href{#method-solarModel-detect_outliers_Yt}{\code{solarModel$detect_outliers_Yt()}}
-\item \href{#method-solarModel-fit_seasonal_mean}{\code{solarModel$fit_seasonal_mean()}}
-\item \href{#method-solarModel-corrective_monthly_mean}{\code{solarModel$corrective_monthly_mean()}}
-\item \href{#method-solarModel-fit_AR_model}{\code{solarModel$fit_AR_model()}}
+\item \href{#method-solarModel-fit_transform}{\code{solarModel$fit_transform()}}
+\item \href{#method-solarModel-fit_seasonal_model_Yt}{\code{solarModel$fit_seasonal_model_Yt()}}
+\item \href{#method-solarModel-fit_monthly_mean}{\code{solarModel$fit_monthly_mean()}}
+\item \href{#method-solarModel-fit_ARMA}{\code{solarModel$fit_ARMA()}}
 \item \href{#method-solarModel-fit_seasonal_variance}{\code{solarModel$fit_seasonal_variance()}}
-\item \href{#method-solarModel-fit_GARCH_model}{\code{solarModel$fit_GARCH_model()}}
-\item \href{#method-solarModel-corrective_monthly_variance}{\code{solarModel$corrective_monthly_variance()}}
-\item \href{#method-solarModel-fit_mixture_model}{\code{solarModel$fit_mixture_model()}}
+\item \href{#method-solarModel-fit_monthly_variance}{\code{solarModel$fit_monthly_variance()}}
+\item \href{#method-solarModel-correct_seasonal_variance}{\code{solarModel$correct_seasonal_variance()}}
+\item \href{#method-solarModel-fit_GARCH}{\code{solarModel$fit_GARCH()}}
+\item \href{#method-solarModel-fit_NM_model}{\code{solarModel$fit_NM_model()}}
 \item \href{#method-solarModel-update}{\code{solarModel$update()}}
+\item \href{#method-solarModel-update_moments}{\code{solarModel$update_moments()}}
+\item \href{#method-solarModel-update_logLik}{\code{solarModel$update_logLik()}}
+\item \href{#method-solarModel-update_risk_drivers}{\code{solarModel$update_risk_drivers()}}
+\item \href{#method-solarModel-update_NM_classification}{\code{solarModel$update_NM_classification()}}
 \item \href{#method-solarModel-filter}{\code{solarModel$filter()}}
-\item \href{#method-solarModel-conditional_moments}{\code{solarModel$conditional_moments()}}
-\item \href{#method-solarModel-unconditional_moments}{\code{solarModel$unconditional_moments()}}
+\item \href{#method-solarModel-Moments}{\code{solarModel$Moments()}}
+\item \href{#method-solarModel-VaR}{\code{solarModel$VaR()}}
 \item \href{#method-solarModel-logLik}{\code{solarModel$logLik()}}
+\item \href{#method-solarModel-R_to_Y}{\code{solarModel$R_to_Y()}}
+\item \href{#method-solarModel-Y_to_R}{\code{solarModel$Y_to_R()}}
 \item \href{#method-solarModel-print}{\code{solarModel$print()}}
 \item \href{#method-solarModel-clone}{\code{solarModel$clone()}}
 }
@@ -154,12 +163,12 @@ Initialize and fit a \code{\link{solarModel}} object given the specification con
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-fit_clearsky_model"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-fit_clearsky_model}{}}}
-\subsection{Method \code{fit_clearsky_model()}}{
+\if{html}{\out{<a id="method-solarModel-fit_seasonal_model_Ct"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_seasonal_model_Ct}{}}}
+\subsection{Method \code{fit_seasonal_model_Ct()}}{
 Initialize and fit a \code{\link{seasonalClearsky}} model given the specification contained in \verb{$control}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_clearsky_model()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_seasonal_model_Ct()}\if{html}{\out{</div>}}
 }
 
 }
@@ -167,60 +176,49 @@ Initialize and fit a \code{\link{seasonalClearsky}} model given the specificatio
 \if{html}{\out{<a id="method-solarModel-compute_risk_drivers"></a>}}
 \if{latex}{\out{\hypertarget{method-solarModel-compute_risk_drivers}{}}}
 \subsection{Method \code{compute_risk_drivers()}}{
-Compute the risk drivers and impute the observation that are greater or equal to the clearsky level.
+Compute the risk drivers and impute the observation that are greater or equal to the clear sky level.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$compute_risk_drivers()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-fit_solar_transform"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-fit_solar_transform}{}}}
-\subsection{Method \code{fit_solar_transform()}}{
+\if{html}{\out{<a id="method-solarModel-fit_transform"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_transform}{}}}
+\subsection{Method \code{fit_transform()}}{
 Fit the parameters of the \code{\link{solarTransform}} object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_solar_transform()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_transform()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-detect_outliers_Yt"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-detect_outliers_Yt}{}}}
-\subsection{Method \code{detect_outliers_Yt()}}{
-Detect and assign a zero weight to the outliers to exclude them from the fit. The threshold to be outlier is specified
-with the control function.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$detect_outliers_Yt()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-fit_seasonal_mean"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-fit_seasonal_mean}{}}}
-\subsection{Method \code{fit_seasonal_mean()}}{
+\if{html}{\out{<a id="method-solarModel-fit_seasonal_model_Yt"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_seasonal_model_Yt}{}}}
+\subsection{Method \code{fit_seasonal_model_Yt()}}{
 Fit a \code{\link{seasonalModel}} the transformed variable (\code{Yt}) and compute deseasonalized series (\code{Yt_tilde}).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_seasonal_mean()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_seasonal_model_Yt()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-corrective_monthly_mean"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-corrective_monthly_mean}{}}}
-\subsection{Method \code{corrective_monthly_mean()}}{
+\if{html}{\out{<a id="method-solarModel-fit_monthly_mean"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_monthly_mean}{}}}
+\subsection{Method \code{fit_monthly_mean()}}{
 Correct the deseasonalized series (\code{Yt_tilde}) by subtracting its monthly mean (\code{Yt_tilde_uncond}).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$corrective_monthly_mean()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_monthly_mean()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-fit_AR_model"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-fit_AR_model}{}}}
-\subsection{Method \code{fit_AR_model()}}{
+\if{html}{\out{<a id="method-solarModel-fit_ARMA"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_ARMA}{}}}
+\subsection{Method \code{fit_ARMA()}}{
 Fit an AR model (\code{Yt_tilde}) and compute AR residuals (\code{eps}).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_AR_model()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_ARMA()}\if{html}{\out{</div>}}
 }
 
 }
@@ -235,36 +233,43 @@ Fit a \code{\link{seasonalModel}} on AR squared residuals (\code{eps}) and compu
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-fit_GARCH_model"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-fit_GARCH_model}{}}}
-\subsection{Method \code{fit_GARCH_model()}}{
+\if{html}{\out{<a id="method-solarModel-fit_monthly_variance"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_monthly_variance}{}}}
+\subsection{Method \code{fit_monthly_variance()}}{
+Correct the standardized series (\code{eps_tilde}) by subtracting its monthly mean (\code{sigma_uncond}).
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_monthly_variance()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-correct_seasonal_variance"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-correct_seasonal_variance}{}}}
+\subsection{Method \code{correct_seasonal_variance()}}{
+Correct the parameters of the seasonal variance to ensure a unitary variance
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$correct_seasonal_variance()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-fit_GARCH"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_GARCH}{}}}
+\subsection{Method \code{fit_GARCH()}}{
 Fit a \code{GARCH} model on the deseasonalized residuals (\code{eps_tilde}).
 Compute the standardized (\code{u}) and monthly deseasonalized residuals (\code{u_tilde}).
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_GARCH_model()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_GARCH()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-corrective_monthly_variance"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-corrective_monthly_variance}{}}}
-\subsection{Method \code{corrective_monthly_variance()}}{
-Correct the standardized GARCH residuals (\code{u}) by dividing them by the monthly std. deviation (\code{sigma_m}).
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$corrective_monthly_variance()}\if{html}{\out{</div>}}
-}
-
-\subsection{Returns}{
-Update the slots \verb{$data$u_tilde} and \verb{$monthly_data$sigma_m}.
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-fit_mixture_model"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-fit_mixture_model}{}}}
-\subsection{Method \code{fit_mixture_model()}}{
+\if{html}{\out{<a id="method-solarModel-fit_NM_model"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-fit_NM_model}{}}}
+\subsection{Method \code{fit_NM_model()}}{
 Initialize and fit a \code{solarMixture} object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_mixture_model()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_NM_model()}\if{html}{\out{</div>}}
 }
 
 }
@@ -280,10 +285,50 @@ Update the parameters inside object
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{params}}{List of parameters. See the slot \verb{$parameters} for a template.}
+\item{\code{params}}{List of parameters. See the slot \verb{$coefficients} for a template.}
 }
 \if{html}{\out{</div>}}
 }
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-update_moments"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-update_moments}{}}}
+\subsection{Method \code{update_moments()}}{
+Update the moments inside object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$update_moments()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-update_logLik"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-update_logLik}{}}}
+\subsection{Method \code{update_logLik()}}{
+Update the log-likelihood inside object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$update_logLik()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-update_risk_drivers"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-update_risk_drivers}{}}}
+\subsection{Method \code{update_risk_drivers()}}{
+Update the clear sky and risk drivers
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$update_risk_drivers()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-update_NM_classification"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-update_NM_classification}{}}}
+\subsection{Method \code{update_NM_classification()}}{
+Update the classification of the Bernoulli random variable.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$update_NM_classification(filter = FALSE)}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-filter"></a>}}
@@ -295,29 +340,52 @@ Filter the time series when new parameters are supplied in the method \verb{$upd
 }
 
 \subsection{Returns}{
-Update the slots \verb{$data}, \verb{$seasonal_data}, \verb{$monthly_data}, \verb{$moments$conditional},
-\verb{$moments$unconditional} and \verb{$loglik}.
+Update the slots \verb{$data}, \verb{$seasonal_data}, \verb{$monthly_data}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-conditional_moments"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-conditional_moments}{}}}
-\subsection{Method \code{conditional_moments()}}{
-Compute the conditional moments and update the slot \verb{$moments$conditional}.
+\if{html}{\out{<a id="method-solarModel-Moments"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-Moments}{}}}
+\subsection{Method \code{Moments()}}{
+Compute the conditional moments
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$conditional_moments()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$Moments(t_now, t_hor, quiet = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{t_now}}{Character date. Today date.}
+
+\item{\code{t_hor}}{Character date. Horizon date.}
+
+\item{\code{quiet}}{Logical for verbose messages.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-unconditional_moments"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-unconditional_moments}{}}}
-\subsection{Method \code{unconditional_moments()}}{
-Compute the unconditional seasonal moments and update the slot \verb{$moments$unconditional}.
+\if{html}{\out{<a id="method-solarModel-VaR"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-VaR}{}}}
+\subsection{Method \code{VaR()}}{
+Value at Risk for a \code{solarModel}
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$unconditional_moments()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$VaR(moments, t_now, t_hor, theta = 0, ci = 0.05)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{moments}}{moments dataset}
+
+\item{\code{t_now}}{Character date. Today date.}
+
+\item{\code{t_hor}}{Character date. Horizon date.}
+
+\item{\code{ci}}{Confidence interval (one tail).}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-logLik"></a>}}
@@ -325,9 +393,62 @@ Compute the unconditional seasonal moments and update the slot \verb{$moments$un
 \subsection{Method \code{logLik()}}{
 Compute the log-likelihood of the model and update the slot \verb{$loglik}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$logLik()}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$logLik(moments, target = "Yt")}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{moments}}{Dataset containing the moments to use for computation.}
+
+\item{\code{target}}{Character. Target variable to use "Yt" or "GHI".}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-R_to_Y"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-R_to_Y}{}}}
+\subsection{Method \code{R_to_Y()}}{
+Convert solar radiation Rt into the transformed variable Yt for a given day of the year.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$R_to_Y(Rt, t_now)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{Rt}}{Numeric, solar radiation.}
+
+\item{\code{t_now}}{Character, today date.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Transformed variable on date t_now.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel-Y_to_R"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel-Y_to_R}{}}}
+\subsection{Method \code{Y_to_R()}}{
+Convert the transformed variable Yt into solar radiation Rt for a given day of the year.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel$Y_to_R(Yt, t_now)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{Yt}}{Numeric, transformed variable.}
+
+\item{\code{t_now}}{Character, today date.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Solar radiation Rt on date t_now.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-print"></a>}}

@@ -31,7 +31,7 @@
 #'
 #' @name seasonalSolarFunctions
 #' @rdname seasonalSolarFunctions
-#'
+#' @note Version 1.0.0
 #' @references Duffie, Solar Engineering of Thermal Processes Fourth Edition.
 #' @export
 seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
@@ -376,6 +376,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   }
                                 ),
                                 private = list(
+                                  version = "1.0.0",
                                   ..G0 = 1367,
                                   method_ = ""
                                 ),

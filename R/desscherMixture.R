@@ -1,4 +1,4 @@
-#' Esscher transform of a Gaussian Mixture
+#' Density of the Esscher transform of a Gaussian Mixture
 #'
 #' @inheritParams dmixnorm
 #' @param theta Esscher parameter, the default is zero.
@@ -55,14 +55,41 @@ desscherMixture <- function(mean = c(0,0), sd = c(1,1), alpha = c(0.5, 0.5), the
   }
 }
 
+#' Cdf of the Esscher transform of a Gaussian Mixture
 #' @rdname desscherMixture
 #'
 #' @export
 pesscherMixture <- function(mean = c(0,0), sd = c(1,1), alpha = c(0.5, 0.5), theta = 0){
+
   # Esscher pdf
-  pdf <- desscherMixture(mean, sd, alpha, theta)
+  #pdf <- desscherMixture(mean, sd, alpha, theta)
   # Esscher cdf depending on `x` and `h`
-  cdf <- function(q, lower = -Inf){
-    purrr::map_dbl(q, ~integrate(function(x) pdf(x), lower = lower, upper = .x)$value)
+  #function(q, lower = -Inf){
+  #  purrr::map_dbl(q, ~integrate(function(x) pdf(x), lower = lower, upper = .x)$value)
+  #}
+
+  # Moment generating function of k-component
+  mgf <- function(mean, sd, theta) exp(theta*mean + (theta^2*sd^2)/2)
+
+  num <- c()
+  den <- 0
+  for(k in 1:length(mean)){
+    num[k] <- alpha[k]*mgf(mean[k], sd[k], theta)
+    den <- den + num[k]
+  }
+  # Update probabilities
+  probs <- num/den
+  # Update means parameters
+  mean <- mean + theta*sd^2
+  # Mixture cdf
+  cdf <- function(x) pmixnorm(x, mean, sd, alpha)
+  # Esscher cdf
+  function(x, log = FALSE){
+    probs <- cdf(x)
+    # Log-probabilities
+    if (log) {
+      probs <- base::log(probs)
+    }
+    return(probs)
   }
 }

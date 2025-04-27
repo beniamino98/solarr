@@ -5,20 +5,22 @@
 \title{Payoff on simulated Data}
 \usage{
 solarOption_scenario(
+  model,
   scenario,
   nmonths = 1:12,
   put = TRUE,
-  measure = "P",
   nsim,
   control_options = control_solarOption()
 )
 }
 \arguments{
+\item{model}{An object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
+
 \item{scenario}{object with the class \code{solarModelScenario}. See the function \code{\link{solarModel_scenarios}} for details.}
 
-\item{nmonths}{numeric vector of months in which the payoff is computed. Range from 1 to 12.}
+\item{nmonths}{Numeric vector. Months in which the payoff should be computed. Can vary from 1 (January) to 12 (December).}
 
-\item{put}{logical, when \code{TRUE}, the default, the computations will consider a \code{put} contract. Otherwise a \code{call}.}
+\item{put}{Logical. When \code{TRUE}, the default, will be computed the price for a \code{put} contract, otherwise for a \code{call} contract.}
 
 \item{nsim}{number of simulation to use for computation.}
 
@@ -32,8 +34,8 @@ Payoff on simulated Data
 }
 \examples{
 model <- Bologna
-scenario <- solarScenario(model, from = "2011-01-01", to = "2012-01-01", by = "1 month", nsim = 1, seed = 3)
-solarOption_scenario(scenario)
+scenario <- solarScenario(model, from = "2011-01-01", to = "2012-01-01", by = "1 month", nsim = 10, seed = 3)
+solarOption_scenario(model, scenario)
 solarOption_historical(model)
 
 }

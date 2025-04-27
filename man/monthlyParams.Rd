@@ -8,6 +8,9 @@ Create a function of time for monthly parameters
 
 Create a function of time for monthly parameters
 }
+\note{
+Version 1.0.0
+}
 \examples{
 set.seed(1)
 params <- runif(12)
@@ -17,11 +20,19 @@ t_hor <- as.Date("2024-12-31")
 dates <- seq.Date(t_now, t_hor, by = "1 day")
 plot(mp$predict(dates), type = "l")
 }
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{parameters}}{vector of parameters with length 12.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-monthlyParams-new}{\code{monthlyParams$new()}}
 \item \href{#method-monthlyParams-predict}{\code{monthlyParams$predict()}}
+\item \href{#method-monthlyParams-update}{\code{monthlyParams$update()}}
 \item \href{#method-monthlyParams-clone}{\code{monthlyParams$clone()}}
 }
 }
@@ -29,6 +40,7 @@ plot(mp$predict(dates), type = "l")
 \if{html}{\out{<a id="method-monthlyParams-new"></a>}}
 \if{latex}{\out{\hypertarget{method-monthlyParams-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a \code{monthlyParams} object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{monthlyParams$new(params)}\if{html}{\out{</div>}}
 }
@@ -36,7 +48,7 @@ plot(mp$predict(dates), type = "l")
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{params}}{Vector of length 12 with the monthly parameters.}
+\item{\code{params}}{numeric vector of parameters with length 12.}
 }
 \if{html}{\out{</div>}}
 }
@@ -45,10 +57,35 @@ plot(mp$predict(dates), type = "l")
 \if{html}{\out{<a id="method-monthlyParams-predict"></a>}}
 \if{latex}{\out{\hypertarget{method-monthlyParams-predict}{}}}
 \subsection{Method \code{predict()}}{
+Predict the monthly paramete
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{monthlyParams$predict(x)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{date as character or month as numeric.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-monthlyParams-update"></a>}}
+\if{latex}{\out{\hypertarget{method-monthlyParams-update}{}}}
+\subsection{Method \code{update()}}{
+Update the monthly parameters
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{monthlyParams$update(params)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{params}}{numeric vector of parameters with length 12.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-monthlyParams-clone"></a>}}

@@ -29,7 +29,7 @@ p = c(0.17, 0.34, 0.3, 0.19)
 
 ```{r}
 # Simulated gaussian mixture
-gm <- rmixnorm(n, means = means, sd = sd, p = p)
+gm <- rmixnorm(n, means, sd, p)
 # Plot points divided by group
 ggplot()+
   geom_point(data = gm, aes(t, X))+

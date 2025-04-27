@@ -48,7 +48,7 @@ ggplot()+
 # Parameters
 
 ```{r}
-dplyr::bind_cols(model$parameters) %>%
+dplyr::bind_cols(model$coefficients) %>%
   tidyr::gather("parameter", "value")
 ```
 
@@ -61,7 +61,6 @@ model$loglik
 ```{r}
 c_moments <- model$moments$conditional
 c_moments$GHI <- model$data$GHI
-c_moments <- dplyr::left_join(c_moments, dplyr::select(model$seasonal_data, -n), by = c("Month", "Day"))
 c_moments$e_GHI <- model$transform$GHI_y(c_moments$e_Yt, c_moments$Ct)
 c_moments$e_GHI_up <- model$transform$GHI_y(c_moments$e_Yt + c_moments$sd_Yt , c_moments$Ct)
 c_moments$e_GHI_dw <- model$transform$GHI_y(c_moments$e_Yt - c_moments$sd_Yt, c_moments$Ct)

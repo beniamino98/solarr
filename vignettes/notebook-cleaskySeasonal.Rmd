@@ -19,7 +19,7 @@ library(solarr)
 ```{r}
 # Control for `clearskyModel`
 spec <- solarModel_spec("Bologna", target = "clearsky")
-spec$control$clearsky <- control_seasonalClearsky(method = "II", include.intercept = TRUE, order = 1, period = 365,
+spec$control$clearsky <- control_seasonalClearsky(include.intercept = TRUE, order = 1, period = 365,
                                                   delta0 = 1.4, ntol = 30, lower = 0, upper = 2, by = 0.001, quiet = FALSE)
 ```
 
@@ -65,13 +65,11 @@ data %>%
 
 ```
 
-
-
 ### Test: delta parameter 
 
 ```{r}
 # Test delta parameter
-delta <- clearsky_model$extra_params$delta
+delta <- clearsky_model$.__enclos_env__$private$delta
 test_delta <- delta > spec$control$clearsky$lower & delta < spec$control$clearsky$upper
 test_msg <- paste0("Check if the parameter delta is inside lower (", spec$control$clearsky$lower, ") and upper (", spec$control$clearsky$upper,")",
                    "...", "(", delta, ") ",

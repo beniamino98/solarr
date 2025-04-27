@@ -2,18 +2,12 @@
 % Please edit documentation in R/solarModel_internals.R
 \name{solarModel_unconditional_moments}
 \alias{solarModel_unconditional_moments}
-\title{Compute conditional moments from a \code{solarModel} object}
+\title{Compute the unconditional moments}
 \usage{
-solarModel_unconditional_moments(model, nmonths, ndays, date)
+solarModel_unconditional_moments(seasonal_data, ARMA, GARCH)
 }
 \description{
-Compute conditional moments from a \code{solarModel} object
+Compute the unconditional moments
 }
-\examples{
-model <- Bologna
-solarModel_unconditional_moments(model)
-solarModel_unconditional_moments(model, nmonths = 1)
-solarModel_unconditional_moments(model, nmonths = 1, ndays = 1)
-solarModel_unconditional_moments(model, date = "2022-01-01")
-
-}
+\keyword{internal}
+\keyword{solarModel}
