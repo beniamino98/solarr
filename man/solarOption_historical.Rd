@@ -6,6 +6,7 @@
 \usage{
 solarOption_historical(
   model,
+  data = NULL,
   nmonths = 1:12,
   put = TRUE,
   control_options = control_solarOption()
@@ -13,6 +14,8 @@ solarOption_historical(
 }
 \arguments{
 \item{model}{An object with the class \code{solarModel}. See the function \code{\link{solarModel}} for details.}
+
+\item{data}{Optional dataset for the computation of the payoff.}
 
 \item{nmonths}{Numeric vector, months in which the payoff should be computed. Can vary from 1 (January) to 12 (December).}
 

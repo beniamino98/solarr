@@ -12,11 +12,9 @@ Gaussian mixture
 Fit the parameters of a gaussian mixture with k-components.
 
 Applied after updating the parameters
-
-Applied after updating the parameters
 }
 \note{
-Version 1.0.0
+Version 1.0.2
 }
 \examples{
 means = c(0.5,2)
@@ -48,6 +46,8 @@ gm$update(means = c(-2, 0, 2))
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
+\item{\code{control}}{List to contain custom control parameters.}
+
 \item{\code{maxit}}{Integer, maximum number of iterations.}
 
 \item{\code{maxrestarts}}{Integer, maximum number of restarts.}
@@ -55,6 +55,8 @@ gm$update(means = c(-2, 0, 2))
 \item{\code{abstol}}{Numeric, absolute level for convergence.}
 
 \item{\code{components}}{Integer, number of mixture components.}
+
+\item{\code{method}}{Character, package used for fitting.}
 }
 \if{html}{\out{</div>}}
 }
@@ -69,8 +71,6 @@ gm$update(means = c(-2, 0, 2))
 
 \item{\code{coefficients}}{named list with mixture coefficients.}
 
-\item{\code{use_empiric}}{logical to denote if empiric parameters are currently used}
-
 \item{\code{std.errors}}{named list with mixture parameters.}
 
 \item{\code{model}}{Tibble with mixture parameters, in order means, sd, p.}
@@ -79,9 +79,11 @@ gm$update(means = c(-2, 0, 2))
 
 \item{\code{fitted}}{fitted series}
 
+\item{\code{responsabilities}}{resp}
+
 \item{\code{moments}}{Tibble with the theoric moments and the number of observations used for fit.}
 
-\item{\code{summary}}{Tibble with estimated parameters, std.errors and statistics}
+\item{\code{tidy}}{Tibble with estimated parameters, std.errors and statistics}
 }
 \if{html}{\out{</div>}}
 }
@@ -89,6 +91,7 @@ gm$update(means = c(-2, 0, 2))
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-gaussianMixture-new}{\code{gaussianMixture$new()}}
+\item \href{#method-gaussianMixture-set_time_series}{\code{gaussianMixture$set_time_series()}}
 \item \href{#method-gaussianMixture-logLik}{\code{gaussianMixture$logLik()}}
 \item \href{#method-gaussianMixture-E_step}{\code{gaussianMixture$E_step()}}
 \item \href{#method-gaussianMixture-classify}{\code{gaussianMixture$classify()}}
@@ -96,10 +99,8 @@ gm$update(means = c(-2, 0, 2))
 \item \href{#method-gaussianMixture-EM}{\code{gaussianMixture$EM()}}
 \item \href{#method-gaussianMixture-update}{\code{gaussianMixture$update()}}
 \item \href{#method-gaussianMixture-update_logLik}{\code{gaussianMixture$update_logLik()}}
-\item \href{#method-gaussianMixture-update_empiric_parameters}{\code{gaussianMixture$update_empiric_parameters()}}
 \item \href{#method-gaussianMixture-filter}{\code{gaussianMixture$filter()}}
 \item \href{#method-gaussianMixture-Hessian}{\code{gaussianMixture$Hessian()}}
-\item \href{#method-gaussianMixture-use_empiric_parameters}{\code{gaussianMixture$use_empiric_parameters()}}
 \item \href{#method-gaussianMixture-print}{\code{gaussianMixture$print()}}
 \item \href{#method-gaussianMixture-clone}{\code{gaussianMixture$clone()}}
 }
@@ -112,6 +113,7 @@ Initialize a \code{gaussianMixture} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$new(
   components = 2,
+  method = "mixtools",
   maxit = 5000,
   maxrestarts = 500,
   abstol = 1e-08
@@ -123,11 +125,32 @@ Initialize a \code{gaussianMixture} object.
 \describe{
 \item{\code{components}}{(\code{integer(1)}), number of components.}
 
+\item{\code{method}}{Character, package used to fit the parameters. Can be \code{mclust} or \code{mixtools}.}
+
 \item{\code{maxit}}{(\code{integer(1)}) Numeric, maximum number of iterations.}
 
 \item{\code{maxrestarts}}{(\code{integer(1)}) Numeric, maximum number of restarts.}
 
 \item{\code{abstol}}{(\code{numeric(1)}) Numeric, absolute level for convergence.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-gaussianMixture-set_time_series"></a>}}
+\if{latex}{\out{\hypertarget{method-gaussianMixture-set_time_series}{}}}
+\subsection{Method \code{set_time_series()}}{
+Set the time series internally
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$set_time_series(x, weights)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+
+\item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.}
 }
 \if{html}{\out{</div>}}
 }
@@ -196,13 +219,7 @@ Classify the time series in the components with highest likelihood.
 \subsection{Method \code{fit()}}{
 Fit the parameters with mclust package
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$fit(
-  x,
-  weights,
-  method = "mixtools",
-  mu_target = NA,
-  var_target = NA
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$fit(x, weights, mu_target = NA, var_target = NA)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -211,8 +228,6 @@ Fit the parameters with mclust package
 \item{\code{x}}{vector}
 
 \item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.}
-
-\item{\code{method}}{Character, package used to fit the parameters. Can be \code{mclust} or \code{mixtools}.}
 
 \item{\code{mu_target}}{Numeric, target mean of the mixture to match.}
 
@@ -254,11 +269,11 @@ Update the parameters inside the object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{means}}{Numeric vector, means parameters.}
+\item{\code{means}}{Named vector, new means parameters.}
 
-\item{\code{sd}}{Numeric vector, std. deviation parameters.}
+\item{\code{sd}}{Named vector, new std. deviation parameters.}
 
-\item{\code{p}}{Numeric vector, probabilities.}
+\item{\code{p}}{Named vector, new probabilities.}
 }
 \if{html}{\out{</div>}}
 }
@@ -270,16 +285,6 @@ Update the parameters inside the object.
 Update the log-likelihood with the current parameters
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update_logLik()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-gaussianMixture-update_empiric_parameters"></a>}}
-\if{latex}{\out{\hypertarget{method-gaussianMixture-update_empiric_parameters}{}}}
-\subsection{Method \code{update_empiric_parameters()}}{
-Compute the parameters on the classified time series.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$update_empiric_parameters()}\if{html}{\out{</div>}}
 }
 
 }
@@ -300,17 +305,6 @@ Update the responsibilities, the log-likelihood, classify again the points and r
 Hessian matrix \code{gaussianMixture} class.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$Hessian()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-gaussianMixture-use_empiric_parameters"></a>}}
-\if{latex}{\out{\hypertarget{method-gaussianMixture-use_empiric_parameters}{}}}
-\subsection{Method \code{use_empiric_parameters()}}{
-Substitute the empiric parameters with EM parameters. If evaluated again
-the EM parameters will be substituted back.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{gaussianMixture$use_empiric_parameters()}\if{html}{\out{</div>}}
 }
 
 }

@@ -37,20 +37,23 @@ control_solarOption <- function(nyears = c(2005, 2025), K = 0, leap_year = FALSE
 #' @param K Numeric, scalar or vector of strikes.
 #' @param put Logical, when `TRUE`, the default, the function will return the output of a put payoff
 #' otherwise a call payoff. See the details.
-#' @details The put option payoff reads:
+#' @details When `put = TRUE`, the function evaluate a put payoff:
 #' \deqn{(K - R)^{+} = (K - R) 1_{K > R}}
-#' Symmetrically a call option payoff reads:
+#' When `put = TRUE`, the function evaluate a call payoff:
 #' \deqn{(R-K)^{+} = (R - K) 1_{R \ge K}}
-#'
 #' @examples
-#' solarPayoff(10, 9, put = TRUE)
-#'
-#' @rdname solarPayoff
-#' @name solarPayoff
+#' # Put
+#' solarOption_payoff(10, 9, put = TRUE)
+#' solarOption_payoff(8, 9, put = TRUE)
+#' # Call
+#' solarOption_payoff(10, 9, put = FALSE)
+#' solarOption_payoff(8, 9, put = FALSE)
+#' @rdname solarOption_payoff
+#' @name solarOption_payoff
 #' @keywords solarOption
 #' @note Version 1.0.0.
 #' @export
-solarPayoff <- function(R, K = 0, put = TRUE){
+solarOption_payoff <- function(R, K = 0, put = TRUE){
   put <- ifelse(put, -1, 1)
   payoff <- (R - K) * put
   payoff[payoff < 0] <- 0
@@ -63,22 +66,62 @@ solarPayoff <- function(R, K = 0, put = TRUE){
 #' @param P Numeric, price of the contract.
 #' @param Gamma_h Numeric, hedged payoff.
 #' @param r Numeric, daily risk-free rate.
-#'
 #' @details The discount factor reads:
 #' \deqn{B(\tau, P, \Gamma^h, r) = e^{-r \tau} + \frac{\Gamma^h}{P} (1 - e^{-r \tau})}
-#'
 #' @examples
-#' solarDiscount(365. 0.6, 2, 0.000008)
-#' solarDiscount(365, 0.3, 2, 0.00008)
+#' solarOption_discount(365. 0.6, 2, 0.000008)
+#' solarOption_discount(365, 0.3, 2, 0.00008)
 #'
-#' @rdname solarDiscount
-#' @name solarDiscount
+#' @rdname solarOption_discount
+#' @name solarOption_discount
 #' @keywords solarOption
 #' @note Version 1.0.0.
 #' @export
-solarDiscount <- function(tau, P = 1, Gamma_h = 0, r = 0.03/365){
+solarOption_discount <- function(tau, P = 1, Gamma_h = 0, r = 0.03/365){
   exp(-r * tau) + (Gamma_h / P) * (1 - exp(-r * tau))
 }
+
+#' Compute the price of a `solarOption`
+#'
+#' @param K Numeric, strike price.
+#' @param pdf_R Function, density function of solar radiation at maturity.
+#' @param R_min Numeric, minimum value of solar radiation at maturity.
+#' @param R_max Numeric, maximum value of solar radiation at maturity.
+#' @details When `put = TRUE`, the function evaluate a put payoff:
+#' \deqn{\mathbb{E}\{(K - R)^{+}\} = K \mathbb{P}\{R_T < K\} - \mathbb{E}\{R 1_{K > R_T}\}}
+#' When `put = TRUE`, the function evaluate a call payoff:
+#' \deqn{\mathbb{E}\{(K - R)^{+}\} = \mathbb{E}\{R 1_{K < R_T}\} - K \mathbb{P}\{R_T > K\}}
+#' @examples
+#' # Parameters for the pdf of Rt
+#' Ct <- 7
+#' alpha <- 0.01
+#' beta <- 0.92
+#' Rt_min_max <- Ct * c(1-alpha-beta, 1-alpha)
+#' pdf_R <- function(x) dsolarGHI(x, Ct, alpha, beta, function(x) dnorm(x))
+#' cdf_R <- function(x) psolarGHI(x, Ct, alpha, beta, function(x) pnorm(x))
+#' # Put price
+#' solarOption_price(5, R_min = Rt_min_max[1], R_max = Rt_min_max[2], TRUE)
+#' # Call price
+#' solarOption_price(5, pdf_R, Rt_min_max[1], Rt_min_max[2], FALSE)
+#' @rdname solarOption_price
+#' @name solarOption_price
+#' @keywords solarOption
+#' @note Version 1.0.0.
+#' @export
+solarOption_price <- function(K, pdf_R, R_min, R_max, put = TRUE){
+  if(!is.function(pdf_R)) stop("pdf_R is not a function!")
+  # Bounds
+  lower <- ifelse(put, R_min, K)
+  upper <- ifelse(put, K, R_max)
+  # Payoff function
+  Gamma <- function(x) solarOption_payoff(x, K, put = put) * pdf_R(x)
+  # Premium
+  price <- integrate(function(x) solarOption_payoff(x, K, put = put) * pdf_R(x),
+                     stop.on.error = FALSE, lower = lower, upper = upper)$value
+  # Return the option price
+  return(price)
+}
+
 
 #' Structure the outputs of solarOption functions
 #'

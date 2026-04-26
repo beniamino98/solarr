@@ -2,14 +2,28 @@
 % Please edit documentation in R/seasonalSolarFunctions-R6.R
 \name{seasonalSolarFunctions}
 \alias{seasonalSolarFunctions}
-\title{Solar seasonal functions}
+\title{Solar geometry and extraterrestrial radiation utilities}
 \description{
-Solar seasonal functions
+\code{seasonalSolarFunctions} is an R6 class that implements standard solar
+geometry and clear-sky formulas (Duffie & Beckman, Comini).
+}
+\details{
+Implementations includes:
+\itemize{
+\item Day-of-year seasonal parameter \eqn{B(n)} and time equation \eqn{E(n)}
+\item Angle conversions between radians and degrees
+\item Solar time, hour angle, declination, and sunset hour angle
+\item Extraterrestrial radiation on a horizontal surface \eqn{H_{on}}
+\item Solar incidence, azimuth, altitude, and daily solar angles
+\item Hottel-type clear-sky transmissivity and clear-sky irradiance
+}
 
-Solar seasonal functions
+The methods follow the notation and equations in Duffie & Beckman
+(\emph{Solar Engineering of Thermal Processes}, 4th ed.) unless otherwise
+specified.
 }
 \note{
-Version 1.0.0
+Version 1.0.2
 }
 \examples{
 dates <- seq.Date(as.Date("2022-01-01"), as.Date("2022-12-31"), 1)
@@ -45,9 +59,6 @@ sf$hour_angle("2022-01-01 14:00", 11, 15)
 sf$incidence_angle("2022-06-01 21:00", 31, 12, lon_st = 15, beta = 0, gamma = 0)
 sf$azimut_angle("2022-01-01 14:00", 30, 17, lon_st = 15)
 
-}
-\references{
-Duffie, Solar Engineering of Thermal Processes Fourth Edition.
 }
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}

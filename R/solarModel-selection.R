@@ -8,15 +8,16 @@
 #' @param garchOrder Numeric, maximum GARCH order.
 #' @examples
 #' spec <- solarModel_spec$new()
-#' models <- solarModels_grid(spec, "Bologna", 1,1,1,1)
-#' models[which.min(models$L),]
+#' spec$specification("Bologna")
+#' models <- solarModel_grid(spec, 1,1,1,1)
+#' models
 #'
-#' @rdname solarModels_grid
-#' @name solarModels_grid
+#' @rdname solarModel_grid
+#' @name solarModel_grid
 #' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
-solarModels_grid <- function(spec, arOrder = 2, maOrder = 2, archOrder = 1, garchOrder = 1, QMLE = FALSE){
+solarModel_grid <- function(spec, arOrder = 2, maOrder = 2, archOrder = 1, garchOrder = 1, QMLE = FALSE){
 
   AR_order <- paste0("ARMA(", 1:arOrder)
   MA_order <- paste0(",", 0:maOrder, ")")
@@ -53,11 +54,11 @@ solarModels_grid <- function(spec, arOrder = 2, maOrder = 2, archOrder = 1, garc
     # Specification
     spec$set_mean.model(arOrder = order[[i]][1], maOrder = order[[i]][2])
     if (order[[i]][3] == 0 & order[[i]][4] == 0){
-      spec$set_variance.model(archOrder = order[[i]][3], garchOrder = order[[i]][4], garch_variance = FALSE)
+      spec$set_variance.model(archOrder = order[[i]][3], garchOrder = order[[i]][4])
     } else {
-      spec$set_variance.model(archOrder = order[[i]][3], garchOrder = order[[i]][4], garch_variance = TRUE)
+      spec$set_variance.model(archOrder = order[[i]][3], garchOrder = order[[i]][4])
     }
-    models_name[i] <- paste0("ARMA(", order[[i]][1], ", ", order[[i]][2],")-GARCH(", order[[i]][3], ", ", order[[i]][4], ")")
+    models_name[i] <- spec$model_name
     print(models_name[i])
     # Initialize the model
     model <- solarModel$new(spec)
@@ -72,7 +73,18 @@ solarModels_grid <- function(spec, arOrder = 2, maOrder = 2, archOrder = 1, garc
     models[[i]] <- model$clone(TRUE)
   }
   names(models) <- models_name
-  return(models)
+  models_name <- names(models)
+
+  dplyr::tibble(
+    model.name = models_name,
+    link = model$spec$transform$link,
+    AR = purrr::map_dbl(order, ~.x[1]),
+    MA = purrr::map_dbl(order, ~.x[2]),
+    ARCH = purrr::map_dbl(order, ~.x[3]),
+    GARCH = purrr::map_dbl(order, ~.x[4]),
+    spec = purrr::map(models, ~.x$spec$clone(TRUE)),
+    model = models
+  )
 }
 
 #' Compute the AIC and BIC of a solarModel object
@@ -84,7 +96,10 @@ solarModels_grid <- function(spec, arOrder = 2, maOrder = 2, archOrder = 1, garc
 #' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
-solarModel_AIC_BIC <- function(model, target = "GHI", type = c("train", "test", "full")){
+solarModel_AIC_BIC <- function(model, target = "GHI", type = "full"){
+
+  type <- match.arg(type, choices = c("train", "test", "full"))
+
   moments <- model$moments$conditional
   if (type == "train") {
     moments <-  moments[model$data$isTrain,]
@@ -92,7 +107,7 @@ solarModel_AIC_BIC <- function(model, target = "GHI", type = c("train", "test", 
     moments <-  moments[!model$data$isTrain,]
   }
   # Log-likelihood
-  L <- model$logLik(moments, target = "GHI")
+  L <- model$logLik(moments, target = target)
   n <- sum(!is.infinite(L))
   L <- sum(L[!is.infinite(L)])
   # Model's parameters
@@ -104,15 +119,16 @@ solarModel_AIC_BIC <- function(model, target = "GHI", type = c("train", "test", 
   # AIC and BIC
   AIC <- -2 * L + 2 * k
   BIC <- log(n) * k - 2 * L
-  # Model name
-  model_name <- paste0("ARMA", "(", model$ARMA$order[1], ", ", model$ARMA$order[2],
-                       ")-GARCH", "(", model$GARCH$order[1], ", ", model$GARCH$order[2], ")")
 
   dplyr::tibble(
     Place = model$place,
-    Model = model_name,
-    ARMA = list(ARMA = model$ARMA$order),
-    GARCH = list(GARCH = model$GARCH$order),
+    Model = model$spec$model_name,
+    p = model$spec$mean.model$arOrder,
+    q = model$spec$mean.model$maOrder,
+    r = model$spec$variance.model$archOrder,
+    s = model$spec$variance.model$garchOrder,
+    ARMA = list(ARMA = model$spec$mean.model$order),
+    GARCH = list(GARCH = model$spec$variance.model$order),
     Spec = list(model$spec$clone(TRUE)),
     L = L,
     k = k,
@@ -120,112 +136,5 @@ solarModel_AIC_BIC <- function(model, target = "GHI", type = c("train", "test", 
     AIC = AIC,
     BIC = BIC
   )
-}
-
-#' Select the Best Model
-#'
-#' @param spec specification
-#'
-#' @rdname solarModel_selection
-#' @name solarModel_selection
-#' @keywords solarModel
-#' @note Version 1.0.0.
-#' @export
-solarModels_selection <- function(spec, arOrder = 2, maOrder = 2, archOrder = 1, garchOrder = 1){
-  # Logit grid
-  spec_logis <- spec$clone(TRUE)
-  spec_logis$.__enclos_env__$private$..transform$link <- "logis"
-  models_logis <- solarModels_grid(spec_logis, arOrder = arOrder, maOrder = maOrder, archOrder = archOrder, garchOrder = garchOrder)
-  # Probit grid
-  spec_norm <- spec$clone(TRUE)
-  spec_norm$.__enclos_env__$private$..transform$link <- "norm"
-  models_norm <- solarModels_grid(spec_norm, arOrder = arOrder, maOrder = maOrder, archOrder = archOrder, garchOrder = garchOrder)
-  # Gumbel grid
-  spec_invgumb <- spec$clone(TRUE)
-  spec_invgumb$.__enclos_env__$private$..transform$link <- "invgumbel"
-  models_invgumb <- solarModels_grid(spec_invgumb, arOrder = arOrder, maOrder = maOrder, archOrder = archOrder, garchOrder = garchOrder)
-  # AIC / BIC (train)
-  train_logis <- purrr::map_df(models_logis, ~solarModel_AIC_BIC(.x, type = "train"))
-  train_norm <- purrr::map_df(models_norm, ~solarModel_AIC_BIC(.x, type = "train"))
-  train_invgumb <- purrr::map_df(models_invgumb, ~solarModel_AIC_BIC(.x, type = "train"))
-  # Select the best model with Train data
-  AIC_BIC <- dplyr::bind_rows(
-    dplyr::bind_cols(link = "logis", train_logis),
-    dplyr::bind_cols(link = "norm", train_norm),
-    dplyr::bind_cols(link = "invgumbel", train_invgumb)
-  )
-  # AIC on train
-  best_models_AIC <- dplyr::bind_rows(
-    head(AIC_BIC  %>%
-           dplyr::filter(link == "logis") %>%
-           dplyr::arrange(AIC), n = 1),
-    head(AIC_BIC  %>%
-           dplyr::filter(link == "norm") %>%
-           dplyr::arrange(AIC), n = 1),
-    head(AIC_BIC  %>%
-           dplyr::filter(link == "invgumbel") %>%
-           dplyr::arrange(AIC), n = 1)
-  )
-  # BIC on train
-  best_models_BIC <- dplyr::bind_rows(
-    head(AIC_BIC  %>%
-           dplyr::filter(link == "logis") %>%
-           dplyr::arrange(BIC), n = 1),
-    head(AIC_BIC  %>%
-           dplyr::filter(link == "norm") %>%
-           dplyr::arrange(BIC), n = 1),
-    head(AIC_BIC  %>%
-           dplyr::filter(link == "invgumbel") %>%
-           dplyr::arrange(BIC), n = 1)
-  )
-  # Best models overall
-  smallest_AIC <- head(dplyr::arrange(AIC_BIC, AIC), n = 1)
-  smallest_BIC <- head(dplyr::arrange(AIC_BIC, BIC), n = 1)
-  # AIC / BIC (test)
-  test_logis <- purrr::map_df(models_logis, ~solarModel_AIC_BIC(.x, type = "test"))
-  test_norm <- purrr::map_df(models_norm, ~solarModel_AIC_BIC(.x, type = "test"))
-  test_invgumb <- purrr::map_df(models_invgumb, ~solarModel_AIC_BIC(.x, type = "test"))
-  # Evaluate the choice of the best model on test data
-  AIC_BIC_test <- dplyr::bind_rows(
-    dplyr::bind_cols(link = "logis", test_logis),
-    dplyr::bind_cols(link = "norm", test_norm),
-    dplyr::bind_cols(link = "invgumbel", test_invgumb)
-  )
-  best_models_AIC_test <- dplyr::bind_rows(
-    dplyr::filter(AIC_BIC_test, link == best_models_AIC$link[1] & Model == best_models_AIC$Model[1]),
-    dplyr::filter(AIC_BIC_test, link == best_models_AIC$link[2] & Model == best_models_AIC$Model[2]),
-    dplyr::filter(AIC_BIC_test, link == best_models_AIC$link[3] & Model == best_models_AIC$Model[3])
-  )
-  best_models_BIC_test <- dplyr::bind_rows(
-    dplyr::filter(AIC_BIC_test, link == best_models_BIC$link[1] & Model == best_models_BIC$Model[1]),
-    dplyr::filter(AIC_BIC_test, link == best_models_BIC$link[2] & Model == best_models_BIC$Model[2]),
-    dplyr::filter(AIC_BIC_test, link == best_models_BIC$link[3] & Model == best_models_BIC$Model[3])
-  )
-
-  # Total models
-  models <- list(
-    logis = models_logis,
-    norm = models_norm,
-    invgumb = models_invgumb,
-    train = list(
-      logis = train_logis,
-      norm = train_norm,
-      invgumb = train_invgumb
-    ),
-    AIC_BIC_train = AIC_BIC,
-    best_AIC = best_models_AIC,
-    best_BIC = best_models_BIC,
-    test = list(
-      logis = test_logis,
-      norm = test_norm,
-      invgumb = test_invgumb
-    ),
-    AIC_BIC_test = AIC_BIC_test,
-    best_AIC_test = best_models_AIC_test,
-    best_BIC_test = best_models_BIC_test,
-    best_all_AIC = smallest_AIC,
-    best_all_BIC = smallest_BIC
-  )
-  return(models)
 }
 

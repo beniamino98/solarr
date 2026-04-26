@@ -1,6 +1,7 @@
 #' Payoff of solar options on historical data
 #'
 #' @param model An object with the class `solarModel`. See the function \code{\link{solarModel}} for details.
+#' @param data Optional dataset for the computation of the payoff.
 #' @param nmonths Numeric vector, months in which the payoff should be computed. Can vary from 1 (January) to 12 (December).
 #' @param put Logical, when `TRUE`, the default, will be computed the price for a `put` contract, otherwise for a `call` contract.
 #' @param control_options Named list with control parameters. See \code{\link{control_solarOption}} for more details.
@@ -20,14 +21,18 @@
 #' @keywords solarOption
 #' @note Version 1.0.0.
 #' @export
-solarOption_historical <- function(model, nmonths = 1:12, put = TRUE, control_options = control_solarOption()){
+solarOption_historical <- function(model, data = NULL, nmonths = 1:12, put = TRUE, control_options = control_solarOption()){
   # Options control parameters
   K <- control_options$K
   # Target and seasonal mean
   target <- model$spec$target
   target_bar <- paste0(target, "_bar")
   # Complete data
-  data <- dplyr::select(model$data, date, n, Year, Month, Day, tidyr::any_of(c(target, target_bar)), Ct)
+  if (is.null(data) || missing(data)) {
+    data <- dplyr::select(model$data, date, n, Year, Month, Day, tidyr::any_of(c(target, target_bar)), Ct)
+  } else {
+    data <- dplyr::select(data, date, n, Year, Month, Day, tidyr::any_of(c(target, target_bar)), Ct)
+  }
   # Filter for control years
   data <- dplyr::filter(data, date >= control_options$from & date <= control_options$to)
   # Filter for selected months
@@ -40,6 +45,10 @@ solarOption_historical <- function(model, nmonths = 1:12, put = TRUE, control_op
   df_payoff <- dplyr::select(data, date, n, Year, Month, Day, Rt, strike, Ct)
   # Type of option
   df_payoff$side <- ifelse(put, "put", "call")
+  # Minimum and maximum radiation implied by the model
+  Rt_min <- df_payoff$Ct * (1 - model$spec$transform$alpha - model$spec$transform$beta)
+  Rt_max <- df_payoff$Ct * (1 - model$spec$transform$alpha)
+
   # Daily option payoffs
   if (put) {
     # Exercise
@@ -47,19 +56,17 @@ solarOption_historical <- function(model, nmonths = 1:12, put = TRUE, control_op
     # Realized payoff for a put
     df_payoff$payoff <- (df_payoff$strike - df_payoff$Rt) * df_payoff$exercise
     # Maximum payoff
-    max_payoff <- df_payoff$strike - df_payoff$Ct * (1 - model$transform$alpha - model$transform$beta)
+    df_payoff$max_payoff <- df_payoff$strike - Rt_min
   } else {
     # Exercise
     df_payoff$exercise <- ifelse(df_payoff$Rt > df_payoff$strike, 1, 0)
     # Realized payoff for a call
     df_payoff$payoff <- (df_payoff$Rt - df_payoff$strike) * df_payoff$exercise
     # Maximum payoff
-    max_payoff <- df_payoff$Ct * (1 - model$transform$alpha) - df_payoff$strike
+    df_payoff$max_payoff <- Rt_max - df_payoff$strike
   }
   # Aggregation of Historical Payoffs
   df_payoff$premium <- df_payoff$payoff
-  # Compute maximum payoff for each day
-  df_payoff$max_payoff <- max_payoff
   # Reorder variables
   df_payoff <- dplyr::select(df_payoff, side, date, Year, Month, Day, Rt, strike, premium, payoff, exercise, max_payoff)
   # Output structure
@@ -80,7 +87,7 @@ solarOption_historical <- function(model, nmonths = 1:12, put = TRUE, control_op
 #' model <- solarModel$new(spec)
 #' model$fit()
 #' # Simulate scenarios
-#' scenario <- solarScenario(model, from = "2011-01-01", to = "2012-01-01", by = "1 month", nsim = 10, seed = 3)
+#' scenario <- solarScenario_by(model, from = "2011-01-01", to = "2012-01-01", by = "1 month", nsim = 10, seed = 3)
 #'
 #' solarOption_scenario(model, scenario)
 #' solarOption_historical(model)
@@ -89,7 +96,7 @@ solarOption_historical <- function(model, nmonths = 1:12, put = TRUE, control_op
 #' @rdname solarOption_scenario
 #' @name solarOption_scenario
 #' @keywords solarOption
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @export
 solarOption_scenario <- function(model, scenario, nmonths = 1:12, put = TRUE, nsim, control_options = control_solarOption()){
   # Control parameters
@@ -97,11 +104,11 @@ solarOption_scenario <- function(model, scenario, nmonths = 1:12, put = TRUE, ns
   K <- control_options$K
   leap_year = control_options$leap_year
   # Target and seasonal mean
-  target <- scenario$target
+  target <- scenario$spec$target
   target_bar <- paste0(target, "_bar")
 
   # Simulated daily Payoffs
-  sim <- scenario$sim
+  sim <- scenario$spec$scenarios
   # Filter for control years
   df_payoff <- dplyr::filter(sim, date >= control_options$from & date <= control_options$to)
   # Filter for selected months
@@ -126,7 +133,7 @@ solarOption_scenario <- function(model, scenario, nmonths = 1:12, put = TRUE, ns
                                               side == "call" & Rt > strike ~ 1),
                   payoff_sim = dplyr::case_when(side == "put" ~ (strike - Rt)*exercise,
                                                 side == "call" ~ (Rt - strike)*exercise),
-                  max_payoff = Ct * (1-model$transform$alpha - model$transform$beta),
+                  max_payoff = Ct * (1-model$spec$transform$alpha - model$spec$transform$beta),
     ) %>%
     dplyr::group_by(date) %>%
     dplyr::group_by(side, date, Year, Month, Day) %>%
@@ -139,16 +146,17 @@ solarOption_scenario <- function(model, scenario, nmonths = 1:12, put = TRUE, ns
     ) %>%
     dplyr::ungroup()
   # Add and compute realized payoff
-  data <- dplyr::left_join(scenario$emp, model$data[,c("date", target_bar)], by = "date")
-  scenario$emp$Rt <- scenario$emp[[target]]
-  scenario$emp$strike <- data[[target_bar]]*exp(K)
-  scenario$emp$side <- ifelse(put, "put", "call")
-  scenario$emp <- dplyr::mutate(scenario$emp,
-                                payoff = dplyr::case_when(
-                                  side == "put" ~ (strike - Rt)*ifelse(Rt < strike, 1, 0),
-                                  TRUE ~ (Rt - strike)*ifelse(Rt > strike, 1, 0)))
+  df_emp <- scenario$spec$emp
+  data <- dplyr::left_join(df_emp, model$data[,c("date", target_bar)], by = "date")
+  df_emp$strike <- data[[target_bar]]*exp(K)
+  df_emp$Rt <- df_emp[[target]]
+  df_emp$side <- ifelse(put, "put", "call")
+  df_emp <- dplyr::mutate(df_emp,
+                          payoff = dplyr::case_when(
+                            side == "put" ~ (strike - Rt)*ifelse(Rt < strike, 1, 0),
+                            TRUE ~ (Rt - strike)*ifelse(Rt > strike, 1, 0)))
 
-  df_payoff <- dplyr::left_join(df_payoff, scenario$emp[,c("date", "payoff")], by = "date")
+  df_payoff <- dplyr::left_join(df_payoff, df_emp[,c("date", "payoff")], by = "date")
   # Reorder variables
   df_payoff <- dplyr::select(df_payoff, side, date, Year, Month, Day, Rt, strike, premium, payoff, exercise, max_payoff)
   # Output structure

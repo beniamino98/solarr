@@ -7,27 +7,37 @@
 solarModel_tests(
   model,
   lags = c(7),
+  method = "bg",
+  type = "full",
   ci = 0.05,
   min_quantile = 0.025,
-  max_quantile = 0.985,
-  method = "bg",
-  type = c("train", "test", "full")
+  max_quantile = 0.985
 )
 }
 \arguments{
 \item{model}{An object of the class \code{solarModel}}
 
-\item{lags}{Numeric vector. Lags on which perform the autocorrelation tests. Can be more than one.}
+\item{lags}{Numeric vector. Lags on which perform the autocorrelation tests.}
+
+\item{method}{character(1), method of test performed. Can be:
+\describe{
+\item{\code{"bg"}}{for Breush-Godfrey test;}
+\item{\code{"bp"}}{for Box-pierce test;}
+\item{\code{"lb"}}{for Ljung-Box test.}
+}}
+
+\item{type}{character(1), type of test. Can be:
+\describe{
+\item{\code{"train"}}{the test is performed only on train data;}
+\item{\code{"test"}}{the test is performed only on test data;}
+\item{\code{"full"}}{the test is performed only on the full data.}
+}}
 
 \item{ci}{p.value for rejection.}
 
 \item{min_quantile}{minimum quantile for the grid of values.}
 
 \item{max_quantile}{maximum quantile for the grid of values.}
-
-\item{method}{Character, type of test. Can be \code{"bg"} for Breusch-Godfrey, \code{"bp"} for Box-pierce and \code{"lb"} for BLjung-Box.}
-
-\item{type}{Type of test.}
 }
 \description{
 Evaluate a Kolmogorov-Smirnov test on the residuals of a \code{solarModel} model
@@ -41,5 +51,6 @@ Version 1.0.0.
 model = solarModel$new(spec)
 model$fit()
 solarModel_tests(model, train_data = TRUE)
+
 }
-\keyword{solarModel_test}
+\keyword{solarModel}

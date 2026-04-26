@@ -12,4 +12,4 @@ Compute metrics to test forecasts
 \note{
 Version 1.0.0.
 }
-\keyword{solarModel_test}
+\keyword{solarModel}

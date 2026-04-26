@@ -7,18 +7,18 @@
 ARMA_companion_matrix(phi, theta)
 }
 \arguments{
-\item{phi}{Numeric vector with length \code{p}, AR parameters.}
+\item{phi}{numeric vector of length p, AR parameters.}
 
-\item{theta}{Numeric vector with length \code{q}, MA parameters.}
+\item{theta}{numeric vector of length q, MA parameters.}
 }
 \value{
-A square matrix with dimension (p+q)
+numeric matrix of size p+q x p+q.
 }
 \description{
 Construct the companion matrix of an ARMA model
 }
 \note{
-Version 1.0.0.
+Version 1.0.2
 }
 \examples{
 # AR(1) / MA(1) ~ No companion
@@ -29,7 +29,7 @@ ARMA_companion_matrix(c(0.4, 0.3, 0.1))
 # Only MA
 ARMA_companion_matrix(theta = c(0.4, 0.3, 0.1))
 # ARMA
-ARMA_companion_matrix(c(0.4, 0.2), c(0.3))
+ARMA_companion_matrix(c(0.4, 0.2), c(0.3, 0))
 ARMA_companion_matrix(c(0.1, 0.02, 0.01), c(0.3, 0.1, 0.05))
 }
 \keyword{ARMA}

@@ -10,6 +10,6 @@ solarModel_QMLE(model, maxrestarts = 1, seed = 1, quiet = TRUE)
 QMLE Estimate
 }
 \note{
-Version 1.0.0.
+Version 1.0.2
 }
 \keyword{solarModel}

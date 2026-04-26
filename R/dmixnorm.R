@@ -35,17 +35,20 @@
 #' @aliases qmixnorm
 #' @aliases rmixnorm
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @details Version 1.0.1.
 #' @export
 dmixnorm <- function(x, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), log = FALSE){
-  # Density
-  p <- c()
-  for(i in 1:length(x)){
-    p[i] <- 0
-    for(s in 1:length(mean)){
-      p[i] <- p[i] + alpha[s]*dnorm(x[i], mean = mean[s], sd = sd[s])
-    }
+  # Number of observations
+  N <- length(x)
+  # Number of components
+  K <- length(mean)
+  # Initialize a matrix for the components
+  f <- matrix(0, nrow = N, ncol = K)
+  for(k in 1:K){
+    f[,k] <- alpha[k]*dnorm(x, mean = mean[k], sd = sd[k])
   }
+  # Density
+  p <- rowSums(f)
   # Log-probability
   if (log) {
     p <- base::log(p)
@@ -56,14 +59,17 @@ dmixnorm <- function(x, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), l
 #' @rdname dmixnorm
 #' @export
 pmixnorm <- function(q, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), lower.tail = TRUE, log.p = FALSE){
-  # Distribution
-  p <- c()
-  for(i in 1:length(q)){
-    p[i] <- 0
-    for(s in 1:length(mean)){
-      p[i] <- p[i] + alpha[s]*pnorm(q[i], mean = mean[s], sd = sd[s], lower.tail = lower.tail)
-    }
+  # Number of observations
+  N <- length(q)
+  # Number of components
+  K <- length(mean)
+  # Initialize a matrix for the components
+  f <- matrix(0, nrow = N, ncol = K)
+  for(k in 1:K){
+    f[,k] <- alpha[k]*pnorm(q, mean = mean[k], sd = sd[k], lower.tail = lower.tail)
   }
+  # Density
+  p <- rowSums(f)
   # Log-probability
   if (log.p) {
     p <- base::log(p)

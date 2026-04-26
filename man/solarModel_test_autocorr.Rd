@@ -6,22 +6,33 @@
 \usage{
 solarModel_test_autocorr(
   model,
+  nyears,
+  method = "bg",
+  type = "full",
   lag.max = 3,
-  ci = 0.05,
-  method = c("bg", "bp", "lb"),
-  type = c("train", "test", "full")
+  ci = 0.05
 )
 }
 \arguments{
 \item{model}{An object of the class \code{solarModel}}
 
-\item{lag.max}{Numeric, scalar. Maximum lag to consider for the test.}
+\item{method}{character(1), method of test performed. Can be:
+\describe{
+\item{\code{"bg"}}{for Breush-Godfrey test;}
+\item{\code{"bp"}}{for Box-pierce test;}
+\item{\code{"lb"}}{for Ljung-Box test.}
+}}
 
-\item{ci}{Numeric, scalar. Minimum p-value to consider the test \code{"passed"}.}
+\item{type}{character(1), type of test. Can be:
+\describe{
+\item{\code{"train"}}{the test is performed only on train data;}
+\item{\code{"test"}}{the test is performed only on test data;}
+\item{\code{"full"}}{the test is performed only on the full data.}
+}}
 
-\item{method}{Character, type of test. Can be \code{"bg"} for Breusch-Godfrey, \code{"bp"} for Box-pierce and \code{"lb"} for BLjung-Box.}
+\item{lag.max}{integer(1), maximum lag to consider for the test.}
 
-\item{train_data}{Logical, when \code{TRUE} only train data will be used to evaluate the test, otherwise all the available sample.}
+\item{ci}{p.value for rejection.}
 }
 \description{
 Evaluate the autocorrelation in the components of a \code{solarModel} object.
@@ -35,4 +46,4 @@ model$fit()
 solarModel_test_autocorr(model, method = "lb")
 
 }
-\keyword{solarModel_test}
+\keyword{solarModel}

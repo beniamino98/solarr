@@ -33,14 +33,14 @@ An object of the class \code{solarOptionPayoff}.
 Compute average premium on simulated Data
 }
 \note{
-Version 1.0.0.
+Version 1.0.2
 }
 \examples{
 # Solar model
 model <- solarModel$new(spec)
 model$fit()
 # Simulate scenarios
-scenario <- solarScenario(model, from = "2011-01-01", to = "2012-01-01", by = "1 month", nsim = 10, seed = 3)
+scenario <- solarScenario_by(model, from = "2011-01-01", to = "2012-01-01", by = "1 month", nsim = 10, seed = 3)
 
 solarOption_scenario(model, scenario)
 solarOption_historical(model)

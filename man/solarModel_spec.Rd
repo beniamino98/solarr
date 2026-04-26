@@ -4,33 +4,46 @@
 \alias{solarModel_spec}
 \title{Control function for a \code{solarModel} object}
 \description{
-Control function for a \code{solarModel} object
-
-Control function for a \code{solarModel} object
-}
-\details{
 Control function for a \code{solarModel} object that contains all the setups used for the estimation.
 }
 \note{
-Version 1.0.0.
+Version 1.0.3
 }
 \examples{
 control <- solarModel_spec$new()
 }
 \keyword{solarModel}
-\section{Active bindings}{
-\if{html}{\out{<div class="r6-active-bindings">}}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
 \describe{
+\item{\code{outliers}}{list with outliers.}
+
 \item{\code{place}}{Character, optional name of the location considered.}
 
-\item{\code{target}}{Character, name of the target variable to model. Can be \code{"GHI"} or \code{"clearsky"}.}
-
-\item{\code{coords}}{A named list with the coordinates of the location considered. Contains:
+\item{\code{coords}}{A named list with the name and the coordinates of the location considered. Contains:
 \describe{
 \item{lat}{Numeric, reference latitude in degrees.}
 \item{lon}{Numeric, reference longitude in degrees.}
 \item{alt}{Numeric, reference altitude in metres.}
 }}
+}
+\if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{target}}{Character, name of the target variable to model. Can be \code{"GHI"} or \code{"clearsky"}.}
+
+\item{\code{location}}{A Tibble with the name and the coordinates of the location considered. Contains:
+\describe{
+\item{place}{Character, selected location}
+\item{target}{Target variable}
+\item{lat}{Numeric, reference latitude in degrees.}
+\item{lon}{Numeric, reference longitude in degrees.}
+\item{alt}{Numeric, reference altitude in metres.}
+}}
+
+\item{\code{model_name}}{Character, standard model's name.}
 
 \item{\code{dates}}{A named list, with three sub-lists: \code{data} containing the information on the complete dataset,
 \code{train} containing the information on the train dataset and \code{test} containing the information on the test dataset.
@@ -44,21 +57,27 @@ Each sub-list is structured as follows:
 
 \item{\code{data}}{Tibble, dataset with CAMS solar radiation data.}
 
-\item{\code{transform}}{Named list, specification of the solar transform.}
+\item{\code{transform}}{A \code{\link{solarTransform}} object with the transformation applied to the data.}
 
-\item{\code{clearsky}}{Named list, specification of the clear sky model.}
+\item{\code{seasonal_model_Ct}}{A \code{\link{clearskySeasona}} object with the clear-sky model applied to the data.}
 
-\item{\code{seasonal.mean}}{Named list, specification of the seasonal model.}
+\item{\code{seasonal.mean}}{A \code{\link{seasonalModel}} object with the seasonal model applied to the data.}
 
-\item{\code{mean.model}}{Named list, specification of the ARMA model.}
+\item{\code{mean.model}}{An \code{\link{ARMA_modelR6}} object with the ARMA model applied to the data.}
 
-\item{\code{seasonal.variance}}{Named list, specification of the seasonal variance model.}
+\item{\code{seasonal.variance}}{A \code{\link{seasonalModel}} object with the seasonal variance applied to the data.}
 
-\item{\code{variance.model}}{Named list, specification of the GARCH model for deseasonalized residuals \eqn{\tilde{e}_t}.}
+\item{\code{variance.model}}{An \code{\link{sGARCH}} object with the GARCH model applied to the data.}
 
-\item{\code{mixture.model}}{Named list, specification of the Mixture model for GARCH residuals \eqn{u_t}.}
+\item{\code{mixture.model}}{A \code{\link{solarMixture}} object with the monthly Gaussian Mixture models applied to the data.}
 
-\item{\code{garch_variance}}{Logical, when \code{TRUE} the GARCH model will be used otherwise no.}
+\item{\code{coefficients}}{Get the model parameters as a named list.}
+
+\item{\code{std.errors}}{Get the model parameters as a named list.}
+
+\item{\code{hessian}}{Get the model hessian}
+
+\item{\code{jacobian}}{Get the model jacobian}
 
 \item{\code{clearsky_threshold}}{Numeric, parameter > 1, used to scale up CAMS clearsky.}
 
@@ -72,7 +91,6 @@ Each sub-list is structured as follows:
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-solarModel_spec-new}{\code{solarModel_spec$new()}}
-\item \href{#method-solarModel_spec-specification}{\code{solarModel_spec$specification()}}
 \item \href{#method-solarModel_spec-set_params}{\code{solarModel_spec$set_params()}}
 \item \href{#method-solarModel_spec-set_transform}{\code{solarModel_spec$set_transform()}}
 \item \href{#method-solarModel_spec-set_clearsky}{\code{solarModel_spec$set_clearsky()}}
@@ -81,6 +99,8 @@ Each sub-list is structured as follows:
 \item \href{#method-solarModel_spec-set_seasonal.variance}{\code{solarModel_spec$set_seasonal.variance()}}
 \item \href{#method-solarModel_spec-set_variance.model}{\code{solarModel_spec$set_variance.model()}}
 \item \href{#method-solarModel_spec-set_mixture.model}{\code{solarModel_spec$set_mixture.model()}}
+\item \href{#method-solarModel_spec-specification}{\code{solarModel_spec$specification()}}
+\item \href{#method-solarModel_spec-update}{\code{solarModel_spec$update()}}
 \item \href{#method-solarModel_spec-print}{\code{solarModel_spec$print()}}
 \item \href{#method-solarModel_spec-clone}{\code{solarModel_spec$clone()}}
 }
@@ -94,45 +114,6 @@ Initialize a \code{solarModel_spec} object.
 \if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$new()}\if{html}{\out{</div>}}
 }
 
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel_spec-specification"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel_spec-specification}{}}}
-\subsection{Method \code{specification()}}{
-Specification function for a \code{solarModel}
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$specification(
-  place,
-  target = "GHI",
-  min_date,
-  max_date,
-  from,
-  to,
-  data
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{place}}{Character, name of an element in the \code{CAMS_data} list.}
-
-\item{\code{target}}{Character, target variable to model. Can be \code{GHI} or \code{clearsky}.}
-
-\item{\code{min_date}}{Character. Date in the format \code{YYYY-MM-DD}. Minimum date for the complete data. If \code{missing} will be used the minimum data available.}
-
-\item{\code{max_date}}{Character. Date in the format \code{YYYY-MM-DD}. Maximum date for the complete data. If \code{missing} will be used the maximum data available.}
-
-\item{\code{from}}{Character. Date in the format \code{YYYY-MM-DD}. Starting date to use for training data.
-If \code{missing} will be used the minimum data available after filtering for \code{min_date}.}
-
-\item{\code{to}}{character. Date in the format \code{YYYY-MM-DD}. Ending date to use for training data.
-If \code{missing} will be used the maximum data available after filtering for \code{max_date}.}
-
-\item{\code{data}}{data for the selected location.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel_spec-set_params"></a>}}
@@ -197,13 +178,18 @@ The default is \code{0.01}. See \code{\link{solarTransform}} for more details.}
 \subsection{Method \code{set_clearsky()}}{
 List with specification's parameters of the clear sky model.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_clearsky(control = control_seasonalClearsky())}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_clearsky(
+  spec = seasonalClearsky_spec(),
+  control = control_seasonalClearsky()
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{control}}{Named list with control parameters. See \code{\link{control_seasonalClearsky}} for more details.}
+\item{\code{spec}}{Named list, model's specification. See the function \code{\link{seasonalClearsky_spec}} for more details.}
+
+\item{\code{control}}{Named list, control parameters. See the function \code{\link{control_seasonalClearsky}} for more details.}
 }
 \if{html}{\out{</div>}}
 }
@@ -305,11 +291,7 @@ such that it has unitary variance for all the months. The default if \code{TRUE}
 \subsection{Method \code{set_variance.model()}}{
 List with specification's parameters of the GARCH variance \eqn{\sigma_t} for deseasonalized residuals \eqn{\tilde{e}_t = e_t/\bar{\sigma}_t}.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_variance.model(
-  archOrder = 1,
-  garchOrder = 1,
-  garch_variance = TRUE
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_variance.model(archOrder = 1, garchOrder = 1)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -318,8 +300,6 @@ List with specification's parameters of the GARCH variance \eqn{\sigma_t} for de
 \item{\code{archOrder}}{Integer. An integer specifying the order of the ARCH component. The default is \code{1}.}
 
 \item{\code{garchOrder}}{Integer. An integer specifying the order of the GARCH component. The default is \code{1}.}
-
-\item{\code{garch_variance}}{Logical. When \code{TRUE} the GARCH model will be used to standardize the residuals otherwise will be excluded. The dafault if \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -359,6 +339,62 @@ will be estimated ensuring that mean and variance matches the empirical paramete
 \item{\code{maxit}}{Integer. Maximum number of iterations for EM-algorithm. The default is \code{5000}.}
 
 \item{\code{maxrestarts}}{Integer. Maximum number of restarts when EM-algorithm does not converge. The default is \code{500}.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-specification"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-specification}{}}}
+\subsection{Method \code{specification()}}{
+Specification function for a \code{solarModel}
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$specification(
+  place,
+  target = "GHI",
+  min_date,
+  max_date,
+  from,
+  to,
+  data
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{place}}{Character, name of an element in the \code{CAMS_data} list.}
+
+\item{\code{target}}{Character, target variable to model. Can be \code{GHI} or \code{clearsky}.}
+
+\item{\code{min_date}}{Character. Date in the format \code{YYYY-MM-DD}. Minimum date for the complete data. If \code{missing} will be used the minimum data available.}
+
+\item{\code{max_date}}{Character. Date in the format \code{YYYY-MM-DD}. Maximum date for the complete data. If \code{missing} will be used the maximum data available.}
+
+\item{\code{from}}{Character. Date in the format \code{YYYY-MM-DD}. Starting date to use for training data.
+If \code{missing} will be used the minimum data available after filtering for \code{min_date}.}
+
+\item{\code{to}}{character. Date in the format \code{YYYY-MM-DD}. Ending date to use for training data.
+If \code{missing} will be used the maximum data available after filtering for \code{max_date}.}
+
+\item{\code{data}}{data for the selected location.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarModel_spec-update"></a>}}
+\if{latex}{\out{\hypertarget{method-solarModel_spec-update}{}}}
+\subsection{Method \code{update()}}{
+Update the parameters inside object
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$update(params)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{params}}{List of parameters. See the slot \verb{$coefficients} for a template.}
 }
 \if{html}{\out{</div>}}
 }

@@ -9,10 +9,7 @@
 #' @rdname solarMoments_conditional
 #' @name solarMoments_conditional
 #' @export
-solarMoments_conditional = function(data, theta = 0, control_model){
-  if (!control_model$garch_variance) {
-    data$sigma <- 1
-  }
+solarMoments_conditional = function(data, theta = 0){
   # Compute conditional moments
   data <- dplyr::mutate(data,
                         # Change of measure

@@ -22,6 +22,8 @@ st <- solarTransform$new()
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
+\item{\code{control}}{List to contain custom control parameters.}
+
 \item{\code{epsilon}}{Numeric, \eqn{\epsilon} transformation parameter.}
 }
 \if{html}{\out{</div>}}

@@ -12,17 +12,28 @@ The seasonal model is fitted using a specified formula, which allows for the inc
 to model seasonal variations. The periodicity can be customized, and the model can be updated with new coefficients after the initial fit.
 }
 \note{
-Version 1.0.1
+Version 1.0.3
 }
 \examples{
-sm <- seasonalModel$new(1, 365)
-formula <- "Yt ~ 1"
-data = data.frame(Yt = rnorm(1000), n = 1:1000)
-sm$fit(formula, data = data)
-sm
+# Sample time series
+n <- 1000
+eps <- rnorm(n, sd = 0.2)
+Yt <- 0.5 + 0.2 * sin(2*base::pi/365*c(1:n)) + 0.3 * cos(2*base::pi/365*c(1:n)) + eps
+
+# Initialize the model
+sm <- seasonalModel$new("Yt ~ 1", 1, 365)
+# Fit the model
+data = data.frame(Yt = Yt, n = 1:1000)
+sm$fit(data = data)
+data$Yt_hat <- sm$predict(n = data$n)
+# Fitted parameters
 sm$coefficients
-sm$update(sm$coefficients*3)
-sm$predict(20)
+
+# Plot the fitted data
+library(ggplot2)
+ggplot()+
+geom_line(data = data, aes(n, Yt))+
+geom_line(data = data, aes(n, Yt_hat), color = "red")
 
 }
 \keyword{seasonalModel}
@@ -30,23 +41,27 @@ sm$predict(20)
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
 \item{\code{extra_params}}{List to contain custom extra parameters.}
+
+\item{\code{control}}{List to contain custom control parameters.}
 }
 \if{html}{\out{</div>}}
 }
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{coefficients}}{Named vector, fitted coefficients.}
+\item{\code{period}}{Integer vector, periodicities of the seasonality.}
 
-\item{\code{model}}{A slot with the fitted \code{lm} object.}
+\item{\code{order}}{Integer vector, number of combinations of sines and cosines.}
 
-\item{\code{period}}{Integer scalar, periodicity of the seasonality.}
+\item{\code{omega}}{Integer, periodicity computed as \eqn{\frac{2 \pi}{\text{period}}}.}
 
-\item{\code{order}}{Integer scalar, number of combinations of sines and cosines.}
+\item{\code{coefficients}}{Named vector, model's parameters.}
 
-\item{\code{omega}}{Integer, periodicity.}
+\item{\code{dcoefficients}}{Named vector, model's parameters for the differential with respect to \code{n}.}
 
-\item{\code{std.errors}}{Named vector, with the parameters' std. errors.}
+\item{\code{std.errors}}{Named vector, standard errors of the model's parameters.}
+
+\item{\code{coefs_names}}{Named vector, names of the model's parameters.}
 
 \item{\code{tidy}}{A tibble with estimated parameters and std. errors.}
 }
@@ -60,6 +75,7 @@ sm$predict(20)
 \item \href{#method-seasonalModel-predict}{\code{seasonalModel$predict()}}
 \item \href{#method-seasonalModel-differential}{\code{seasonalModel$differential()}}
 \item \href{#method-seasonalModel-update}{\code{seasonalModel$update()}}
+\item \href{#method-seasonalModel-update_coefs_names}{\code{seasonalModel$update_coefs_names()}}
 \item \href{#method-seasonalModel-update_std.errors}{\code{seasonalModel$update_std.errors()}}
 \item \href{#method-seasonalModel-print}{\code{seasonalModel$print()}}
 \item \href{#method-seasonalModel-clone}{\code{seasonalModel$clone()}}
@@ -71,12 +87,15 @@ sm$predict(20)
 \subsection{Method \code{new()}}{
 Initialize a \code{seasonalModel} object.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(order = 1, period = 365)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$new(formula, order = 1, period = 365)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{formula}}{formula, an object of class \code{formula} (or one that can be coerced to that class).
+It is a symbolic description of the model to be fitted and can be used to include or exclude the intercept or external regressors in \code{data}.}
+
 \item{\code{order}}{Integer, number of combinations of sines and cosines.}
 
 \item{\code{period}}{Integer, seasonality period. The default is 365.}
@@ -92,17 +111,13 @@ Fit a seasonal model as a linear combination of sine and cosine functions and
 eventual external regressors specified in the formula. The external regressors used should
 have the same periodicity, i.e. not stochastic regressors are allowed.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$fit(formula, data, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$fit(data, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{formula}}{formula, an object of class \code{formula} (or one that can be coerced to that class).
-It is a symbolic description of the model to be fitted and can be used to include or exclude the intercept or external regressors in \code{data}.}
-
-\item{\code{data}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
-If not found in data, the variables are taken from environment(formula), typically the environment from which \code{lm} is called.}
+\item{\code{data}}{A data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.}
 
 \item{\code{...}}{other parameters to be passed to the function \code{lm}.}
 }
@@ -123,8 +138,7 @@ Predict method for the class \code{seasonalModel}.
 \describe{
 \item{\code{n}}{Integer vector, numbers of day of the year.}
 
-\item{\code{newdata}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
-If not found in data, the variables are taken from environment(formula), typically the environment from which \code{lm} is called.}
+\item{\code{newdata}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.}
 }
 \if{html}{\out{</div>}}
 }
@@ -133,7 +147,7 @@ If not found in data, the variables are taken from environment(formula), typical
 \if{html}{\out{<a id="method-seasonalModel-differential"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalModel-differential}{}}}
 \subsection{Method \code{differential()}}{
-Compute the differential of the sinusoidal function.
+Compute the differential with respect to time (\code{n}).
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$differential(n, newdata)}\if{html}{\out{</div>}}
 }
@@ -143,8 +157,7 @@ Compute the differential of the sinusoidal function.
 \describe{
 \item{\code{n}}{Integer, number of day of the year.}
 
-\item{\code{newdata}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.
-If not found in data, the variables are taken from environment(formula), typically the environment from which \code{lm} is called.}
+\item{\code{newdata}}{an optional data frame, list or environment (or object coercible by as.data.frame to a data frame) containing the variables in the model.}
 }
 \if{html}{\out{</div>}}
 }
@@ -153,7 +166,7 @@ If not found in data, the variables are taken from environment(formula), typical
 \if{html}{\out{<a id="method-seasonalModel-update"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalModel-update}{}}}
 \subsection{Method \code{update()}}{
-Update the model's parameters.
+Update the parameters.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$update(coefficients)}\if{html}{\out{</div>}}
 }
@@ -161,7 +174,24 @@ Update the model's parameters.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{coefficients}}{Named vector, new parameters.}
+\item{\code{coefficients}}{Named vector, with new parameters, the names should match the names of the coefficients.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-seasonalModel-update_coefs_names"></a>}}
+\if{latex}{\out{\hypertarget{method-seasonalModel-update_coefs_names}{}}}
+\subsection{Method \code{update_coefs_names()}}{
+Update the names of the parameters.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{seasonalModel$update_coefs_names(coefs_names)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{coefs_names}}{Named vector, new parameters names, the names should match the names of the old coefficients.}
 }
 \if{html}{\out{</div>}}
 }
@@ -170,7 +200,7 @@ Update the model's parameters.
 \if{html}{\out{<a id="method-seasonalModel-update_std.errors"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalModel-update_std.errors}{}}}
 \subsection{Method \code{update_std.errors()}}{
-Update the parameter's std. errors.
+Update the standard errors of the parameter.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{seasonalModel$update_std.errors(std.errors)}\if{html}{\out{</div>}}
 }
@@ -178,7 +208,7 @@ Update the parameter's std. errors.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{std.errors}}{Named vector, new standard errors of the parameters.}
+\item{\code{std.errors}}{Named vector with new standard errors, the names should match the names of the coefficients.}
 }
 \if{html}{\out{</div>}}
 }

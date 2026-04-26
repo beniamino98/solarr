@@ -9,7 +9,17 @@ Compute the generic conditional moments of a solarModel object
 Compute the generic conditional moments of a solarModel object
 }
 \details{
-Version 1.0.0.
+Version 1.0.1.
+}
+\examples{
+model <- solarModel$new(spec)
+model$fit()
+# Conditional moments
+mom <- solarMoment$new(model, "2022-01-01", "2025-01-01")
+mom$filter()
+mom$data
+solarOption_model(model, mom$data)
+
 }
 \keyword{solarMoments}
 \section{Methods}{

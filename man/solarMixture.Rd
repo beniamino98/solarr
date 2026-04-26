@@ -31,13 +31,7 @@ sm$std.errors
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{maxit}}{Integer, maximum number of iterations.}
-
-\item{\code{maxrestarts}}{Integer, maximum number of restarts.}
-
-\item{\code{abstol}}{Numeric, absolute level for convergence.}
-
-\item{\code{components}}{Integer, number of components.}
+\item{\code{control}}{List to contain custom control parameters.}
 
 \item{\code{mu1}}{Function, see \code{\link{monthlyParams}}.}
 
@@ -69,8 +63,6 @@ sm$std.errors
 
 \item{\code{model}}{Named List with 12 \code{\link{gaussianMixture}} objects.}
 
-\item{\code{use_empiric}}{logical to denote if empiric parameters are currently used}
-
 \item{\code{loglik}}{Numeric, total log-likelihood.}
 
 \item{\code{fitted}}{A \code{tibble} with the classified series}
@@ -89,7 +81,7 @@ sm$std.errors
 
 \item{\code{std.errors}}{A \code{tibble} with the fitted std.errors}
 
-\item{\code{summary}}{A \code{tibble} with the fitted std.errors}
+\item{\code{tidy}}{A \code{tibble} with the fitted std.errors}
 }
 \if{html}{\out{</div>}}
 }
@@ -97,13 +89,12 @@ sm$std.errors
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-solarMixture-new}{\code{solarMixture$new()}}
+\item \href{#method-solarMixture-set_time_series}{\code{solarMixture$set_time_series()}}
 \item \href{#method-solarMixture-fit}{\code{solarMixture$fit()}}
 \item \href{#method-solarMixture-update}{\code{solarMixture$update()}}
 \item \href{#method-solarMixture-update_logLik}{\code{solarMixture$update_logLik()}}
-\item \href{#method-solarMixture-update_empiric_parameters}{\code{solarMixture$update_empiric_parameters()}}
 \item \href{#method-solarMixture-filter}{\code{solarMixture$filter()}}
 \item \href{#method-solarMixture-Hessian}{\code{solarMixture$Hessian()}}
-\item \href{#method-solarMixture-use_empiric_parameters}{\code{solarMixture$use_empiric_parameters()}}
 \item \href{#method-solarMixture-logLik}{\code{solarMixture$logLik()}}
 \item \href{#method-solarMixture-grades}{\code{solarMixture$grades()}}
 \item \href{#method-solarMixture-VaR}{\code{solarMixture$VaR()}}
@@ -120,8 +111,9 @@ Initialize a \code{solarMixture} object
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMixture$new(
   components = 2,
-  maxit = 5000,
-  maxrestarts = 500,
+  method = "mixtools",
+  maxit = 10000,
+  maxrestarts = 1000,
   abstol = 1e-08
 )}\if{html}{\out{</div>}}
 }
@@ -131,11 +123,34 @@ Initialize a \code{solarMixture} object
 \describe{
 \item{\code{components}}{(\code{integer(1)}), number of components.}
 
+\item{\code{method}}{Character, package used to fit the parameters. Can be \code{mixtools} or \code{mclust}.}
+
 \item{\code{maxit}}{(\code{integer(1)}) Numeric, maximum number of iterations.}
 
 \item{\code{maxrestarts}}{(\code{integer(1)}) Numeric, maximum number of restarts.}
 
 \item{\code{abstol}}{(\code{numeric(1)}) Numeric, absolute level for convergence.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-solarMixture-set_time_series"></a>}}
+\if{latex}{\out{\hypertarget{method-solarMixture-set_time_series}{}}}
+\subsection{Method \code{set_time_series()}}{
+Set the time series internally
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{solarMixture$set_time_series(x, dates, weights)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{x}}{vector}
+
+\item{\code{dates}}{date vector}
+
+\item{\code{weights}}{observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.}
 }
 \if{html}{\out{</div>}}
 }
@@ -207,16 +222,6 @@ Apply the \verb{$update_logLik()} method to all the \code{gaussianMixture} model
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarMixture-update_empiric_parameters"></a>}}
-\if{latex}{\out{\hypertarget{method-solarMixture-update_empiric_parameters}{}}}
-\subsection{Method \code{update_empiric_parameters()}}{
-Apply the \verb{$update_empiric_parameters()} method to all the \code{gaussianMixture} models
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMixture$update_empiric_parameters()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMixture-filter"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMixture-filter}{}}}
 \subsection{Method \code{filter()}}{
@@ -233,17 +238,6 @@ Apply the \verb{$filter()} method to all the \code{gaussianMixture} models
 Apply the \verb{$Hessian()} method to all the \code{gaussianMixture} models
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMixture$Hessian()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarMixture-use_empiric_parameters"></a>}}
-\if{latex}{\out{\hypertarget{method-solarMixture-use_empiric_parameters}{}}}
-\subsection{Method \code{use_empiric_parameters()}}{
-Substitute the empiric parameters with EM parameters. If evaluated again
-the EM parameters will be substituted back.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMixture$use_empiric_parameters()}\if{html}{\out{</div>}}
 }
 
 }

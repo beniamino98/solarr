@@ -2,21 +2,50 @@
 % Please edit documentation in R/seasonalClearsky-R6-internals.R
 \name{clearsky_optimizer}
 \alias{clearsky_optimizer}
-\title{Optimizer for clear sky model with restricted least squares (RLS).}
+\title{Fit the seasonal model for clear sky radiation.}
 \usage{
-clearsky_optimizer(seasonal_model_Ct, newdata, ntol = 0)
+clearsky_optimizer(
+  x,
+  dates,
+  clearsky,
+  lat,
+  spec = seasonalClearsky_spec(),
+  control = control_seasonalClearsky(),
+  seasonal_model_Ct
+)
 }
 \arguments{
-\item{seasonal_model_Ct}{An object of the class \code{seasonalClearsky}. See the function \code{\link{seasonalClearsky}} for more details.}
+\item{x}{Numeric vector, time series of solar radiation.}
 
-\item{newdata}{A data frame to input to the method \code{seasonal_model_Ct$predict()}.}
+\item{dates}{Character or Date vector, time series of dates.}
 
-\item{ntol}{Integer scalar. Tolerance for the maximum number of violations admitted of the condition \code{clearsky > GHI}. Default is \code{0}.}
+\item{clearsky}{Numeric vector, time series of target clear sky radiation.}
+
+\item{lat}{Numeric scalar, reference latitude. Overwritten when \code{seasonal_model_Ct} is specified.}
+
+\item{spec}{See the function \code{\link{seasonalClearsky_spec}} for more details.
+Overwritten when \code{seasonal_model_Ct} is specified.}
+
+\item{control}{See the function \code{\link{control_seasonalClearsky}} for more details.
+Overwritten when \code{seasonal_model_Ct} is specified.}
+
+\item{seasonal_model_Ct}{Optional object of the class \code{\link{seasonalClearsky}}.
+When submitted \code{lat}, \code{spec} and \code{control} parameters used are recovered from the specified model.}
 }
 \description{
-Optimizer for clear sky model with restricted least squares (RLS).
+Fit the seasonal model for clear sky radiation.
 }
 \note{
 Version 1.0.0
+}
+\examples{
+x  = solarr::spec$data$GHI
+dates  = solarr::spec$data$date
+lat = solarr::spec$coords$lat
+clearsky = solarr::spec$data$clearsky
+# Without a clearsky model
+seasonal_model_Ct <- clearsky_optimizer(x, dates, clearsky, lat)
+# With a clearsky model
+clearsky_optimizer(x, dates, clearsky, seasonal_model_Ct = seasonal_model_Ct)
 }
 \keyword{clearsky}

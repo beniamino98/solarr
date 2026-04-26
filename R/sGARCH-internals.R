@@ -1,10 +1,11 @@
 #' GARCH_vector_b(0,2)
-#' @keywords GARCH
-#' @note Version 1.0.0.
+#'
 #' @rdname GARCH_vector_b
 #' @name GARCH_vector_b
-#' @export
+#' @keywords GARCH
+#' @note Version 1.0.2
 #' @noRd
+#' @export
 GARCH_vector_b <- function(archOrder = 1, garchOrder = 0){
   # Arch order
   p <- archOrder
@@ -41,7 +42,9 @@ GARCH_vector_b <- function(archOrder = 1, garchOrder = 0){
 #'
 #' # With initials (k=max(p,q)=1)
 #' sGARCH_filter(x, omega, alpha, beta, eps0 = 0, sigma20 = 0.2)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_filter <- function(x, omega, alpha, beta, eps0 = NULL, sigma20 = NULL) {
   if (is.null(eps0) != is.null(sigma20)){
@@ -70,12 +73,12 @@ sGARCH_filter <- function(x, omega, alpha, beta, eps0 = NULL, sigma20 = NULL) {
 #' # Next step forecast
 #' sGARCH_next_step(omega, alpha, beta, sigma20, eps0)
 #'
-#' @keywords GARCG
-#' @note Version 1.0.0.
 #' @rdname sGARCH_next_step
 #' @name sGARCH_next_step
-#' @export
+#' @keywords GARCH
+#' @note Version 1.0.2
 #' @noRd
+#' @export
 sGARCH_next_step <- function(omega, alpha, beta, eps0 = 0, sigma20 = 1){
   eps0 <- eps0[1:length(alpha)]
   sigma20 <- sigma20[1:length(beta)]
@@ -106,7 +109,9 @@ sGARCH_next_step <- function(omega, alpha, beta, eps0 = 0, sigma20 = 1){
 #' sim <- sGARCH_scenarios(B = 10, n = 500,
 #' omega = 0.05, alpha = 0.05, beta = 0.9,
 #' mu = c(0, 0), sd = c(1, 2), p_mix = 0.2)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_scenarios <- function(B = 100, n = 1000, eps0 = 0, sigma2_0, omega, alpha, beta, mu, sd, probs){
   # ARCH order
@@ -156,7 +161,9 @@ sGARCH_scenarios <- function(B = 100, n = 1000, eps0 = 0, sigma2_0, omega, alpha
 #' # eta0, kappa1..kappa2 for p+q=2
 #' zeta <- c(0, rep(0, 2))
 #' GARCH_params_to_phi(zeta, p = 1, q = 1)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_params_to_phi <- function(zeta, p, q, mode = "unitOmega", eps = 0) {
 
@@ -216,7 +223,9 @@ sGARCH_params_to_phi <- function(zeta, p, q, mode = "unitOmega", eps = 0) {
 #' @examples
 #' phi <- c(omega = 0.1, alpha1 = 0.05, beta1 = 0.9)
 #' GARCH_params_to_zeta(phi, p = 1, q = 1)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_params_to_zeta <- function(phi, p, q, mode = "unitOmega", eps = 0) {
 
@@ -282,7 +291,9 @@ sGARCH_params_to_zeta <- function(phi, p, q, mode = "unitOmega", eps = 0) {
 #' @examples
 #' zeta <- c(0, 0, 0)  # eta0, kappa1 (since last fixed), and psi/xi if needed
 #' GARCH_params_to_zeta_jacobian(zeta, p = 1, q = 1)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_params_to_zeta_jacobian <- function(zeta, p, q, mode = "unitOmega", eps = 0) {
 
@@ -380,7 +391,9 @@ sGARCH_params_to_zeta_jacobian <- function(zeta, p, q, mode = "unitOmega", eps =
 #' @inheritParams sGARCH_params_to_phi
 #'
 #' @return Numeric vector (if \code{per_obs=TRUE}) or numeric scalar (sum log-likelihood).
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_loglik <- function(y, weights, omega, alpha, beta, eps0 = NULL, sigma20 = NULL, per_obs = FALSE){
   if (missing(weights)){
@@ -423,7 +436,9 @@ sGARCH_loglik <- function(y, weights, omega, alpha, beta, eps0 = NULL, sigma20 =
 #' set.seed(1)
 #' x <- rnorm(500)
 #' fit <- sGARCH_fit(x, archOrder = 1, garchOrder = 1)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_fit <- function(y, weights, archOrder = 1, garchOrder = 1, mode = c("unitOmega","targetSigma2","freeOmega")){
   # Match argument
@@ -525,7 +540,9 @@ sGARCH_fit <- function(y, weights, archOrder = 1, garchOrder = 1, mode = c("unit
 #' set.seed(1)
 #' x <- rnorm(500)
 #' fit <- sGARCH_fit_rugarch(x, archOrder = 1, garchOrder = 1)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_fit_rugarch <- function(y, archOrder = 1, garchOrder = 0, mode = "unitOmega") {
 
@@ -615,7 +632,9 @@ sGARCH_fit_rugarch <- function(y, archOrder = 1, garchOrder = 0, mode = "unitOme
 #' set.seed(1)
 #' x <- rnorm(500)
 #' fit <- sGARCH_robust_fit(x, archOrder = 1, garchOrder = 1)
-#'
+#' @keywords GARCH
+#' @note Version 1.0.2
+#' @noRd
 #' @export
 sGARCH_robust_fit <- function(y, weights, archOrder = 1, garchOrder = 0, mode = "unitOmega", method = "rugarch") {
 
@@ -665,12 +684,12 @@ sGARCH_robust_fit <- function(y, weights, archOrder = 1, garchOrder = 0, mode = 
 }
 
 #' Forecast GARCH
-#' @keywords GARCH
-#' @note Version 1.0.0.
 #' @rdname sGARCH_forecast_sigma2
 #' @name sGARCH_forecast_sigma2
-#' @export
+#' @keywords GARCH
+#' @note Version 1.0.2
 #' @noRd
+#' @export
 sGARCH_forecast_sigma2 <- function(h = 1, A, b, d, e1, S0, e_u2 = 1) {
   res <- .Call("sGARCH_forecast_sigma2_c",
                as.matrix(A),
@@ -686,7 +705,7 @@ sGARCH_forecast_sigma2 <- function(h = 1, A, b, d, e1, S0, e_u2 = 1) {
 
 #' Forecast GARCH
 #' @keywords GARCH
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @rdname sGARCH_forecast_sigma4
 #' @name sGARCH_forecast_sigma4
 #' @export
@@ -708,10 +727,10 @@ sGARCH_forecast_sigma4 <- function(h = 1, A, b, d, e1, S0, E_S0, e_u2 = 1, e_u4 
 
 #' Forecast GARCH
 #' @keywords GARCH
-#' @note Version 1.0.0.
 #' @rdname sGARCH_forecast_covariance
 #' @name sGARCH_forecast_covariance
 #' @export
+#' @note Version 1.0.2
 #' @noRd
 sGARCH_forecast_covariance <- function(A, b, d, e1, E_S0, E2_S0, e_u2 = 1) {
   h <- length(E_S0)
@@ -727,12 +746,13 @@ sGARCH_forecast_covariance <- function(A, b, d, e1, E_S0, E2_S0, e_u2 = 1) {
 }
 
 #' Forecast GARCH
-#' @keywords GARCH
-#' @note Version 1.0.0.
+#'
 #' @rdname sGARCH_forecast
 #' @name sGARCH_forecast
-#' @export
+#' @keywords GARCH
+#' @note Version 1.0.2
 #' @noRd
+#' @export
 sGARCH_forecast <- function(h, A, b, d, e1, S0, e_u2, e_u4){
   # Forecast expectation
   E_S0 <- sGARCH_forecast_sigma2(h, A, b, d, e1, S0, e_u2)

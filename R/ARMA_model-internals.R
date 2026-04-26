@@ -1,7 +1,7 @@
 #' Construct the vector b of an ARMA model
 #'
-#' @param arOrder Numeric scalar, order of AR model.
-#' @param maOrder Numeric scalar, order of MA model.
+#' @param arOrder integer(1), order of AR model.
+#' @param maOrder integer(1), order of MA model.
 #' @examples
 #' # ARMA(2,2)
 #' ARMA_vector_b(2,2)
@@ -10,11 +10,10 @@
 #' # MA(2)
 #' ARMA_vector_b(0,2)
 #' @keywords ARMA
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @rdname ARMA_vector_b
 #' @name ARMA_vector_b
 #' @export
-#' @noRd
 ARMA_vector_b <- function(arOrder, maOrder){
   # Companion vector AR
   e_p <- c()
@@ -37,9 +36,9 @@ ARMA_vector_b <- function(arOrder, maOrder){
 
 #' Construct the companion matrix of an ARMA model
 #'
-#' @param phi Numeric vector with length `p`, AR parameters.
-#' @param theta Numeric vector with length `q`, MA parameters.
-#' @return A square matrix with dimension (p+q)
+#' @param phi numeric vector of length p, AR parameters.
+#' @param theta numeric vector of length q, MA parameters.
+#' @return numeric matrix of size p+q x p+q.
 #' @examples
 #' # AR(1) / MA(1) ~ No companion
 #' ARMA_companion_matrix(c(0.4))
@@ -49,20 +48,39 @@ ARMA_vector_b <- function(arOrder, maOrder){
 #' # Only MA
 #' ARMA_companion_matrix(theta = c(0.4, 0.3, 0.1))
 #' # ARMA
-#' ARMA_companion_matrix(c(0.4, 0.2), c(0.3))
+#' ARMA_companion_matrix(c(0.4, 0.2), c(0.3, 0))
 #' ARMA_companion_matrix(c(0.1, 0.02, 0.01), c(0.3, 0.1, 0.05))
 #' @keywords ARMA
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @rdname ARMA_companion_matrix
 #' @name ARMA_companion_matrix
 #' @export
 ARMA_companion_matrix <- function(phi, theta){
-  if (missing(theta)){
-    theta <- NULL
-  }
-  if (missing(phi)){
+  # Check AR parameters
+  if (missing(phi)) {
     phi <- NULL
   }
+  phi <- phi[phi != 0]
+  if (purrr::is_empty(phi)) {
+    phi <- NULL
+  }
+  # Check MA parameters
+  if (missing(theta)) {
+    theta <- NULL
+  }
+  theta <- theta[theta != 0]
+  if (purrr::is_empty(theta)) {
+    theta <- NULL
+  }
+
+  if (is.null(phi) & is.null(theta)){
+    A <- matrix(0)
+    # Add attributes
+    attr(A, "arOrder") <- 0
+    attr(A, "maOrder") <- 0
+    return(A)
+  }
+
   # AR order
   p <- length(phi)
   # MA order
@@ -100,10 +118,10 @@ ARMA_companion_matrix <- function(phi, theta){
 
 #' Compute the conditional mean of an ARMA model
 #'
-#' @param h Numeric scalar, number of steps ahead.
-#' @param X0 Numeric vector with length `p + q`, state vector of past values.
-#' @param A Matrix with dimension `(p+q) x (p+q)`, companion matrix for ARMA model. See the function [ARMA_companion_matrix()].
-#' @param b Numeric vector with length `p + q`. See the function [ARMA_vector_b()].
+#' @param h integer(1), number of steps ahead.
+#' @param X0 numeric vector of length p + q, state vector of past values.
+#' @param A numeric matrix of size p+q x p+q. See the function \code{\link{ARMA_companion_matrix}} for more details.
+#' @param b mumeric vector of length p+q. See the function \code{\link{ARMA_vector_b}} for more details.
 #' @param intercept Numeric scalar, intercept parameter.
 #' @examples
 #' A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
@@ -112,12 +130,11 @@ ARMA_companion_matrix <- function(phi, theta){
 #' X0 <- c(0.9, 0.2, -0.1, 0.3)
 #' ARMA_expectation(h = 3, X0, A, b, intercept)
 #' @keywords ARMA
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @rdname ARMA_expectation
 #' @name ARMA_expectation
 #' @export
-#' @noRd
-ARMA_expectation <- function(h = 10, X0, A, b, intercept = 0){
+ARMA_expectation <- function(h, X0, A, b, intercept = 0){
   # Dimension
   pq <- ncol(A)
   # Build intercept vector
@@ -136,17 +153,16 @@ ARMA_expectation <- function(h = 10, X0, A, b, intercept = 0){
 #' Compute the long-term variance of an ARMA model
 #'
 #' @inheritParams ARMA_expectation
-#' @param sigma2 Numeric scalar, std. deviation of the residuals.
+#' @param sigma2 integer(1), std. deviation of the residuals.
 #' @examples
 #' A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
 #' b <- ARMA_vector_b(2,2)
 #' ARMA_variance(h = 3, A, b, sigma2 = 1)
 #' @keywords ARMA
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @rdname ARMA_variance
 #' @name ARMA_variance
 #' @export
-#' @noRd
 ARMA_variance <- function(h = 1, A, b, sigma2 = 1){
   # Detect AR-order
   bb <- b %*% t(b)
@@ -167,17 +183,16 @@ ARMA_variance <- function(h = 1, A, b, sigma2 = 1){
 #' Compute the ARMA conditional variance / covariance
 #'
 #' @inheritParams ARMA_variance
-#' @param k Numeric scalar, number of steps ahead for the second lag.
+#' @param k integer(1), number of steps ahead for the second lag.
 #' @examples
 #' A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
 #' b <- ARMA_vector_b(2,2)
 #' ARMA_covariance(3, 1, A, b, sigma2 = 1)
 #' @keywords ARMA
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @rdname ARMA_covariance
 #' @name ARMA_covariance
 #' @export
-#' @noRd
 ARMA_covariance <- function(h, k, A, b, sigma2 = 1){
   cv_t <- c(0)
   cv_x <- 0
@@ -194,7 +209,7 @@ ARMA_covariance <- function(h, k, A, b, sigma2 = 1){
 #' Next-step value of an ARMA process
 #'
 #' @inheritParams ARMA_expectation
-#' @param eps Numeric, vector of new residuals.
+#' @param eps optional numeric vector of length h. Next step new residuals.
 #' @examples
 #' # Companion matrix and vector b
 #' A <- ARMA_companion_matrix(c(0.4), c())
@@ -220,11 +235,10 @@ ARMA_covariance <- function(h, k, A, b, sigma2 = 1){
 #' ARMA_next_step(10, X0, A, b, intercept = 0.2, eps = eps)
 #'
 #' @keywords ARMA
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @rdname ARMA_next_step
 #' @name ARMA_next_step
 #' @export
-#' @noRd
 ARMA_next_step <- function(h = 1, X0, A, b, intercept = 0, eps = 0){
   if (h > 1 & (length(eps) == 1 && eps == 0)) {
     eps <- rep(0, h)
@@ -244,14 +258,15 @@ ARMA_next_step <- function(h = 1, X0, A, b, intercept = 0, eps = 0){
   return(x_t)
 }
 
-#' @description
+
 #' Filter the time-series and compute fitted values and residuals.
-#' @param x Numeric vector, time series to filter.
+#'
+#' @param x numeric vector, time series to filter.
 #' @inheritParams ARMA_expectation
 #' @rdname ARMA_filter
 #' @name ARMA_filter
+#' @note Version 1.0.2
 #' @export
-#' @noRd
 ARMA_filter <- function(x, A, b, intercept = 0) {
   # AR order
   p <- attr(A, "arOrder")
@@ -259,6 +274,10 @@ ARMA_filter <- function(x, A, b, intercept = 0) {
   q <- attr(A, "maOrder")
   # Companion matrix
   A <- as.matrix(A); storage.mode(A) <- "double"
+  # AR parameters
+  phi <- 0
+  if (p > 0) phi <- A[1,1:p]
+
   # Fitted values
   x_hat <- .Call("ARMA_filter_c",
                  A,
@@ -266,29 +285,30 @@ ARMA_filter <- function(x, A, b, intercept = 0) {
                  as.numeric(x),
                  as.integer(p),
                  as.integer(q),
-                 as.numeric(intercept))
+                 as.numeric(intercept * (1 - phi)))
   return(x_hat)
 }
 
 #' Fast ARMA state-space h-step forecast and weights (C/BLAS)
 #'
-#' @param h Integer, steps ahead.
-#' @param X0 Numeric vector of length p+q (state).
-#' @param A  Numeric (p+q) x (p+q) companion matrix.
-#' @param b  Numeric vector length p+q (shocks selector).
-#' @param intercept Scalar intercept (0 if none).
+#' @inheritParams ARMA_expectation
 #' @examples
 #' h <- 1000
 #' X0 <- c(0.2, 0.1)
 #' A <- ARMA_companion_matrix(0.2, 0.1)
 #' b <- ARMA_vector_b(1,1)
 #' ARMA_forecast(h, X0, A, b, intercept = 0)
-#'
+#' @note Version 1.0.2
+#' @rdname ARMA_forecast
+#' @name ARMA_forecast
 #' @export
 ARMA_forecast <- function(h, X0, A, b, intercept = 0) {
-  A <- as.matrix(A)
-  storage.mode(A) <- "double"
-  df_tT <- .Call("ARMA_forecast_c", A, as.numeric(X0), as.numeric(b), as.integer(h), as.numeric(intercept))
+  df_tT <- .Call("ARMA_forecast_c",
+                 as.matrix(A),
+                 as.numeric(X0),
+                 as.numeric(b),
+                 as.integer(h),
+                 as.numeric(intercept))
   df_tT <- dplyr::bind_rows(df_tT)
   # Add step
   df_tT$step <- 1:h
@@ -299,13 +319,13 @@ ARMA_forecast <- function(h, X0, A, b, intercept = 0) {
 
 #' Compute the long-term variance of an AR model
 #'
-#' @param phi Numeric vector, AR parameters.
-#' @param sigma2 Numeric scalar, std. deviation of the residuals.
+#' @param phi numeric vector of length p, AR parameters.
+#' @param sigma2 integer(1), std. deviation of the residuals.
 #' @examples
 #' AR_variance(c(0.5, 0.2))
 #' AR_variance(c(0.2, 0.3, 0.2), 2)
 #' @keywords ARMA
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @export
 #' @noRd
 AR_variance <- function(phi, sigma2 = 1){
@@ -341,7 +361,7 @@ AR_variance <- function(phi, sigma2 = 1){
 }
 
 #' From constraint to uncontraint parameters
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @noRd
 AR_params_to_zeta <- function(phi){
   p <- length(phi)
@@ -368,12 +388,15 @@ AR_params_to_zeta <- function(phi){
 }
 
 #' From constraint to uncontraint parameters
+#'
+#' @param zeta_phi Numeric vector of length p, AR parameters.
+#' @param zeta_theta Numeric vector of length q, MA parameters.
 #' @examples
 #' phi <- c(0.3, 0.4, 0.1)
 #' theta <- c(0.1, 0.8)
 #' zeta <- ARMA_params_to_zeta(phi, theta)
 #'
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @export
 #' @noRd
 ARMA_params_to_zeta <- function(phi, theta){
@@ -383,14 +406,12 @@ ARMA_params_to_zeta <- function(phi, theta){
     zeta_phi <- AR_params_to_zeta(phi)
     names(zeta_phi) <- paste0("zeta_phi_", 1:length(phi))
   }
-
   zeta_theta <- c()
   # Ensure not missing
   if (!missing(theta) && theta[1] != 0){
     zeta_theta <- AR_params_to_zeta(theta)
     names(zeta_theta) <- paste0("zeta_theta_", 1:length(theta))
   }
-
   structure(
     list(
       zeta_phi = zeta_phi,
@@ -401,7 +422,7 @@ ARMA_params_to_zeta <- function(phi, theta){
 
 #' From unconstraint to contraint parameters
 #'
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @noRd
 AR_params_to_phi <- function(zeta){
   p <- length(zeta)
@@ -466,12 +487,15 @@ AR_params_to_phi <- function(zeta){
 }
 
 #' From constraint to uncontraint parameters
+#'
+#' @param zeta_phi Numeric vector of length p, unconstraint AR parameters.
+#' @param zeta_theta Numeric vector of length q, unconstraint MA parameters.
+#'
 #' @examples
 #' zeta_phi <- c(0.7043836, 0.4652377, 0.1003353)
 #' zeta_theta <- c(0.5493061, 1.0986123)
 #' ARMA_params_to_phi(zeta_phi, zeta_theta)
-#'
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @export
 #' @noRd
 ARMA_params_to_phi <- function(zeta_phi, zeta_theta){

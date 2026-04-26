@@ -22,14 +22,8 @@
 #' @export
 solarMixture <-  R6::R6Class("solarMixture",
                              public = list(
-                               #' @field maxit Integer, maximum number of iterations.
-                               maxit = 100,
-                               #' @field maxrestarts Integer, maximum number of restarts.
-                               maxrestarts = 500,
-                               #' @field abstol Numeric, absolute level for convergence.
-                               abstol = 10e-5,
-                               #' @field components Integer, number of components.
-                               components = 2,
+                               #' @field control List to contain custom control parameters.
+                               control = list(match.expectation = FALSE, match.variance = FALSE, match.empiric = FALSE),
                                #' @field mu1 Function, see \code{\link{monthlyParams}}.
                                mu1 = NA,
                                #' @field mu2 Function, see \code{\link{monthlyParams}}.
@@ -43,14 +37,70 @@ solarMixture <-  R6::R6Class("solarMixture",
                                #' @description
                                #' Initialize a `solarMixture` object
                                #' @param components (`integer(1)`), number of components.
+                               #' @param method Character, package used to fit the parameters. Can be `mixtools` or `mclust`.
                                #' @param maxit (`integer(1)`) Numeric, maximum number of iterations.
                                #' @param abstol (`numeric(1)`) Numeric, absolute level for convergence.
                                #' @param maxrestarts (`integer(1)`) Numeric, maximum number of restarts.
-                               initialize = function(components = 2, maxit = 5000, maxrestarts = 500, abstol = 1e-8){
-                                 self$components <- components
-                                 self$maxit <- maxit
-                                 self$maxrestarts <- maxrestarts
-                                 self$abstol <- abstol
+                               initialize = function(components = 2, method = "mixtools", maxit = 10000, maxrestarts = 1000, abstol = 1e-8){
+                                 # Initialize Gaussian mixture objects for all the months
+                                 private$..model <- vector("list", 12)
+                                 private$date_month <- vector("list", 12)
+                                 for(m in 1:12){
+                                   private$..model[[m]] <- gaussianMixture$new(components = components,
+                                                                               method = method,
+                                                                               maxit = maxit,
+                                                                               maxrestarts = maxrestarts,
+                                                                               abstol = abstol)
+                                 }
+                                 # Assign standard names
+                                 names(private$..model) <- lubridate::month(1:12, label = TRUE)
+                                 names(private$date_month) <- lubridate::month(1:12, label = TRUE)
+                               },
+                               #' @description
+                               #' Set the time series internally
+                               #' @param x vector
+                               #' @param dates date vector
+                               #' @param weights observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
+                               set_time_series = function(x, dates, weights){
+                                 # Add custom weights
+                                 if (missing(weights)) {
+                                   w <- rep(1, length(x))
+                                 } else {
+                                   w <- ifelse(weights == 0, 0, 1)
+                                 }
+                                 # Ensure no NA
+                                 idx_NA <- which(is.na(x))
+                                 if (!purrr::is_empty(idx_NA)) {
+                                   cli::cli_alert_warning(paste0("Some NA found at indexes: ", idx_NA, collapse = " "))
+                                   w[is.na(x)] <- 0
+                                 }
+                                 # Ensure no infinity
+                                 idx_infty <- which(is.infinite(x))
+                                 if (!purrr::is_empty(idx_infty)) {
+                                   cli::cli_alert_warning(paste0("Some infinity values found at indexes: ", idx_infty, collapse = " "))
+                                   w[is.na(x)] <- 0
+                                 }
+                                 # ************************************************
+                                 # Add x
+                                 private[["x"]] <- x
+                                 # Add weights
+                                 private[["w"]] <- w
+                                 # Add date
+                                 private[["date"]] <- dates
+                                 # ************************************************
+                                 data <- self$data
+                                 # Gaussian Mixture parameters
+                                 for(m in 1:12){
+                                   data_months <- dplyr::filter(data, Month == m)
+                                   if (nrow(data_months) <= 1){
+                                     cli::cli_alert_warning(paste0("No observations for the month: ", m))
+                                     next
+                                   }
+                                   # Store monthly dates
+                                   private$date_month[[m]] <- data_months$date
+                                   # Fit the GM model for the m-month
+                                   private$..model[[m]]$set_time_series(data_months$x, data_months$w)
+                                 }
                                },
                                #' @description
                                #' Fit the parameters with mclust package
@@ -62,33 +112,20 @@ solarMixture <-  R6::R6Class("solarMixture",
                                #' @param mu_target Numeric vector with length 12, target mean of the mixture to match.
                                #' @param var_target Numeric vector with length 12, target variance of the mixture to match.
                                fit = function(x, date, weights, method = "mixtools", mu_target = rep(NA, 12), var_target = rep(NA, 12)){
-                                 # Add data
-                                 private$x <- x
-                                 private$date <- date
-                                 # Weights
-                                 if (missing(weights)){
-                                   w <- rep(1, n)
-                                 } else {
-                                   w <- ifelse(weights == 0, 0, 1)
-                                 }
-                                 private$w <- w
+                                 # Set time series internally
+                                 self$set_time_series(x, date, weights)
                                  data <- self$data
+                                 M <- length(private$..model)
                                  # Gaussian Mixture parameters
-                                 for(m in 1:12){
+                                 for(m in 1:M){
                                    data_months <- dplyr::filter(data, Month == m)
-                                   w <- data_months$w
-                                   # Monthly data
-                                   eps <- data_months$x
-                                   private$date_month[[m]] <- data_months$date
-                                   # Fitted model
-                                   GM_model <- gaussianMixture$new(maxit = self$maxit, maxrestarts = self$maxrestarts,
-                                                                   abstol = self$abstol, components = self$components)
-                                   GM_model$fit(eps, w, method = method, mu_target = mu_target[m], var_target = var_target[m])
-                                   # Add model
-                                   private$..model[[m]] <- GM_model$clone(deep = TRUE)
+                                   if (nrow(data_months) <= 1){
+                                     cli::cli_alert_warning(paste0("No observations for the month: ", m))
+                                     next
+                                   }
+                                   # Fit the GM model for the m-month
+                                   private$..model[[m]]$fit(data_months$x, data_months$w, mu_target = mu_target[m], var_target = var_target[m])
                                  }
-                                 names(private$..model) <- lubridate::month(1:12, label = TRUE)
-                                 names(private$date_month) <- lubridate::month(1:12, label = TRUE)
                                  # Initialize monthly function for Mixture parameters
                                  self$mu1 <- monthlyParams$new(self$coefficients$mu1)
                                  self$mu2 <- monthlyParams$new(self$coefficients$mu2)
@@ -114,17 +151,17 @@ solarMixture <-  R6::R6Class("solarMixture",
                                  if (missing(p)) {
                                    p <- self$p
                                  }
-                                 M <- length(private$..model)
                                  # Update parameters
-                                 for(m in 1:M){
+                                 for(m in 1:12){
                                    private$..model[[m]]$update(means = means[m,], sd = sd[m,], p = p[m,])
                                  }
                                  # Update monthly function for Mixture parameters
-                                 self$mu1 <- monthlyParams$new(self$coefficients$mu1)
-                                 self$mu2 <- monthlyParams$new(self$coefficients$mu2)
-                                 self$sd1 <- monthlyParams$new(self$coefficients$sd1)
-                                 self$sd2 <- monthlyParams$new(self$coefficients$sd2)
-                                 self$prob <- monthlyParams$new(self$coefficients$p1)
+                                 coefficients <- self$coefficients
+                                 self$mu1 <- monthlyParams$new(coefficients$mu1)
+                                 self$mu2 <- monthlyParams$new(coefficients$mu2)
+                                 self$sd1 <- monthlyParams$new(coefficients$sd1)
+                                 self$sd2 <- monthlyParams$new(coefficients$sd2)
+                                 self$prob <- monthlyParams$new(coefficients$p1)
                                },
                                #' @description
                                #' Apply the `$update_logLik()` method to all the `gaussianMixture` models
@@ -133,16 +170,6 @@ solarMixture <-  R6::R6Class("solarMixture",
                                  # Update log-likelihood
                                  for(m in 1:M){
                                    private$..model[[m]]$update_logLik()
-                                 }
-                                 return(invisible(NULL))
-                               },
-                               #' @description
-                               #' Apply the `$update_empiric_parameters()` method to all the `gaussianMixture` models
-                               update_empiric_parameters = function(){
-                                 M <- length(private$..model)
-                                 # Update empiric parameters
-                                 for(m in 1:M){
-                                   private$..model[[m]]$update_empiric_parameters()
                                  }
                                  return(invisible(NULL))
                                },
@@ -164,17 +191,6 @@ solarMixture <-  R6::R6Class("solarMixture",
                                  for(m in 1:M){
                                    private$..model[[m]]$Hessian()
                                  }
-                                 return(invisible(NULL))
-                               },
-                               #' @description
-                               #' Substitute the empiric parameters with EM parameters. If evaluated again
-                               #' the EM parameters will be substituted back.
-                               use_empiric_parameters = function(){
-                                 M <- length(private$..model)
-                                 for(i in 1:M){
-                                   private$..model[[i]]$use_empiric_parameters()
-                                 }
-                                 private$..use_empiric <- private$..model[[1]]$use_empiric
                                  return(invisible(NULL))
                                },
                                #' @description
@@ -291,13 +307,12 @@ solarMixture <-  R6::R6Class("solarMixture",
                                }
                              ),
                              private = list(
-                               version = "1.0.0",
+                               version = "1.0.1",
                                x = NA,
                                w = NA,
                                date = NA,
                                date_month = list(),
                                ..model = list(),
-                               ..use_empiric = FALSE,
                                deep_clone = function(name, value){
                                  if (name == "..model") {
                                    # Clonazione profonda degli oggetti kernelRegression all'interno della lista ..models
@@ -327,7 +342,8 @@ solarMixture <-  R6::R6Class("solarMixture",
                                #' @field means Matrix of means where a row represents a month and a column a mixture component.
                                means = function(){
                                  M <- length(private$..model)
-                                 means <- matrix(0, nrow = M, ncol = self$components)
+                                 components <- private$..model[[1]]$components
+                                 means <- matrix(0, nrow = M, ncol = components)
                                  for(m in 1:M){
                                    means[m,] <- unlist(self$model[[m]]$means)
                                  }
@@ -338,7 +354,8 @@ solarMixture <-  R6::R6Class("solarMixture",
                                #' @field sd Matrix of std. deviations where a row represents a month and a column a mixture component.
                                sd = function(){
                                  M <- length(private$..model)
-                                 sd <- matrix(0, nrow = M, ncol = self$components)
+                                 components <- private$..model[[1]]$components
+                                 sd <- matrix(0, nrow = M, ncol = components)
                                  for(m in 1:M){
                                    sd[m,] <- unlist(self$model[[m]]$sd)
                                  }
@@ -349,7 +366,8 @@ solarMixture <-  R6::R6Class("solarMixture",
                                #' @field p Matrix of probabilities where a row represents a month and a column a mixture component.
                                p = function(){
                                  M <- length(private$..model)
-                                 p <- matrix(0, nrow = M, ncol = self$components)
+                                 components <- private$..model[[1]]$components
+                                 p <- matrix(0, nrow = M, ncol = components)
                                  for(m in 1:M){
                                    p[m,] <- unlist(self$model[[m]]$p)
                                  }
@@ -361,18 +379,18 @@ solarMixture <-  R6::R6Class("solarMixture",
                                model = function(){
                                  private$..model
                                },
-                               #' @field use_empiric logical to denote if empiric parameters are currently used
-                               use_empiric = function(){
-                                 private$..use_empiric
-                               },
                                #' @field loglik Numeric, total log-likelihood.
                                loglik = function(){
                                  sum(purrr::map_dbl(self$model, ~.x$loglik))
                                },
                                #' @field fitted A `tibble` with the classified series
                                fitted = function(){
-                                 df_fitted <- purrr::map2_df(self$model, private$date_month, ~ dplyr::bind_cols(date = .y, dplyr::select(.x$fitted, B = "B1", uncertanty)))
-                                 dplyr::arrange(df_fitted, date)
+                                 df_fitted <- self$model[[1]]$fitted
+                                 if (!is.na(df_fitted)) {
+                                   df_fitted <- purrr::map2_df(self$model, private$date_month, ~ dplyr::bind_cols(date = .y, dplyr::select(.x$fitted, B = "B1", uncertanty)))
+                                   df_fitted <- dplyr::arrange(df_fitted, date)
+                                 }
+                                 return(df_fitted)
                                },
                                #' @field moments A `tibble` with the theoric moments. It contains:
                                #' \describe{
@@ -397,136 +415,10 @@ solarMixture <-  R6::R6Class("solarMixture",
                                  M <- length(private$..model)
                                  dplyr::bind_cols(Month = 1:M, purrr::map_df(self$model, ~dplyr::bind_cols(purrr::map(.x$std.errors, ~dplyr::bind_rows(as.list(.x))))))
                                },
-                               #' @field summary A `tibble` with the fitted std.errors
-                               summary = function(){
+                               #' @field tidy A `tibble` with the fitted std.errors
+                               tidy = function(){
                                  M <- length(private$..model)
-                                 purrr::map2_df(1:M, self$model, ~dplyr::bind_cols(Month = .x, .y$summary))
+                                 purrr::map2_df(1:M, self$model, ~dplyr::bind_cols(Month = .x, .y$tidy))
                                }
                              )
-                            )
-
-#' Correct the moments to ensure moments matching
-#'
-#' @keywords solarMixture internal
-#' @export
-#' @noRd
-solarMixture_moments_match <- function(coefficients, e_target, v_target, sk_target, kt_target, x){
-  # Loss function
-  loss_function <- function(params, prob, e_target, v_target, sk_target, kt_target, x){
-    # Extract the parameters
-    means <- params[stringr::str_detect(names(params), "mu")]
-    sigma <- params[stringr::str_detect(names(params), "sd")]
-    probs <- c(p1 = prob[[1]], p2 = 1 - prob[[1]])
-    # Compute the moments
-    mom <- GM_moments(means, sigma, probs)
-    loss <- 0
-    # Compute the loss from target moments
-    if (!is.na(e_target)){
-      loss <- loss + abs(mom$mean - e_target)
-    }
-    if (!is.na(v_target)){
-      loss <- loss + abs(mom$variance - v_target)
-    }
-    if (!is.na(sk_target)){
-      loss <- loss + abs(mom$skewness - sk_target)
-    }
-    if (!is.na(kt_target)){
-      loss <- loss + abs(mom$kurtosis - kt_target)
-    }
-    # Compute log-likelihood
-    loss <- 10000*loss^2 #- GM_loglik(means, sigma, probs, x)
-    return(loss)
-  }
-  # Monthly optimization
-  opt_coefficients <- coefficients
-  for(nmonth in 1:nrow(coefficients)) {
-    # Initial parameters
-    params <- unlist(purrr::flatten(coefficients[nmonth,]))
-    # Optimal parameters
-    opt <- optim(par = params[-5], fn = loss_function, x = x[[nmonth]], prob = params[5],
-                 e_target = e_target[nmonth], v_target = v_target[nmonth], sk_target = sk_target[nmonth],
-                 kt_target = kt_target[nmonth])
-    opt_coefficients[nmonth, 1:4] <- dplyr::bind_rows(opt$par)
-  }
-  opt_coefficients$p2 <- 1 - opt_coefficients$p1
-  return(opt_coefficients)
-}
-
-
-# Monthly multivariate Gaussian mixture with two components
-solarModel_mvmixture <- function(model_Ct, model_GHI){
-
-  # Extract a bivariate dataset
-  data_GHI <- dplyr::select(model_GHI$data, date, Month, GHI = "u_tilde")
-  data_Ct <- dplyr::select(model_Ct$data, date, Month, Ct = "u_tilde")
-  data <- dplyr::inner_join(data_GHI, data_Ct, by = c("date", "Month"))
-  # Remove outliers
-  outliers_date <- c(model_Ct$.__enclos_env__$private$outliers$date, model_GHI$.__enclos_env__$private$outliers$date)
-  data <- dplyr::filter(data, !(date %in% outliers_date))
-
-  # Extract Gaussian mixture parameters
-  NM_model_GHI <- model_GHI$.__enclos_env__$private$..NM_model
-  NM_model_GHI$rho_up <- NM_model_GHI$rho_dw <- 0
-  NM_model_Ct <- model_Ct$.__enclos_env__$private$..NM_model
-  NM_model_Ct$rho_up <- NM_model_Ct$rho_dw <- 0
-
-  # Gaussian Mixture parameters
-  m <- 1
-  # Monthly data
-  data_months <- list()
-  for(m in 1:12){
-    data_months[[m]] <- dplyr::filter(data, Month == m)
-    # Monthly data
-    eps <- data_months[[m]][,c(3,4)]
-    # Fitted model
-    gm <- mvgaussianMixture(eps, components = 2, na.rm = TRUE)
-    # Update Gaussian mixture parameters (GHI)
-    NM_model_GHI$mu_up[m] <- gm$params$means[1,2]
-    NM_model_GHI$mu_dw[m] <- gm$params$means[2,2]
-    NM_model_GHI$sd_up[m] <- sqrt(gm$params$sigma2[1,2])
-    NM_model_GHI$sd_dw[m] <- sqrt(gm$params$sigma2[2,2])
-    NM_model_GHI$p_up[m] <- gm$params$p[1]
-    NM_model_GHI$p_dw[m] <- gm$params$p[2]
-    NM_model_GHI$rho_up[m] <- gm$params$rho[1]
-    NM_model_GHI$rho_dw[m] <- gm$params$rho[2]
-    # Update Gaussian mixture parameters (Ct)
-    NM_model_Ct$mu_up[m] <- gm$params$means[1,1]
-    NM_model_Ct$mu_dw[m] <- gm$params$means[2,1]
-    NM_model_Ct$sd_up[m] <- sqrt(gm$params$sigma2[1,1])
-    NM_model_Ct$sd_dw[m] <- sqrt(gm$params$sigma2[2,1])
-    NM_model_Ct$p_up[m] <- gm$params$p[1]
-    NM_model_Ct$p_dw[m] <- gm$params$p[2]
-    NM_model_Ct$rho_up[m] <- gm$params$rho[1]
-    NM_model_Ct$rho_dw[m] <- gm$params$rho[2]
-    # Add fitted Bernoulli series
-    data_months[[m]]$B <- gm$B_hat$B1
-  }
-  # Fitted series of bernoulli
-  data_months <- dplyr::select(dplyr::bind_rows(data_months), date, B)
-
-  # Update data (Ct)
-  data_Ct <- model_Ct$.__enclos_env__$private$..data
-  data_Ct <- dplyr::left_join(dplyr::select(data_Ct, -B), data_months, by = "date")
-  data_Ct$B[is.na(data_Ct$B)] <- 0
-  model_Ct$.__enclos_env__$private$..data <- data_Ct
-  model_Ct$.__enclos_env__$private$..NM_model <- NM_model_Ct
-  # Update data (GHI)
-  data_GHI <- model_GHI$.__enclos_env__$private$..data
-  data_GHI <- dplyr::left_join(dplyr::select(data_GHI, -B), data_months, by = "date")
-  data_GHI$B[is.na(data_GHI$B)] <- 0
-  model_GHI$.__enclos_env__$private$..data <- data_GHI
-  model_GHI$.__enclos_env__$private$..NM_model <- NM_model_GHI
-
-  structure(
-    list(
-      model_Ct = model_Ct,
-      model_GHI = model_GHI
-    ),
-    class = c("solarModelMixture", "list")
-  )
-}
-
-
-
-
-
+)

@@ -1,8 +1,9 @@
 #' Create a Fourier formula
 #'
 #' @keywords seasonalModel
+#' @note Version 1.0.2
 #' @noRd
-seasonalModel_formula <- function(formula, order = 1, period = 365, sin = TRUE, cos = TRUE, t_idx = "n"){
+seasonalModel_formula_ <- function(formula, order = 1, period = 365, sin = TRUE, cos = TRUE, t_idx = "n"){
   if (order == 0) {
     return(formula)
   }
@@ -38,6 +39,7 @@ seasonalModel_formula <- function(formula, order = 1, period = 365, sin = TRUE, 
 #' Create a Fourier formula for the differential
 #'
 #' @keywords seasonalModel
+#' @note Version 1.0.2
 #' @noRd
 seasonalModel_formula_dt <- function(formula, order = 1, period = 365, sin = TRUE, cos = TRUE, t_idx = "n"){
   if (order == 0) {
@@ -73,9 +75,49 @@ seasonalModel_formula_dt <- function(formula, order = 1, period = 365, sin = TRU
 }
 
 
+#' Create a Fourier formula
+#'
+#' @keywords seasonalModel
+#' @note Version 1.0.2
+#' @noRd
+#' @export
+seasonalModel_formula <- function(formula, order = 1, period = 365, sin = TRUE, cos = TRUE, t_idx = "n"){
+
+  # Formula with standard names
+  base_formula <- base_formula_dt <- formula
+
+  # Case I: length(order) == 1
+  if (length(order) == 1) {
+    for(p in period) {
+      for (o in order){
+        for(i in 1:o){
+          base_formula <- seasonalModel_formula_(base_formula, order = i, period = p)
+          base_formula_dt <- seasonalModel_formula_dt(base_formula_dt, order = i, period = p)
+        }
+      }
+    }
+  } else if (length(order) == length(period)) {
+    for(j in 1:length(period)) {
+      p <- period[j]
+      for (i in 1:order[j]){
+        base_formula <- seasonalModel_formula(base_formula, order = i, period = p)
+        base_formula_dt <- seasonalModel_formula_dt(base_formula_dt, order = i, period = p)
+      }
+    }
+  }
+  coefs_names <- attr(base_formula, "coef_names")
+  # Remove attributes
+  attr(base_formula, "coef_names") <- attr(base_formula_dt, "coef_names") <- NULL
+  list(formula = as.formula(base_formula),
+       formula_dt = as.formula(base_formula_dt),
+       coefs_names = coefs_names)
+}
+
+
 #' From constraint to unconstrained parameters
 #'
 #' @keywords seasonalModel
+#' @note Version 1.0.2
 #' @noRd
 #' @export
 seasonalModel_params_to_zeta <- function(b){
@@ -92,6 +134,7 @@ seasonalModel_params_to_zeta <- function(b){
 #' From unconstrained to constraint parameters
 #'
 #' @keywords seasonalModel
+#' @note Version 1.0.2
 #' @noRd
 #' @export
 seasonalModel_params_to_phi <- function(b_star){
@@ -109,6 +152,7 @@ seasonalModel_params_to_phi <- function(b_star){
 #' Jacobian from unconstrained to constraint parameters
 #'
 #' @keywords seasonalModel
+#' @note Version 1.0.2
 #' @noRd
 #' @export
 seasonalModel_params_to_zeta_jacobian <- function(b_star){

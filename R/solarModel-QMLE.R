@@ -2,6 +2,7 @@
 #'
 #' @keywords solarModel
 #' @noRd
+#' @note Version 1.0.2.
 #' @export
 solarModel_params_to_zeta <- function(model){
 
@@ -15,16 +16,17 @@ solarModel_params_to_zeta <- function(model){
   params_names <- names(params)
 
   # 2) ARMA parameters
-  phi <- model$ARMA$phi
+  phi <- model$spec$mean.model$phi
   if (is.null(phi[1])){
     phi <- c(phi_1 = 0)
   }
-  theta <- model$ARMA$theta
+  theta <- model$spec$mean.model$theta
   if (is.null(theta[1])){
     theta <- c(theta_1 = 0)
   }
-  params <- c(params, unlist(purrr::flatten(ARMA_params_to_zeta(phi, theta))))
-  params_names <- c(params_names, names(phi), names(theta))
+  new_params <-  unlist(purrr::flatten(ARMA_params_to_zeta(phi, theta)))
+  params <- c(params, new_params)
+  params_names <- c(params_names, stringr::str_remove_all(names(new_params), "zeta_"))
 
   # 3) Seasonal variance
   b <- unlist(model$coefficients$seasonal_variance)
@@ -34,23 +36,24 @@ solarModel_params_to_zeta <- function(model){
   params_names <- c(params_names, names(b))
 
   # GARCH parameters
-  if (model$spec$garch_variance){
-    if (model$GARCH$order[1] != 0 & model$GARCH$order[2] != 0){
-      coefs <- c(model$GARCH$alpha, model$GARCH$beta)
-    } else if (model$GARCH$order[1] != 0 & model$GARCH$order[2] == 0){
-      coefs <- c(model$GARCH$alpha)
+  if (model$spec$variance.model$control$garch_variance){
+    if (model$spec$variance.model$order[1] != 0 & model$spec$variance.model$order[2] != 0){
+      coefs <- c(model$spec$variance.model$alpha, model$spec$variance.model$beta)
+    } else if (model$spec$variance.model$order[1] != 0 & model$spec$variance.model$order[2] == 0){
+      coefs <- c(model$spec$variance.model$alpha)
     }
-    coefs <- c(model$GARCH$omega, coefs)
-    coefs_star <- sGARCH_params_to_zeta(coefs, model$GARCH$archOrder, model$GARCH$garchOrder)
+    coefs <- c(model$spec$variance.model$omega, coefs)
+    coefs_star <- sGARCH_params_to_zeta(coefs, model$spec$variance.model$archOrder, model$spec$variance.model$garchOrder)
     coefs_star <- head(coefs_star, length(coefs_star)-1)
     #names(coefs_star) <- paste0(names(coefs)[-1], "_star")
     params <- c(params, coefs_star)
     params_names <- c(params_names, names(coefs))
   }
+
   list(
     params = params,
     orig_names = params_names,
-    GARCH_order = model$GARCH$order
+    GARCH_order = model$spec$variance.model$order
   )
 }
 
@@ -58,14 +61,20 @@ solarModel_params_to_zeta <- function(model){
 #'
 #' @keywords solarModel
 #' @noRd
+#' @note Version 1.0.2.
 #' @export
 solarModel_params_to_phi <- function(params, orig_names, GARCH_order){
   # Names of the bounded parameters
   params_names <- names(params)
   # Number of parameters
   d <- length(params)
-  # Initialize a Jacobian matrix
-  J_qmle <- matrix(0, nrow = d+1, ncol = d)
+  if (any(GARCH_order > 0)) {
+    # Initialize a Jacobian matrix
+    J_qmle <- matrix(0, nrow = d+1, ncol = d)
+  } else {
+    # Initialize a Jacobian matrix
+    J_qmle <- matrix(0, nrow = d, ncol = d)
+  }
   # Diagonal entries all equal to 1
   diag(J_qmle) <- 1
   # Col names
@@ -153,6 +162,7 @@ solarModel_params_to_phi <- function(params, orig_names, GARCH_order){
 #'
 #' @keywords solarModel
 #' @noRd
+#' @note Version 1.0.2.
 #' @export
 solarModel_quasi_loglik <- function(params, Yt, w, t, orig_names, GARCH_order,
                                    neg_loglik = FALSE, per_obs = FALSE) {
@@ -182,7 +192,7 @@ solarModel_quasi_loglik <- function(params, Yt, w, t, orig_names, GARCH_order,
 #' @rdname solarModel_QMLE
 #' @name solarModel_QMLE
 #' @keywords solarModel
-#' @note Version 1.0.0.
+#' @note Version 1.0.2
 #' @export
 solarModel_QMLE <- function(model, maxrestarts = 1, seed = 1, quiet = TRUE){
   # Extract data
@@ -197,18 +207,18 @@ solarModel_QMLE <- function(model, maxrestarts = 1, seed = 1, quiet = TRUE){
   w <- data$weights
   # Initialize unbounded parameters
   init <- solarModel_params_to_zeta(model)
-  init_params <- init$params
+  params <- init$params
   orig_names <- init$orig_names
   GARCH_order <- init$GARCH_order
   # Log-likelihood function
   logLik <- function(params, neg_loglik = FALSE, per_obs = FALSE, quiet = TRUE){
     solarModel_quasi_loglik(params, Yt = Yt, w = w, t = t, orig_names = orig_names,
-                           GARCH_order = GARCH_order, neg_loglik = neg_loglik, per_obs = per_obs)
+                            GARCH_order = GARCH_order, neg_loglik = neg_loglik, per_obs = per_obs)
   }
   # Initial log-likelihood
-  init_loglik <- logLik(init_params, neg_loglik = TRUE, per_obs = FALSE, quiet = TRUE)
+  init_loglik <- logLik(params, neg_loglik = TRUE, per_obs = FALSE, quiet = TRUE)
   # QMLE optimization
-  opt <- optim(init_params, logLik, neg_loglik = TRUE, per_obs = FALSE, quiet = TRUE)
+  opt <- optim(params, logLik, neg_loglik = TRUE, per_obs = FALSE, quiet = TRUE)
 
   # Improvement of the log-likelihood
   if (!quiet) print(paste0("Log-lik improved by: ", init_loglik - opt$value))
@@ -216,16 +226,16 @@ solarModel_QMLE <- function(model, maxrestarts = 1, seed = 1, quiet = TRUE){
   theta_star_qml <- opt$par
   # Random change the initial parameters and choose the best one
   if (maxrestarts > 1) {
-    best_loglik <- logLik(theta_star_qml, Yt, w, t, neg_loglik = TRUE, per_obs = FALSE, quiet = TRUE)
+    best_loglik <- logLik(theta_star_qml, neg_loglik = TRUE, per_obs = FALSE, quiet = TRUE)
     n.restarts <- 1
     set.seed(seed)
     while(n.restarts < maxrestarts) {
-      rand_params <- init_params*runif(length(theta_star_qml))
+      rand_params <- params*runif(length(theta_star_qml), min = 0.8, max = 1.2)
       if (!quiet) print(paste0("Restarting: ", n.restarts, "/", maxrestarts))
       # Optimize the parameters
       opt <- optim(rand_params, logLik, neg_loglik = TRUE, per_obs = FALSE, quiet = TRUE)
-      if (!quiet) message("New-loglik: ", opt$value, " Old: ", best_loglik)
-      if (opt$value < best_loglik) {
+      # if (!quiet) message("New-log-lik: ", opt$value, " Old: ", best_loglik)
+      if (opt$value > best_loglik) {
         if (!quiet) print(paste0("Log-lik improved by: ",  abs(opt$value)-abs(best_loglik)))
         best_loglik <- opt$value
         theta_star_qml <- opt$par
@@ -255,7 +265,6 @@ solarModel_QMLE <- function(model, maxrestarts = 1, seed = 1, quiet = TRUE){
   V_rob_star <- V_star %*% B %*% V_star
   # Sandwitch var-cov matrix (original)
   V_rob_orig <- J_qmle %*% V_rob_star %*% t(J_qmle)
-
   # Extract QMLE parameters
   theta_qml <- par_qmle$theta
   # Robust standard errors
@@ -265,21 +274,24 @@ solarModel_QMLE <- function(model, maxrestarts = 1, seed = 1, quiet = TRUE){
   # Update model's parameters
   model_upd <- model$clone(TRUE)
   # Update the parameters
-  model_upd$update(theta_qml[!(names(theta_qml) == "omega")])
+  model_upd$update(dplyr::bind_rows(theta_qml[!(names(theta_qml) == "omega")]))
   # Update standard errors
-  suppressMessages(model_upd$seasonal_model_Yt$update_std.errors(std.errors))
-  suppressMessages(model_upd$ARMA$update_std.errors(std.errors))
-  suppressMessages(model_upd$seasonal_variance$update_std.errors(std.errors))
-  suppressMessages(model_upd$GARCH$update_std.errors(std.errors))
+  model_upd$spec$seasonal.mean$update_std.errors(std.errors)
+  model_upd$spec$mean.model$update_std.errors(std.errors)
+  model_upd$spec$seasonal.variance$update_std.errors(std.errors)
+  model_upd$spec$variance.model$update_std.errors(std.errors)
   # Filter the data with new parameters
   model_upd$filter()
   # Fit again the Gaussian mixture
-  model_upd$fit_NM_model()
+  model_upd$fit_mixture_model()
   # Update conditional moments
   model_upd$update_moments()
   # Update log-likelihood
   model_upd$update_logLik()
+  # Store Hessian and Jacobian
+  rownames(V_rob_star) <- colnames(V_rob_star) <- colnames(J_qmle)
+  model_upd$.__enclos_env__$private$..spec$.__enclos_env__$private$..hessian  <- V_rob_star
+  model_upd$.__enclos_env__$private$..spec$.__enclos_env__$private$..jacobian <- J_qmle
 
   return(model_upd)
 }
-

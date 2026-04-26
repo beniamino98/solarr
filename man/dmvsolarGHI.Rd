@@ -2,23 +2,31 @@
 % Please edit documentation in R/dmvsolarGHI.R
 \name{dmvsolarGHI}
 \alias{dmvsolarGHI}
-\title{Bivariate PDF GHI}
+\alias{pmvsolarGHI}
+\alias{qmvsolarGHI}
+\title{Multivariate PDF GHI}
 \usage{
-dmvsolarGHI(x, Ct, alpha, beta, joint_pdf_Yt)
+dmvsolarGHI(x, Ct, pdf_Yt, st)
+
+pmvsolarGHI(x, Ct, cdf_Yt, st)
+
+qmvsolarGHI(p, Ct, cdf_Yt, st, v = NULL, tol = 1e-08, range_s = c(-100, 100))
 }
 \arguments{
-\item{x}{vector of quantiles.}
+\item{x}{vector or quantiles.}
 
 \item{Ct}{clear sky radiation}
 
-\item{alpha}{parameters \code{alpha > 0}.}
+\item{pdf_Yt}{joint density of Y_t.}
 
-\item{beta}{parameters \code{beta > 0} and \code{alpha + beta < 1}.}
-
-\item{joint_pdf_Yt}{joint density of Y1_t, Y2_t.}
+\item{st}{list of solarTransform.}
 }
 \description{
-Bivariate PDF GHI
+Multivariate PDF GHI
+
+Distribution function for the GHI
+
+Directional quantile
 }
 \details{
 Version 1.0.0.

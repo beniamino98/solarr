@@ -4,14 +4,14 @@
 #' st <- boundTransform$new()
 #'
 #' @keywords utils
-#' @note Version 1.0.0.
+#' @note Version 1.0.3
 #' @export
 boundTransform <- R6::R6Class("boundTransform",
                               public = list(
                                 #' @field epsilon Numeric, \eqn{\epsilon} transformation parameter.
                                 epsilon = 0,
                                 #' @description
-                                #' Initialize a `solarTransform` object.
+                                #' Initialize a `boundTransform` object.
                                 #' @param alpha Numeric, \eqn{\alpha} transformation parameter.
                                 #' @param beta Numeric, \eqn{\beta} transformation parameter.
                                 #' @param link Character, link function.
@@ -32,29 +32,22 @@ boundTransform <- R6::R6Class("boundTransform",
                                 #' Set the transform function \eqn{g}, \eqn{g^{-1}}, \eqn{g^{\prime}}.
                                 #' @param link Character, link function. Valid links are `"invgumbel"`, `"gumbel"`, `"logis"`, `"norm"`.
                                 set_transform = function(link){
-                                  private$..link <- match.arg(link, choices = c("invgumbel", "gumbel", "logis", "norm"))
-                                  # Store the functions: g, g^{-1}, g_prime
-                                  if (private$..link == "invgumbel") {
-                                    private$..g <- function(x) log(-log(x))
-                                    private$..ig <- function(x) exp(-exp(x))
-                                    private$..g_prime <- function(x) 1/(x * log(x))
-                                    private$..monotonicity <- "decreasing"
-                                  } else if (private$..link == "gumbel") {
-                                    private$..g <- function(x) -log(-log(x))
-                                    private$..ig <- function(x) exp(-exp(-x))
-                                    private$..g_prime <- function(x) -1/(x * log(x))
-                                    private$..monotonicity <- "increasing"
-                                  } else if (private$..link == "logis") {
-                                    private$..g <- function(x) log(x/(1-x))
-                                    private$..ig <- function(x) 1/(1+exp(-x))
-                                    private$..g_prime <- function(x) 1 / (x * (1 - x))
-                                    private$..monotonicity <- "increasing"
-                                  } else if (private$..link == "norm") {
-                                    private$..g <- function(x) qnorm(x)
-                                    private$..ig <- function(x) pnorm(x)
-                                    private$..g_prime <- function(x) 1 / dnorm(qnorm(x))
-                                    private$..monotonicity <- "increasing"
+                                  # Available links
+                                  link <- match.arg(link, choices = boundTransform_av_links())
+                                  # Check in the global env first (custom links)
+                                  fun_name <- paste0("boundTransform_link.", link)
+                                  if (existsFunction(fun_name, where = .GlobalEnv)) {
+                                    out <- do.call(fun_name, args = list(), envir = .GlobalEnv)
+                                  } else {
+                                    out <- do.call(fun_name, args = list(), envir = getNamespace("solarr"))
                                   }
+
+                                  # Store the functions: g, g^{-1}, g_prime
+                                  private$..g <- out$g
+                                  private$..ig <- out$ig
+                                  private$..g_prime <- out$g_prime
+                                  private$..monotonicity <- out$monotonicity
+                                  private$..link <- out$link
                                 },
                                 #' @description
                                 #' Map the risk-driver \eqn{X_t} into the normalized risk-driver \eqn{X_t^{\prime}}.
@@ -199,18 +192,23 @@ boundTransform <- R6::R6Class("boundTransform",
                                   private$..beta <- beta
                                 },
                                 #' @description
-                                #' Print method for the class `solarTransform`
+                                #' Print method for the class `boundTransform`
                                 print = function(){
                                   alpha_ <- format(self$alpha, digits = 3, scientific = FALSE)
                                   beta_ <- format(self$beta, digits = 4, scientific = FALSE)
-                                  cat("------------------------ \033[1;35m boundTransform \033[0m ------------------------", "\n")
-                                  cat(paste0("Link: \033[1;32m ", private$..link, "\033[0m \n"))
-                                  cat(paste0("iY(y): \033[1;32m ",  alpha_, "\033[0m + \033[1;32m", beta_, "\033[0m exp(-exp(Y)) \n"))
-                                  cat(paste0("Y(x): log(log(\033[1;32m",  beta_, "\033[0m) - log(x- \033[1;32m", alpha_, "\033[0m))"))
+                                  # ********************************************************
+                                  msg0 <- paste0("--------------------- ", "boundTransform", " ---------------------")
+                                  cat(msg0,  "\n")
+                                  cat("Link: ", private$..link, "\n",
+                                      "Monotonicity: ", private$..monotonicity, "\n",
+                                      "Alpha: ", alpha_, "\n",
+                                      "Beta: ", beta_, " \n",
+                                      "Version: ", private$version, "\n",
+                                      paste0(rep("-", length(strsplit(msg0, "")[[1]])-1), collapse = ""), "\n")
                                 }
                               ),
                               private = list(
-                                version = "1.0.1",
+                                version = "1.0.3",
                                 ..alpha = NA,
                                 ..beta = NA,
                                 ..link = NA,
@@ -228,13 +226,15 @@ boundTransform <- R6::R6Class("boundTransform",
                                 beta = function(){
                                   private$..beta
                                 },
-                                #' @field monotonicity Character, type of monotonicity of \eqn{g}.
-                                monotonicity = function(){
-                                  private$..monotonicity
-                                },
                                 #' @field link Character, name of the link function \eqn{g}.
                                 link = function(){
                                   private$..link
+                                },
+                                #' @field monotonicity Character, type of monotonicity of \eqn{g}.
+                                monotonicity = function(){
+                                  private$..monotonicity
                                 }
                               )
 )
+
+

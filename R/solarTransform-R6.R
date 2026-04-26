@@ -9,6 +9,8 @@
 solarTransform <- R6::R6Class("solarTransform",
                               inherit = boundTransform,
                               public = list(
+                                #' @field control List to contain custom control parameters.
+                                control = list(),
                                 #' @field epsilon Numeric, \eqn{\epsilon} transformation parameter.
                                 epsilon = 0,
                                 #' @description
@@ -101,7 +103,7 @@ solarTransform <- R6::R6Class("solarTransform",
                                 }
                               ),
                               private = list(
-                                version = "1.0.1"
+                                version = "1.0.3"
                               ),
                               active = list()
 

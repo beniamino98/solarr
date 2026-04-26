@@ -127,3 +127,33 @@ format_pval <- function(x){
   ifelse(x > 0.1, "", ifelse(x > 0.05, "*", ifelse(x > 0.01, "**", "***")))
 }
 
+#' Detector for pattern in files
+#'
+#' @param dir_ directory
+#' @param patter pattern
+#' @param file.format file format, default is "R". No need to add ".".
+#' @rdname detect_pattern_files
+#' @name detect_pattern_files
+#' @export
+#' @noRd
+detect_pattern_files <- function(dir_, pattern, file.format = "R"){
+  all.files <- list.files(dir_)
+  all.files <- all.files[stringr::str_detect(all.files, paste0("\\.", file.format))]
+  file <- all.files[1]
+  info <- list()
+  for(file in all.files){
+    file_txt <- readLines(file.path(dir_, file))
+    idx.line <- which(stringr::str_detect(file_txt, pattern = pattern))
+    if (!purrr::is_empty(idx.line)) {
+      idx.commented_lines <- which(purrr::map_chr(strsplit(file_txt, ""), ~.x[1]) == "#")
+      idx.line.commented <- idx.line[idx.line %in% idx.commented_lines]
+      idx.line <- idx.line[!(idx.line %in% idx.commented_lines)]
+      info[[as.character(file)]] <- dplyr::tibble(dir = dir_, file = file, lines = paste0(idx.line, collapse = ", "), comment = idx.line.commented)
+    }
+  }
+  dplyr::bind_rows(info)
+}
+
+
+
+

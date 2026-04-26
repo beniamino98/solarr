@@ -7,18 +7,21 @@
 ARMA_forecast(h, X0, A, b, intercept = 0)
 }
 \arguments{
-\item{h}{Integer, steps ahead.}
+\item{h}{integer(1), number of steps ahead.}
 
-\item{X0}{Numeric vector of length p+q (state).}
+\item{X0}{numeric vector of length p + q, state vector of past values.}
 
-\item{A}{Numeric (p+q) x (p+q) companion matrix.}
+\item{A}{numeric matrix of size p+q x p+q. See the function \code{\link{ARMA_companion_matrix}} for more details.}
 
-\item{b}{Numeric vector length p+q (shocks selector).}
+\item{b}{mumeric vector of length p+q. See the function \code{\link{ARMA_vector_b}} for more details.}
 
-\item{intercept}{Scalar intercept (0 if none).}
+\item{intercept}{Numeric scalar, intercept parameter.}
 }
 \description{
 Fast ARMA state-space h-step forecast and weights (C/BLAS)
+}
+\note{
+Version 1.0.2
 }
 \examples{
 h <- 1000
@@ -26,5 +29,4 @@ X0 <- c(0.2, 0.1)
 A <- ARMA_companion_matrix(0.2, 0.1)
 b <- ARMA_vector_b(1,1)
 ARMA_forecast(h, X0, A, b, intercept = 0)
-
 }

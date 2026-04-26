@@ -1,35 +1,52 @@
+#' ARMA model
+#'
+#' @description
 #' R6 class for ARMA(p, q) model
 #'
 #' @rdname ARMA_modelR6
 #' @name ARMA_modelR6
 #' @keywords ARMA
-#' @note Version 1.0.1
+#' @note Version 1.0.2
 #' @seealso [stats::arima()] which is wrapped in the method `fit`.
 #' @export
 ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                           public = list(
+                            #' @field control list, to contain custom control parameters.
+                            control = list(include.intercept = FALSE),
+                            #' @field model_name character(1), standard model name.
+                            model_name = "ARMA(0, 0)",
                             #' @description
                             #' Initialize an ARMA model
-                            #' @param arOrder Numeric scalar, order for Autoregressive component.
-                            #' @param maOrder Numeric scalar, order for Moving-Average component.
-                            #' @param include.intercept Logical. When `TRUE` the intercept will be included. The default is `FALSE`.
+                            #' @param arOrder integer(1), order of the Autoregressive component.
+                            #' @param maOrder integer(1), order of the Moving-Average component.
+                            #' @param include.intercept logical(1), the default is `FALSE`. When `TRUE` the intercept will be included.
                             initialize = function(arOrder = 1, maOrder = 1, include.intercept = FALSE){
                               # Logical value for the intercept parameter
-                              private$include.intercept <- include.intercept
+                              self$control[["include.intercept"]] <- include.intercept
                               # Store AR order
-                              private$..arOrder <- arOrder
+                              private[["..arOrder"]] <- arOrder
+                              if (arOrder > 0){
+                                private[["..phi"]] <- setNames(rep(0, arOrder), paste0("phi_", 1:arOrder))
+                              }
                               # Store MA order
-                              private$..maOrder <- maOrder
+                              private[["..maOrder"]] <- maOrder
+                              if (maOrder > 0){
+                                private[["..theta"]] <- setNames(rep(0, maOrder), paste0("theta_", 1:maOrder))
+                              }
+                              # Standard errors
+                              private[["..std.errors"]] <- c(intercept = NA, self$phi, self$theta)
                               # Pre-compute vector b
-                              private$..b <- ARMA_vector_b(arOrder, maOrder)
+                              private[["..b"]] <- ARMA_vector_b(arOrder, maOrder)
+                              # Model name
+                              self$model_name <- paste0("ARMA", " (", arOrder, ", ", maOrder, ")")
                             },
                             #' @description
                             #' Fit the ARMA model with `arima` function.
-                            #' @param x Numeric vector, time series to fit.
+                            #' @param x numeric vector, time series to fit.
                             fit = function(x){
                               # Fitted model
                               ARMA_model <- arima(x, order = c(self$order[1], 0, self$order[2]),
-                                                  include.mean = private$include.intercept, method = "CSS")
+                                                  include.mean = self$control$include.intercept, method = "CSS")
                               # Standardize parameters names
                               params <- ARMA_model$coef
                               # Extract the std.errors
@@ -38,7 +55,7 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                               # Extract intercept
                               intercept <- c(intercept = 0)
                               std.errors_intercept <- c(intercept = NA)
-                              if (private$include.intercept) {
+                              if (self$control$include.intercept) {
                                 index <- which(names(params) == "intercept")
                                 intercept <- c(intercept = params[[index]])
                                 std.errors_intercept <- c(intercept = std.errors[[index]])
@@ -46,8 +63,8 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                                 params <- params[-c(index)]
                               }
                               # AR coefficients without intercept
-                              phi <- c()
-                              std.errors_ar <- c()
+                              phi <- c(phi_1 = 0)
+                              std.errors_ar <- c(phi_1 = NA)
                               if (self$order[1] > 0){
                                 index <- stringr::str_detect(names(params), "ar")
                                 phi <- params[index]
@@ -55,8 +72,8 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                                 names(phi) <- names(std.errors_ar) <- paste0("phi_", 1:self$order[1])
                               }
                               # MA coefficients without intercept
-                              theta <- c()
-                              std.errors_ma <- c()
+                              theta <- c(theta_1 = 0)
+                              std.errors_ma <- c(theta_1 = NA)
                               if (self$order[2] > 0){
                                 index <- stringr::str_detect(names(params), "ma")
                                 theta <- params[index]
@@ -70,31 +87,29 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                               private$..theta <- theta
                               # Compute companion matrix
                               private$..A <- ARMA_companion_matrix(phi, theta)
-                              # Store the fitted model
-                              private$..model <- ARMA_model
                               # Store the std. errors
                               private$..std.errors <- c(std.errors_intercept, std.errors_ar, std.errors_ma)
                               # Update fitted variance
                               private$..sigma2 <- sqrt(ARMA_model$sigma2)
                             },
                             #' @description
-                            #' Filter the time-series and compute fitted values and residuals.
-                            #' @param x Numeric vector, time series to filter.
+                            #' Filter the time-series and compute fitted values and residuals. See the function \code{\link{ARMA_filter}} for more details.
+                            #' @param x numeric vector, time series to filter.
                             filter = function(x){
                               ARMA_filter(x, self$A, self$b, self$intercept)
                             },
                             #' @description
-                            #' Next step function
+                            #' Next step function. See the function \code{\link{ARMA_next_step}} for more details.
                             #' @param x Numeric vector, state vector with past observations and residuals.
-                            #' @param n.ahead Numeric scalar, forecasted steps ahead.
-                            #' @param eps Numeric vector, optional realized residuals.
+                            #' @param n.ahead integer(1), number of steps ahead.
+                            #' @param eps optional numeric vector of length n.ahead, next step realized residuals.
                             next_step = function(x, n.ahead = 1, eps = 0){
                               ARMA_next_step(n.ahead, x, self$A, self$b, self$intercept, eps)
                             },
                             #' @description
-                            #' Forecast expected value
-                            #' @param h Numeric scalar, number of steps ahead.
-                            #' @param X0 Numeric vector with length `p + q`, state vector of past values.
+                            #' Forecast expected value. See the function \code{\link{ARMA_expectation}} for more details.
+                            #' @param h integer(1), number of steps ahead.
+                            #' @param X0 numeric vector of size p + q. State vector of past values.
                             expectation = function(h = 1, X0){
                               if (missing(X0)){
                                 X0 <- rep(0, sum(self$order))
@@ -102,9 +117,9 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                               ARMA_expectation(h, X0, self$A, self$b, self$intercept)
                             },
                             #' @description
-                            #' Forecast variance
-                            #' @param h Numeric scalar, number of steps ahead.
-                            #' @param sigma2 Numeric scalar, std. deviation of the residuals.
+                            #' Forecast variance. See the function \code{\link{ARMA_variance}} for more details.
+                            #' @param h integer(1), number of steps ahead.
+                            #' @param sigma2 integer(1), standard deviation of the residuals.
                             variance = function(h = 1, sigma2 = 1){
                               ARMA_variance(h, self$A, self$b, sigma2)
                             },
@@ -120,40 +135,39 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                               # Extract names
                               names_old <- names(new_coefs)
                               names_new <- names(coefficients)
-                              # Warning
-                              if (length(names_new) != length(names_old)) {
-                                cli::cli_alert_warning("In ARMA_model$update(): The lenght of new `coefficients` do not match the length of the old coefficients.")
-                              }
                               # Update only if they are present
                               for(i in 1:length(coefficients)){
-                                if (names_new[i] %in% names_old) {
-                                  new_coefs[names_new[i]] <- coefficients[i]
-                                  private$..std.errors[names_new[i]] <- NA_integer_
+                                # Check if new parameters matches the parameters in the model
+                                condition <- names_new[i] %in% names_old
+                                # Update the parameter
+                                if (condition) {
+                                  old_coef <- new_coefs[names_new[i]]
+                                  if (old_coef != coefficients[i]){
+                                    new_coefs[names_new[i]] <- coefficients[i]
+                                    private[["..std.errors"]][names_new[i]] <- NA_integer_
+                                  }
                                 }
                               }
                               # Update intercept
-                              if (private$include.intercept){
-                                private$..intercept <- new_coefs["intercept"]
+                              if (self$control$include.intercept){
+                                private[["..intercept"]] <- new_coefs["intercept"]
                               }
                               # Update AR parameters
                               if (self$order[1] > 0) {
-                                private$..phi <- new_coefs[stringr::str_detect(names_old, "phi")]
+                                private[["..phi"]] <- new_coefs[stringr::str_detect(names_old, "phi")]
                               }
                               # Update MA parameters
                               if (self$order[2] > 0) {
-                                private$..theta <- new_coefs[stringr::str_detect(names_old, "theta")]
+                                private[["..theta"]] <- new_coefs[stringr::str_detect(names_old, "theta")]
                               }
-                              if (!private$include.intercept){
+                              if (!self$control$include.intercept){
                                 new_coefs <- new_coefs[-which(names_old == "intercept")]
                               } else {
                                 index <- which(names_old == "intercept")
                                 new_coefs <- c(new_coefs[-index], new_coefs[index])
                               }
-                              # Update the parameters inside the ARMA model
-                              names(new_coefs) <- names(private$..model$coef)
-                              private$..model$coef <- new_coefs
                               # Update companion matrix
-                              private$..A <- ARMA_companion_matrix(self$phi, self$theta)
+                              private[["..A"]] <- ARMA_companion_matrix(self$phi, self$theta)
                             },
                             #' @description
                             #' Update the standard errors of the parameters.
@@ -167,10 +181,6 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                               # Extract names
                               names_old <- names(new_std.errors)
                               names_new <- names(std.errors)
-                              # Warning
-                              if (length(names_new) != length(names_old)) {
-                                cli::cli_alert_warning("In ARMA_model$update_std.errors(): The lenght of new `std.errors` do not match the length of the old std. errors!")
-                              }
                               # Update only if they are present
                               for(i in 1:length(std.errors)){
                                 if (names_new[i] %in% names_old) {
@@ -178,18 +188,18 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                                 }
                               }
                               # Update private std. errors
-                              private$..std.errors <- new_std.errors
+                              private[["..std.errors"]] <- new_std.errors
                             },
                             #' @description
                             #' Update the variance of the residuals.
-                            #' @param sigma2 Numeric scalar, variance of the residuals.
+                            #' @param sigma2 integer(1), variance of the residuals.
                             update_sigma2 = function(sigma2){
                               if (!missing(sigma2)){
-                                private$..sigma2 <- sigma2
+                                private[["..sigma2"]] <- sigma2
                               }
                             },
                             #' @description
-                            #' Print method for `AR_modelR6` class.
+                            #' Print method for `ARMA_modelR6` class.
                             print = function(){
                               green <- function(x) paste0("\033[1;32m", x, "\033[0m")
                               red <- function(x) paste0("\033[1;31m", x, "\033[0m")
@@ -206,85 +216,78 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                               par.ma <- format(self$theta, digits = 4)
                               std.error.ma <- private$..std.errors[names(private$..std.errors) %in% names(par.ma)]
                               format.ma <- paste0(par.ma, " (", format(std.error.ma, digits = 3), ")")
-                              # Model name
-                              model_name <- paste0("ARMA", "(", self$order[1], ", ", self$order[2], ")")
                               # ********************************************************
-                              msg_0 <- paste0("--------------------- ", model_name, "--------------------- \n")
-                              msg_1 <- paste0("Include Intercept: ", msg_col(private$include.intercept), "\n")
-                              msg_2 <- paste0("AR: ", msg_col(self$order[1] != 0), "\n")
-                              msg_3 <- paste0("MA: ", msg_col(self$order[2] != 0), "\n")
-                              msg_4 <- paste0("Version: ", private$version, "\n")
-                              msg_5 <- "------------------------------------------------\n"
-                              msg_6 <- paste0("Intercept: ", format.intercept, " \n")
-                              msg_7 <- paste0("AR parameters: ", format.ar, " \n")
-                              msg_8 <- paste0("MA parameters: ", format.ma, " \n")
-                              cat(c(msg_0, msg_1, msg_2, msg_3, msg_4, msg_5, msg_6, msg_7, msg_8))
+                              msg0 <- paste0("--------------------- ", self$model_name, " ---------------------")
+                              cat(msg0,  "\n")
+                              cat(" Include Intercept: ", msg_col(self$control$include.intercept), "\n",
+                                  "AR: ", msg_col(self$order[1] != 0), "\n",
+                                  "MA: ", msg_col(self$order[2] != 0), "\n",
+                                  "Intercept: ", format.intercept, " \n",
+                                  "AR parameters: ", format.ar, " \n",
+                                  "MA parameters: ", format.ma, " \n",
+                                  "Version: ", private$version, "\n",
+                                  paste0(rep("-", length(strsplit(msg0, "")[[1]])-1), collapse = ""), "\n")
                             }
                           ),
                           private = list(
-                            version = "1.0.1",
-                            ..model = NA,
+                            version = "1.0.2",
                             ..arOrder = 0,
                             ..maOrder = 0,
-                            ..intercept = 0,
-                            ..phi = c(),
-                            ..theta = c(),
+                            ..intercept = c(intercept = 0),
+                            ..phi = c(phi_1 = 0),
+                            ..theta = c(theta_1 = 0),
                             ..b = c(),
                             ..A = c(),
                             ..sigma2 = 1,
-                            ..std.errors = NA,
-                            include.intercept = FALSE
+                            ..std.errors = c()
                           ),
                           active = list(
-                            #' @field model An object with the fitted ARMA model from the function [stats::arima()].
-                            model = function(){
-                              private$..model
-                            },
-                            #' @field arOrder Numeric scalar, Autoregressive order.
+                            #' @field arOrder integer(1), Autoregressive order.
                             arOrder = function(){
                               private$..arOrder
                             },
-                            #' @field maOrder Numeric scalar, Moving Average order.
+                            #' @field maOrder integer(1), Moving-Average order.
                             maOrder = function(){
                               private$..maOrder
                             },
-                            #' @field order Numeric named vector, orders of the ARMA model. The first element is the AR order, while the second the MA order.
+                            #' @field order named numeric vector of size 2. Orders of the ARMA model: the first element is the `arOrder`, while the second the `maOrder`.
                             order = function(){
-                              c(AR = self$arOrder, MA = self$maOrder)
+                              c(AR = private$..arOrder, MA = private$..maOrder)
                             },
-                            #' @field intercept Numeric named scalar, intercept of the model.
+                            #' @field intercept named integer(1), intercept of the model.
                             intercept = function(){
                               private$..intercept
                             },
-                            #' @field phi Numeric named vector, AR parameters.
+                            #' @field phi named numeric vector of size arOrder, AR parameters. If `arOrder = 0`, the parameter is zero.
                             phi = function(){
                               private$..phi
                             },
-                            #' @field theta Numeric named vector, MA parameters.
+                            #' @field theta named numeric vector of size maOrder, MA parameters. If `maOrder = 0`, the parameter is zero.
                             theta = function(){
                               private$..theta
                             },
-                            #' @field coefficients Numeric named vector, intercept and ARMA parameters.
+                            #' @field coefficients named numeric vector of size arOrder + maOrder + 1.
+                            #' The first element ie sthe intercept, then the ARMA parameters.
                             coefficients = function(){
-                              c(self$intercept, self$phi, self$theta)
+                              c(private$..intercept, private$..phi, private$..theta)
                             },
-                            #' @field std.errors Numeric named vector, std.errors of the intercept and ARMA parameters.
+                            #' @field std.errors Numeric named vector, standard errors of the intercept and ARMA parameters.
                             std.errors = function(){
                               private$..std.errors
                             },
-                            #' @field sigma2 Numeric scalar, std.errors of the residuals.
+                            #' @field sigma2 integer(1), std.errors of the residuals.
                             sigma2 = function(){
                               private$..sigma2
                             },
-                            #' @field A Numeric matrix, companion matrix to govern the transition between two time steps.  See the function [ARMA_companion_matrix()].
+                            #' @field A numeric matrix of size (arOrder + maOrder) x (arOrder + maOrder). See the function \code{\link{ARMA_companion_matrix}} for more details.
                             A = function(){
                               private$..A
                             },
-                            #' @field b Numeric vector, unitary vector for the residuals. See the function [ARMA_vector_b()].
+                            #' @field b numeric vector of size arOrder + maOrder. See the function \code{\link{ARMA_vector_b}} for more details.
                             b = function(){
                               private$..b
                             },
-                            #' @field tidy Tibble with estimated parameters and relative std. errors.
+                            #' @field tidy Tibble with estimated parameters and standard errors.
                             tidy = function(){
                               dplyr::tibble(
                                 term = names(self$coefficients),
@@ -293,4 +296,5 @@ ARMA_modelR6 <- R6::R6Class("ARMA_modelR6",
                               )
                             }
                           ))
+
 

@@ -1,4 +1,21 @@
-#' Solar seasonal functions
+#' Solar geometry and extraterrestrial radiation utilities
+#'
+#' @description
+#' `seasonalSolarFunctions` is an R6 class that implements standard solar
+#' geometry and clear-sky formulas (Duffie & Beckman, Comini).
+#'
+#' @details Implementations includes:
+#'
+#' - Day-of-year seasonal parameter \eqn{B(n)} and time equation \eqn{E(n)}
+#' - Angle conversions between radians and degrees
+#' - Solar time, hour angle, declination, and sunset hour angle
+#' - Extraterrestrial radiation on a horizontal surface \eqn{H_{on}}
+#' - Solar incidence, azimuth, altitude, and daily solar angles
+#' - Hottel-type clear-sky transmissivity and clear-sky irradiance
+#'
+#' The methods follow the notation and equations in Duffie & Beckman
+#' (*Solar Engineering of Thermal Processes*, 4th ed.) unless otherwise
+#' specified.
 #'
 #' @examples
 #' dates <- seq.Date(as.Date("2022-01-01"), as.Date("2022-12-31"), 1)
@@ -36,8 +53,7 @@
 #'
 #' @name seasonalSolarFunctions
 #' @rdname seasonalSolarFunctions
-#' @note Version 1.0.0
-#' @references Duffie, Solar Engineering of Thermal Processes Fourth Edition.
+#' @note Version 1.0.2
 #' @export
 seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                 public = list(
@@ -503,7 +519,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   }
                                 ),
                                 private = list(
-                                  version = "1.0.0",
+                                  version = "1.0.2",
                                   ..Gsc = 1367,
                                   method_ = ""
                                 ),

@@ -4,9 +4,18 @@
 #' object against the estimated Gaussian mixture distribution.
 #'
 #' @param model An object of the class `solarModel`
-#' @param test Character, null hypothesis for the residuals distribution `"gm"` for Gaussian mixture and `"norm"` for normality.
+#' @param H0 Character, null hypothesis for the residuals distribution. Can be:
+#' \describe{
+#'  \item{`"gm"`}{for a test against a gaussian mixture distribution;}
+#'  \item{`"norm"`}{for a test against a gaussian distribution.}
+#'}
+#' @param type character(1), type of test. Can be:
+#' \describe{
+#'  \item{`"train"`}{the test is performed only on train data;}
+#'  \item{`"test"`}{the test is performed only on test data;}
+#'  \item{`"full"`}{the test is performed only on the full data.}
+#'}
 #' @inheritParams ks_test
-#' @param type Type of test.
 #'
 #' @examples
 #' model = solarModel$new(spec)
@@ -15,15 +24,16 @@
 #'
 #' @rdname solarModel_test_distribution
 #' @name solarModel_test_distribution
-#' @keywords solarModel_test
+#' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
-solarModel_test_distribution <- function(model, H0 = c("gm", "norm"), ci = 0.05, min_quantile = 0.025, max_quantile = 0.985,
-                                         type = c("train", "test", "full")){
-  # Null on the distribution
-  test_H0 <- match.arg(H0, choices = c("gm", "norm"))
-  # Type of data
+solarModel_test_distribution <- function(model, H0 = "gm", type = "full", ci = 0.05, min_quantile = 0.025, max_quantile = 0.985){
+
+  # Match H0 for the target distribution
+  H0 <- match.arg(H0, choices = c("gm", "norm"))
+  # Type of data used
   type = match.arg(type, choices = c("train", "test", "full"))
+
   # Extract data
   data <- model$data
   # Filter to exclude or not test data
@@ -37,20 +47,31 @@ solarModel_test_distribution <- function(model, H0 = c("gm", "norm"), ci = 0.05,
   for(nmonth in 1:12){
     # Residuals
     x <- dplyr::filter(data, Month == nmonth)$u_tilde
-    if (test_H0 == "norm"){
+    if (H0 == "norm"){
+      mu_x <- mean(x)
+      sd_x <- sd(x)
       # Normal CDF
-      cdf_Yt <- function(x) pnorm(x, mean(x), sd(x))
+      cdf_Yt <- function(x) pnorm(x, mu_x, sd_x)
     } else {
-      # Gaussian mixture model
-      gm <- model$NM_model$model[[nmonth]]
+      # Gaussian mixture parameters
+      gm <- model$spec$mixture.model$model[[nmonth]]
+      mu_x <- gm$means
+      sd_x <- gm$sd
+      prob <- gm$p
       # Mixture CDF
-      cdf_Yt <- function(x) pmixnorm(x, gm$means, gm$sd, gm$p)
+      cdf_Yt <- function(x) pmixnorm(x, mu_x, sd_x, prob)
     }
     # Distribution test
     tests[[nmonth]] <- ks_test(x, cdf_Yt, ci = ci, min_quantile = min_quantile, max_quantile = max_quantile)
   }
-  tests <- dplyr::bind_cols(Month = 1:12, test_H0 = test_H0, data = type, dplyr::bind_rows(tests))
-  tests$result <- ifelse(tests$H0 == "Non-Rejected", "Passed", "Not-passed")
+  # Unique dataset
+  tests <- dplyr::bind_rows(tests)
+  # Output
+  tests <- dplyr::bind_cols(Month = 1:12,
+                            H0 = H0,
+                            type = type,
+                            tests[,-6],
+                            result = ifelse(tests$H0 == "Non-Rejected", "Passed", "Not-passed"))
   return(tests)
 }
 
@@ -59,10 +80,14 @@ solarModel_test_distribution <- function(model, H0 = c("gm", "norm"), ci = 0.05,
 #' Evaluate the autocorrelation in the components of a `solarModel` object.
 #'
 #' @param model An object of the class `solarModel`
-#' @param lag.max Numeric, scalar. Maximum lag to consider for the test.
-#' @param ci Numeric, scalar. Minimum p-value to consider the test `"passed"`.
-#' @param method Character, type of test. Can be `"bg"` for Breusch-Godfrey, `"bp"` for Box-pierce and `"lb"` for BLjung-Box.
-#' @param train_data Logical, when `TRUE` only train data will be used to evaluate the test, otherwise all the available sample.
+#' @param lag.max integer(1), maximum lag to consider for the test.
+#' @inheritParams solarModel_test_distribution
+#' @param method character(1), method of test performed. Can be:
+#' \describe{
+#'  \item{`"bg"`}{for Breush-Godfrey test;}
+#'  \item{`"bp"`}{for Box-pierce test;}
+#'  \item{`"lb"`}{for Ljung-Box test.}
+#'}
 #'
 #' @examples
 #' model = solarModel$new(spec)
@@ -71,29 +96,39 @@ solarModel_test_distribution <- function(model, H0 = c("gm", "norm"), ci = 0.05,
 #'
 #' @rdname solarModel_test_autocorr
 #' @name solarModel_test_autocorr
-#' @keywords solarModel_test
+#' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
-solarModel_test_autocorr <- function(model, lag.max = 3, ci = 0.05, method = c("bg", "bp", "lb"), type = c("train", "test", "full")){
+solarModel_test_autocorr <- function(model, nyears, method = "bg", type = "full", lag.max = 3, ci = 0.05){
   # Type of test
-  type = match.arg(type, choices = c("train", "test", "full"))
-  # Extract data
+  type <- match.arg(type, choices = c("train", "test", "full"))
+  # Method
+  method <- match.arg(method, choices = c("bg", "bp", "lb"))
+
+  # 1) Extract the data
   data <- model$data
   if (type == "train") {
     data <- data[data$isTrain & data$weights != 0,]
   } else if (type == "test") {
     data <- data[!data$isTrain,]
   }
-  # Standardized mixture residuals
-  data <- dplyr::left_join(data, dplyr::select(model$NM_model$moments, Month, mean, variance), by = c("Month"))
-  data$u <- data$u_tilde
-  data$u_tilde <- (data$u - data$mean) / sqrt(data$variance)
+
+  if (!missing(nyears)){
+    data <- dplyr::filter(data, Year %in% nyears)
+  }
+
+  # Mixture monthly moments
+  mix.mom <- dplyr::select(model$spec$mixture.model$moments, Month, mean, variance)
+  data <- dplyr::left_join(data, mix.mom, by = c("Month"))
+  # Mixture standardization
+  data$z_tilde <- (data$u_tilde - data$mean) / sqrt(data$variance)
   # Squared random variables
   data$Yt_tilde2 <- data$Yt_tilde^2
   data$eps2 <- data$eps^2
   data$eps_tilde2 <- data$eps_tilde^2
-  data$u_2 <- data$u^2
   data$u_tilde2 <- data$u_tilde^2
+  data$z_tilde2 <- data$z_tilde^2
+
   # Autocorrelation test Breusch-Godfrey
   bg_test <- function(target, data, lag.max, ci, expected = "Not-rejected"){
     formula <- as.formula(paste0(target, "~ 1"))
@@ -128,16 +163,20 @@ solarModel_test_autocorr <- function(model, lag.max = 3, ci = 0.05, method = c("
     test$result <- ifelse(test$H0 == expected, "passed", "Not-passed")
     return(test)
   }
-  # Residuals
-  targets <- c("Yt_tilde", "eps", "eps_tilde", "u", "u_tilde")
+
+  # Variables to test
+  ## Residuals
+  targets <- c("Yt_tilde", "eps", "eps_tilde", "u_tilde", "z_tilde")
+  ## Squared residuals
+  targets <- c(targets, "Yt_tilde2", "eps2", "eps_tilde2", "u_tilde2", "z_tilde2")
+
+  # Expected results
   expected <- c("Rejected", "Not-rejected", "Not-rejected", "Not-rejected", "Not-rejected")
-  # Squared residuals
-  targets <- c(targets, "Yt_tilde2", "eps2", "eps_tilde2", "u_2", "u_tilde2")
   expected <- c(expected, "Rejected", "Rejected", "Rejected", "Not-rejected", "Not-rejected")
   names(expected) <- targets
 
+  # Iterate the test for all the variables
   tests <- list()
-  method <- match.arg(method, choices = c("bg", "bp", "lb"))
   for(target in targets){
     if (method == "bg"){
       tests[[target]] <- bg_test(target, data, lag.max, ci, expected = expected[target])
@@ -151,37 +190,46 @@ solarModel_test_autocorr <- function(model, lag.max = 3, ci = 0.05, method = c("
   return(tests)
 }
 
+
 #' Autocorrelation and distribution tests
 #'
 #' Evaluate a Kolmogorov-Smirnov test on the residuals of a `solarModel` model
 #' object against the estimated Gaussian mixture distribution and a Breush-pagan or Box-pierce
 #' test on the residuals.
-#' @param lags Numeric vector. Lags on which perform the autocorrelation tests. Can be more than one.
+#' @param lags Numeric vector. Lags on which perform the autocorrelation tests.
 #' @inheritParams solarModel_test_distribution
 #' @inheritParams solarModel_test_autocorr
+#'
 #' @examples
 #' model = solarModel$new(spec)
 #' model$fit()
 #' solarModel_tests(model, train_data = TRUE)
+#'
 #' @rdname solarModel_tests
 #' @name solarModel_tests
-#' @keywords solarModel_test
+#' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
-solarModel_tests <- function(model, lags = c(7), ci = 0.05, min_quantile = 0.025, max_quantile = 0.985,
-                             method = "bg", type = c("train", "test", "full")){
+solarModel_tests <- function(model, lags = c(7),  method = "bg", type = "full",
+                             ci = 0.05, min_quantile = 0.025, max_quantile = 0.985){
+
+  # Number of lags to test
+  n.lags <- length(lags)
+
+
   # Tests for absence of autocorrelation
   autocorr_tests <- list()
-  for(i in 1:length(lags)){
-    autocorr_tests[[i]] <- solarModel_test_autocorr(model, lag.max = lags[i], ci = ci, method, type)
+  for(lag in lags){
+    test <- solarModel_test_autocorr(model, method = method, type = type, lag.max = lag, ci = ci)
+    autocorr_tests <- append(autocorr_tests, setNames(list(test), paste0("lag_", lag)))
   }
-  # Standard names
-  names(autocorr_tests) <- paste0("lag_", lags)
 
   # Tests for normal distribution
-  normality_test <- solarModel_test_distribution(model, H0 = "norm", ci, min_quantile, max_quantile, type)
+  normality_test <- solarModel_test_distribution(model, H0 = "norm", type = type,
+                                                 ci = ci, min_quantile = min_quantile, max_quantile = max_quantile)
   # Tests for gaussian mixture distribution
-  mixture_test <- solarModel_test_distribution(model, H0 = "gm", ci, min_quantile, max_quantile, type)
+  mixture_test <- solarModel_test_distribution(model, H0 = "gm", type = type,
+                                               ci = ci, min_quantile = min_quantile, max_quantile = max_quantile)
   structure(
     list(
       autocorr = autocorr_tests,
@@ -191,54 +239,46 @@ solarModel_tests <- function(model, lags = c(7), ci = 0.05, min_quantile = 0.025
   )
 }
 
-#' Probability Integral Transform
+#' Evaluate a KS test on the PIT.
 #'
-#' @rdname solarModel_test_PIT
-#' @name solarModel_test_PIT
-#' @keywords solarModel_test
+#' @inheritParams solarModel_test_distribution
+#' @rdname solarModel_PIT_test
+#' @name solarModel_PIT_test
+#' @details See the functions \code{\link{solarModel_PIT}} and \code{\link{ks_test}} for more details.
+#' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
-solarModel_test_PIT <- function(model, ci = 0.05, type = c("train", "test", "full")){
+solarModel_PIT_test <- function(model, type = "full", nyears, ci = 0.05, min_quantile = 0.015, max_quantile = 0.985){
   # Type of computation
   type = match.arg(type, choices = c("train", "test", "full"))
   # Extract conditional moments
   moments <- model$moments$conditional
-  Rt <- model$data$GHI
   if (type == "train") {
     moments <- moments[model$data$isTrain & model$data$weights != 0,]
-    Rt <- Rt[model$data$isTrain]
   } else if (type == "test") {
     moments <- moments[!model$data$isTrain,]
-    Rt <- Rt[!model$data$isTrain]
   }
-  u <- c()
-  link <- model$spec$transform$link
-  for(i in 1:nrow(moments)){
-    # Moments
-    df_n <- moments[i,]
-    # Distribution of Yt
-    cdf_Y <- function(x) pmixnorm(x, mean = c(df_n$M_Y1, df_n$M_Y0), sd = c(df_n$S_Y1, df_n$S_Y0), alpha = c(df_n$p1, 1-df_n$p1))
-    # Grades of Rt
-    u[i] <- psolarGHI(Rt[i], df_n$Ct, df_n$alpha, df_n$beta, cdf_Y, link = link)
+  if (!missing(nyears)){
+    moments <- dplyr::filter(moments, Year %in% nyears)
   }
-  moments$u <- u
-  structure(
-    list(
-      data = dplyr::select(moments, date, Year, Month, Day, u),
-      test = dplyr::bind_cols(link = model$spec$transform$link,
-                              ks_test(u, function(x) punif(x), ci = ci))
-    )
-  )
+
+  # Compute the grades
+  moments <- solarModel_PIT(model, moments)
+  # Perform a KS test on PIT
+  dplyr::bind_cols(link = model$spec$transform$link,
+                   ks_test(moments$grade, function(x) punif(x), ci = ci, min_quantile = min_quantile, max_quantile = max_quantile))
 }
+
 
 #' Compute the Log-predictive density of a solarModel
 #'
 #' @rdname solarModel_test_LPD
 #' @name solarModel_test_LPD
-#' @keywords solarModel_test
+#' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
-solarModel_test_LPD <- function(model, type = c("train", "test", "full")){
+solarModel_test_LPD <- function(model, type = "full"){
+  # Match argument
   type = match.arg(type, choices = c("train", "test", "full"))
   # Extract conditional moments
   moments <- model$moments$conditional
@@ -261,7 +301,7 @@ solarModel_test_LPD <- function(model, type = c("train", "test", "full")){
 #'
 #' @rdname solarModel_test_forecast
 #' @name solarModel_test_forecast
-#' @keywords solarModel_test
+#' @keywords solarModel
 #' @note Version 1.0.0.
 #' @export
 solarModel_test_forecast <- function(model, ci = 0.1, type = c("train", "test", "full") ){

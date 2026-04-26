@@ -137,8 +137,15 @@ solarModel_predict <- function(model, moments, lambda = 0, ci = 0.01){
     cdf_Yt_up <- psugeno(cdf_Yt_up_, lambda)
     cdf_Yt_dw <- psugeno(cdf_Yt_dw_, lambda)
   }
+  # Transform
+  transform <- model$spec$transform
+  # Bounds parameters
+  alpha <- transform$alpha
+  beta <- transform$beta
+  link <- transform$link
+
   # Expected value of Rt^q
-  e_Rt_q <- function(q = 1, pdf_Yt) integrate(function(x) model$transform$iRY(x, df_n$Ct)^q * pdf_Yt(x), lower = -Inf, upper = Inf)$value
+  e_Rt_q <- function(q = 1, pdf_Yt) integrate(function(x) transform$iRY(x, df_n$Ct)^q * pdf_Yt(x), lower = -Inf, upper = Inf)$value
 
   # Expected values
   # Mixture
@@ -158,26 +165,25 @@ solarModel_predict <- function(model, moments, lambda = 0, ci = 0.01){
 
   # Confidence interval
   # Mixture
-  df_n$ci_mix_lo <- qsolarGHI(ci, df_n$Ct, model$transform$alpha, model$transform$beta, cdf_Yt, link = model$spec$transform$link)
-  df_n$ci_mix_hi <- qsolarGHI(1-ci, df_n$Ct, model$transform$alpha, model$transform$beta, cdf_Yt, link = model$spec$transform$link)
+  df_n$ci_mix_lo <- qsolarGHI(ci, df_n$Ct, alpha, beta, cdf_Yt, link = link)
+  df_n$ci_mix_hi <- qsolarGHI(1-ci, df_n$Ct, alpha, beta, cdf_Yt, link = link)
   # Sunny state
-  df_n$ci_up_lo <- qsolarGHI(ci, df_n$Ct, model$transform$alpha, model$transform$beta, cdf_Yt_up, link = model$spec$transform$link)
-  df_n$ci_up_hi <- qsolarGHI(1-ci, df_n$Ct, model$transform$alpha, model$transform$beta, cdf_Yt_up, link = model$spec$transform$link)
+  df_n$ci_up_lo <- qsolarGHI(ci, df_n$Ct, alpha, beta, cdf_Yt_up, link = link)
+  df_n$ci_up_hi <- qsolarGHI(1-ci, df_n$Ct, alpha, beta, cdf_Yt_up, link = link)
   # Cloudy state
-  df_n$ci_dw_lo <- qsolarGHI(ci, df_n$Ct, model$transform$alpha, model$transform$beta, cdf_Yt_dw, link = model$spec$transform$link)
-  df_n$ci_dw_hi <- qsolarGHI(1-ci, df_n$Ct, model$transform$alpha, model$transform$beta, cdf_Yt_dw, link = model$spec$transform$link)
+  df_n$ci_dw_lo <- qsolarGHI(ci, df_n$Ct, alpha, beta, cdf_Yt_dw, link = link)
+  df_n$ci_dw_hi <- qsolarGHI(1-ci, df_n$Ct, alpha, beta, cdf_Yt_dw, link = link)
 
   # Number of points for the grid
   n_points <- 100
   # Compute bounds for GHI
-  lower_Rt = df_n$Ct*model$transform$bounds("Kt")[1]
-  upper_Rt = df_n$Ct*model$transform$bounds("Kt")[2]
+  lower_Rt = df_n$Ct*transform$bounds("Kt")[1]
+  upper_Rt = df_n$Ct*transform$bounds("Kt")[2]
   # Grid for PDF plot
   grid_x <- seq(lower_Rt, upper_Rt, length.out = n_points+2)[-c(1,n_points+2)]
   grid <- dplyr::tibble(x = grid_x)
   # Density GHI
-  pdf_Rt <- function(x, pdf_Yt) dsolarGHI(x, df_n$Ct, model$transform$alpha, model$transform$beta, pdf_Yt,
-                                          link = model$spec$transform$link)
+  pdf_Rt <- function(x, pdf_Yt) dsolarGHI(x, df_n$Ct, alpha, beta, pdf_Yt, link = link)
   # Density points (Mixture)
   grid$pdf_Rt_mix <- pdf_Rt(grid$x, pdf_Yt)
   # Density points (Mixture, up)
@@ -272,4 +278,39 @@ solarModel_match_params <- function(vec_params, params){
   return(params)
 }
 
+#' Compute the Probability Integral Transform (PIT)
+#'
+#' @rdname solarModel_PIT
+#' @name solarModel_PIT
+#' @keywords solarModel
+#' @note Version 1.0.3
+#' @export
+solarModel_PIT <- function(model, moments){
+  # Reference link function
+  link <- model$spec$transform$link
+  # Default moments
+  if (missing(moments)) {
+    grades <- model$moments$conditional
+  } else {
+    grades <- moments
+  }
+  # Number of observations
+  N <- nrow(grades)
+  # Realized radiation
+  Rt <- dplyr::filter(model$data, date %in% grades$date)$GHI
+  # PIT grades
+  grade <- vector("numeric", length = N)
+  for(n in 1:N){
+    # Moments
+    df_n <- grades[n,]
+    # Distribution of Yt
+    cdf_Y <- function(x) pmixnorm(x, mean = c(df_n$M_Y1, df_n$M_Y0), sd = c(df_n$S_Y1, df_n$S_Y0), alpha = c(df_n$p1, 1-df_n$p1))
+    # Grades on Rt
+    grade[n] <- psolarGHI(Rt[n], df_n$Ct, df_n$alpha, df_n$beta, cdf_Y, link = link)
+  }
+  # Add grades
+  grades$grade <- grade
+  # Select only relevant variables
+  grades[, c("date", "Year", "Month", "Day", "grade")]
+}
 

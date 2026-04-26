@@ -4,7 +4,7 @@
 \alias{solarModel_AIC_BIC}
 \title{Compute the AIC and BIC of a solarModel object}
 \usage{
-solarModel_AIC_BIC(model, target = "GHI", type = c("train", "test", "full"))
+solarModel_AIC_BIC(model, target = "GHI", type = "full")
 }
 \arguments{
 \item{model}{solarmodel}

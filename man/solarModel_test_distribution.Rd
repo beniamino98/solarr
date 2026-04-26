@@ -6,25 +6,34 @@
 \usage{
 solarModel_test_distribution(
   model,
-  H0 = c("gm", "norm"),
+  H0 = "gm",
+  type = "full",
   ci = 0.05,
   min_quantile = 0.025,
-  max_quantile = 0.985,
-  type = c("train", "test", "full")
+  max_quantile = 0.985
 )
 }
 \arguments{
 \item{model}{An object of the class \code{solarModel}}
+
+\item{H0}{Character, null hypothesis for the residuals distribution. Can be:
+\describe{
+\item{\code{"gm"}}{for a test against a gaussian mixture distribution;}
+\item{\code{"norm"}}{for a test against a gaussian distribution.}
+}}
+
+\item{type}{character(1), type of test. Can be:
+\describe{
+\item{\code{"train"}}{the test is performed only on train data;}
+\item{\code{"test"}}{the test is performed only on test data;}
+\item{\code{"full"}}{the test is performed only on the full data.}
+}}
 
 \item{ci}{p.value for rejection.}
 
 \item{min_quantile}{minimum quantile for the grid of values.}
 
 \item{max_quantile}{maximum quantile for the grid of values.}
-
-\item{type}{Type of test.}
-
-\item{test}{Character, null hypothesis for the residuals distribution \code{"gm"} for Gaussian mixture and \code{"norm"} for normality.}
 }
 \description{
 Evaluate a Kolmogorov-Smirnov test on the residuals of a \code{solarModel} model
@@ -39,4 +48,4 @@ model$fit()
 solarModel_test_distribution(model)
 
 }
-\keyword{solarModel_test}
+\keyword{solarModel}

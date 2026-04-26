@@ -10,17 +10,15 @@ Depends:
     dplyr,
     mclust
 Imports: 
-    np,
     broom,
+    mixtools,
     stringr,
     rugarch,
     purrr,
     tidyr,    
     lubridate,
     formula.tools,
-    numDeriv,
-    sp,
-    gstat
+    numDeriv
 Suggests: 
     knitr,
     rmarkdown,

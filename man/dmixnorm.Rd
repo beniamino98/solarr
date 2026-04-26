@@ -52,7 +52,7 @@ rmixnorm(n, mean = rep(0, 3), sd = rep(1, 3), alpha = rep(1/3, 3))
 Gaussian mixture density, distribution, quantile and random generator.
 }
 \details{
-Version 1.0.0.
+Version 1.0.1.
 }
 \examples{
 # Parameters

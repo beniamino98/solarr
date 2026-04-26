@@ -4,7 +4,7 @@
 \alias{solarMoments_conditional}
 \title{Compute the conditional moments}
 \usage{
-solarMoments_conditional(data, theta = 0, control_model)
+solarMoments_conditional(data, theta = 0)
 }
 \arguments{
 \item{data}{Slot \code{data} of a \code{solarModel} object. See the function \code{\link{solarModel}} for details.}

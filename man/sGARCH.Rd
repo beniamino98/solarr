@@ -9,9 +9,18 @@ Implementation of \code{rugarch} methods for a GARCH(p,q) as R6 class
 Implementation of \code{rugarch} methods for a GARCH(p,q) as R6 class
 }
 \note{
-Version 1.0.0
+Version 1.0.2
 }
 \keyword{GARCH}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{control}}{List to contain custom control parameters.}
+
+\item{\code{model_name}}{Character, model name}
+}
+\if{html}{\out{</div>}}
+}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{

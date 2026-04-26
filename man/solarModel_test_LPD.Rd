@@ -4,7 +4,7 @@
 \alias{solarModel_test_LPD}
 \title{Compute the Log-predictive density of a solarModel}
 \usage{
-solarModel_test_LPD(model, type = c("train", "test", "full"))
+solarModel_test_LPD(model, type = "full")
 }
 \description{
 Compute the Log-predictive density of a solarModel
@@ -12,4 +12,4 @@ Compute the Log-predictive density of a solarModel
 \note{
 Version 1.0.0.
 }
-\keyword{solarModel_test}
+\keyword{solarModel}

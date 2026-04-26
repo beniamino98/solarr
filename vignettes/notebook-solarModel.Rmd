@@ -50,6 +50,8 @@ Then, a solarModel can be fitted
 # Iniaitlize a solarModel object
 model <- solarModel$new(spec)
 # Fit the model
+#self <- model$.__enclos_env__$self
+#private <- model$.__enclos_env__$private
 model$fit()
 ```
 
@@ -70,11 +72,11 @@ dplyr::bind_cols(model$coefficients) %>%
 ```
 and the standard errors
 ```{r}
-bind_rows(model$seasonal_model_Yt$tidy, model$ARMA$tidy, model$seasonal_variance$tidy, model$GARCH$tidy)
+bind_rows(model$spec$seasonal.mean$tidy, model$spec$mean.model$tidy, model$spec$seasonal.variance$tidy, model$spec$variance.model$tidy)
 ```
 
 ```{r}
-model$NM_model$std.errors %>%
+model$spec$mixture.model$std.errors %>%
   knitr::kable()
 ```
 
@@ -82,11 +84,11 @@ model$NM_model$std.errors %>%
 
 ```{r}
 # Model's name 
-model$model_name
+model$spec$model_name
 # Reference location name
-model$place
+model$spec$place
 # Reference coordinates
-model$location
+model$spec$coords
 ```
 
 Data 
@@ -127,7 +129,8 @@ bind_rows(
 
 Total hessian and jacobians not implemented jet
 ```{r}
-model$var_theta
+model$hessian
+model$jacobian
 ```
 With QMLE estimate the standard errors are updated inside each model
 ```{r}
@@ -135,12 +138,12 @@ model_QMLE <- solarModel_QMLE(model)
 ```
 
 ```{r}
-bind_rows(model_QMLE$seasonal_model_Yt$tidy, 
-          model_QMLE$ARMA$tidy, 
-          model_QMLE$seasonal_variance$tidy, 
-          model_QMLE$GARCH$tidy) %>%
-  knitr::kable()
+bind_rows(model_QMLE$spec$seasonal.mean$tidy, 
+          model_QMLE$spec$mean.model$tidy, 
+          model_QMLE$spec$seasonal.variance$tidy, 
+          model_QMLE$spec$variance.model$tidy)
 ```
+
 
 ## Diagnostic 
 
@@ -182,13 +185,14 @@ solarModel_test_autocorr(model, method = "bp", lag.max = 30) %>%
 ### PIT test 
 
 ```{r}
-solarModel_test_PIT(model, 0.05, "full") %>%
+solarModel_PIT_test(model, ci = 0.05, type = "full") %>%
   knitr::kable()
 ```
 
 ### Log-predictive density 
 
 ```{r}
+
 solarModel_test_LPD(model, "full") %>%
   knitr::kable()
 ```
@@ -200,17 +204,22 @@ solarModel_test_forecast(model, 0.9, "full") %>%
   knitr::kable()
 ```
 
-
 ## Scenarios 
 
 ```{r}
+simSpec <- solarScenario_spec$new(model_QMLE, from = "2022-01-01", to = "2023-01-01", seed = 2, quiet = TRUE)
 # Simulate scenarios 
-scenario <- solarScenario(model, from = "2022-01-01", to = "2023-01-01", nsim = 10, seed = 2, by = "1 year",
-                          quiet = TRUE)
+scenario <- solarScenario$new(simSpec)
+scenario$simulate_residuals(nsim = 10)
+scenario$filter()
+solarScenario_plot(scenario)
 ```
 
 ```{r}
-solarScenario_plot(scenario)
+df_emp <- scenario$spec$emp
+df_emp$VaR <- solarScenario_VaR(scenario, 0.5)$data$VaR_alpha
+
+mean(df_emp$GHI <= df_emp$VaR)
 ```
 
 

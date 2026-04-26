@@ -5,29 +5,30 @@
 \title{Control parameters for a \code{seasonalClearsky} object}
 \usage{
 control_seasonalClearsky(
-  order = 1,
-  order_H0 = 1,
-  period = 365,
-  include.intercept = TRUE,
-  include.trend = FALSE,
   delta0 = 1.4,
   lower = 0,
   upper = 3,
   by = 0.001,
   ntol = 0,
+  eps = 0.01,
+  lambda = 100,
   quiet = FALSE
 )
 }
 \arguments{
-\item{order}{Integer scalar, number of combinations of sines and cosines.}
-
-\item{period}{Integer scalar, seasonality period. The default is 365.}
-
-\item{include.intercept}{Logical, when \code{TRUE}, the default, the intercept will be included in the clear sky model.}
-
 \item{delta0}{Numeric scalar, initial value for the optimization. The estimated clear sky is increased by delta0.}
 
-\item{ntol}{Integer scalar. Tolerance for the maximum number of violations admitted of the condition \code{clearsky > GHI}. Default is \code{0}.}
+\item{lower}{Numeric scalar, lower bound for grid of delta parameters used for optimization. Default is \code{0}.}
+
+\item{upper}{Numeric scalar, upper bound for grid of delta parameters used for optimization. Default is \code{3}.}
+
+\item{by}{Numeric scalar, step for the grid. Default is \code{0.01}.}
+
+\item{ntol}{Integer scalar, Tolerance for the maximum number of violations admitted of the condition \code{Ct > x}. The default is \code{0}.}
+
+\item{eps}{threshold parameter}
+
+\item{lambda}{penalization parameter.}
 
 \item{quiet}{Logical, when \code{FALSE}, the default, the functions displays warning or messages.}
 }
@@ -38,12 +39,12 @@ Named list of control parameters.
 Control parameters for a \code{seasonalClearsky} object
 }
 \details{
-The parameters \code{ntol}, \code{lower}, \code{upper} and \code{by} are used exclusively in \code{\link{clearsky_optimizer}}.
+The parameters \code{ntol}, \code{lower}, \code{upper} and \code{by} are used exclusively in \code{\link{clearsky_delta}}.
 }
 \note{
-Version 1.0.0
+Version 1.0.1
 }
 \examples{
 control = control_seasonalClearsky()
 }
-\keyword{control}
+\keyword{clearsky}

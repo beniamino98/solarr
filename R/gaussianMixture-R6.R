@@ -30,10 +30,12 @@
 #' @rdname gaussianMixture
 #' @name gaussianMixture
 #' @keywords gaussianMixture
-#' @note Version 1.0.0
+#' @note Version 1.0.2
 #' @export
 gaussianMixture <- R6::R6Class("gaussianMixture",
                                public = list(
+                                 #' @field control List to contain custom control parameters.
+                                 control = list(),
                                  #' @field maxit Integer, maximum number of iterations.
                                  maxit = 5000,
                                  #' @field maxrestarts Integer, maximum number of restarts.
@@ -42,33 +44,75 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  abstol = 1e-08,
                                  #' @field components Integer, number of mixture components.
                                  components = 2,
+                                 #' @field method Character, package used for fitting.
+                                 method = "mixtools",
                                  #' @description
                                  #' Initialize a `gaussianMixture` object.
                                  #' @param components (`integer(1)`), number of components.
+                                 #' @param method Character, package used to fit the parameters. Can be `mclust` or `mixtools`.
                                  #' @param maxit (`integer(1)`) Numeric, maximum number of iterations.
                                  #' @param abstol (`numeric(1)`) Numeric, absolute level for convergence.
                                  #' @param maxrestarts (`integer(1)`) Numeric, maximum number of restarts.
-                                 initialize = function(components = 2, maxit = 5000, maxrestarts = 500, abstol = 1e-08){
-                                   # Control parameters
+                                 initialize = function(components = 2, method = "mixtools", maxit = 5000, maxrestarts = 500, abstol = 1e-08){
+                                   # Maximum iteration
                                    self$maxit <- maxit
+                                   # Absolute level for convergence
                                    self$abstol <- abstol
+                                   # Maximum number of restarts
                                    self$maxrestarts <- maxrestarts
-                                   # Mixture components
+                                   # Number of components
                                    self$components <- components
-
-                                   # Initialize the means parameters
+                                   # Method for fit
+                                   self$method <- match.arg(method, choices = c("mixtools", "mclust"))
+                                   # ************************************************
+                                   # Iniitialization
+                                   ## Means
                                    init_means <- seq(-3, 3, length.out = components)
-                                   names(init_means) <- paste0("mu_", 1:components)
-                                   # Initialize the std. deviations parameters
+                                   names(init_means) <- paste0("mu", 1:components)
+                                   ## Std. deviations
                                    init_sd <- rep(1, components)
-                                   names(init_sd) <- paste0("sd_", 1:components)
-                                   # Initialize the slots with the parameters
+                                   names(init_sd) <- paste0("sd", 1:components)
+                                   ## Probabilities
                                    init_p <- rep(1/components, components)
-                                   names(init_p) <- paste0("p_", 1:components)
-                                   # Update private slots
-                                   private$..means = init_means
-                                   private$..sd = init_sd
-                                   private$..p = init_p/sum(init_p)
+                                   names(init_p) <- paste0("p", 1:components)
+                                   # ************************************************
+                                   # Initialize coefficients
+                                   private[["..means"]] <- init_means
+                                   private[["..sd"]] <- init_sd
+                                   private[["..p"]] <- init_p/sum(init_p)
+                                   # Initialize std. errors
+                                   private[["..std.errors.means"]] <- setNames(rep(NA, components), names(init_means))
+                                   private[["..std.errors.sd"]] <- setNames(rep(NA, components), names(init_sd))
+                                   private[["..std.errors.p"]] <- setNames(rep(NA, components), names(init_p))
+                                 },
+                                 #' @description
+                                 #' Set the time series internally
+                                 #' @param x vector
+                                 #' @param weights observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
+                                 set_time_series = function(x, weights){
+                                   # Add custom weights
+                                   if (missing(weights)) {
+                                     w <- rep(1, length(x))
+                                   } else {
+                                     w <- ifelse(weights == 0, 0, 1)
+                                   }
+                                   # Ensure no NA
+                                   idx_NA <- which(is.na(x))
+                                   if (!purrr::is_empty(idx_NA)) {
+                                     cli::cli_alert_warning(paste0("Some NA found at indexes: ", idx_NA, collapse = " "))
+                                     w[is.na(x)] <- 0
+                                   }
+                                   # Ensure no infinity
+                                   idx_infty <- which(is.infinite(x))
+                                   if (!purrr::is_empty(idx_infty)) {
+                                     cli::cli_alert_warning(paste0("Some infinity values found at indexes: ", idx_infty, collapse = " "))
+                                     w[is.na(x)] <- 0
+                                   }
+                                   # ************************************************
+                                   # Add x
+                                   private[["x"]] <- x
+                                   # Add weights
+                                   private[["w"]] <- w
                                  },
                                  #' @description
                                  #' Compute the log-likelihood.
@@ -151,33 +195,25 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  #' Fit the parameters with mclust package
                                  #' @param x vector
                                  #' @param weights observations weights, if a weight is equal to zero the observation is excluded, otherwise is included with unitary weight.
-                                 #' @param method Character, package used to fit the parameters. Can be `mclust` or `mixtools`.
                                  #' @param mu_target Numeric, target mean of the mixture to match.
                                  #' @param var_target Numeric, target variance of the mixture to match.
                                  #' When `missing` all the available observations will be used.
-                                 fit = function(x, weights, method = "mixtools", mu_target = NA, var_target = NA){
+                                 fit = function(x, weights, mu_target = NA, var_target = NA){
                                    # Number of observations
                                    n <- length(x)
-                                   # Weights
-                                   if (missing(weights)) {
-                                     w <- rep(1, n)
-                                   } else {
-                                     w <- ifelse(weights == 0, 0, 1)
-                                   }
-                                   if (!purrr::is_empty(w[is.na(x)])) {
-                                     w[is.na(x)] <- 0
-                                   }
+                                   self$set_time_series(x, weights)
                                    # Add time series
-                                   private$x <- x
-                                   private$w <- w
+                                   x <- private$x
+                                   w <- private$w
                                    # Fitted parameters
-                                   clust <- GM_fit(x[w!=0], method = method, components = self$components,
+                                   clust <- GM_fit(x[w!=0], method = self$method, components = self$components,
                                                    maxit = self$maxit, maxrestarts = self$maxrestarts)
                                    # Moments matching
                                    if (self$components == 2) {
                                      if (!is.na(mu_target) | !is.na(var_target)) {
                                        start_params <- unlist(purrr::flatten(clust)[-6])
-                                       clust <- GM_fit_moments_match(x[w!=0], start_params, mu_target = mu_target, var_target = var_target, maxit = self$maxit, abstol = self$abstol)
+                                       clust <- GM_fit_moments_match(x[w!=0], start_params, mu_target = mu_target, var_target = var_target,
+                                                                     maxit = self$maxit, abstol = self$abstol)
                                      }
                                    }
                                    # Update the parameters
@@ -188,16 +224,8 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    names(private$..means) <- paste0("mu", 1:self$components)
                                    names(private$..sd) <- paste0("sd", 1:self$components)
                                    names(private$..p) <- paste0("p", 1:self$components)
-                                   # E-step: posterior probabilities
-                                   private$responsabilities <- self$E_step(x)
-                                   # Calculate the log-likelihood
-                                   self$update_logLik()
-                                   # Final classification of each component
-                                   private$..fitted <- self$classify(x)
-                                   # Compute empiric parameters
-                                   self$update_empiric_parameters()
-                                   # Compute hessian matrix
-                                   self$Hessian()
+                                   # Filter
+                                   self$filter()
                                  },
                                  #' @description
                                  #' Fit the parameters (EM-algorithm)
@@ -278,37 +306,72 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    # Add time series
                                    private$x <- x
                                    private$w <- w
-                                   # E-step: posterior probabilities
-                                   private$responsabilities <- self$E_step(x)
-                                   # Calculate the log-likelihood
-                                   self$update_logLik()
-                                   # Final classification of each component
-                                   private$..fitted <- self$classify(x)
-                                   # Compute hessian matrix
-                                   self$Hessian()
+                                   # Filter
+                                   self$filter()
                                  },
                                  #' @description
                                  #' Update the parameters inside the object.
-                                 #' @param means Numeric vector, means parameters.
-                                 #' @param sd Numeric vector, std. deviation parameters.
-                                 #' @param p Numeric vector, probabilities.
+                                 #' @param means Named vector, new means parameters.
+                                 #' @param sd Named vector, new std. deviation parameters.
+                                 #' @param p Named vector, new probabilities.
                                  update = function(means, sd, p){
-                                   # Update mean parameters
+                                   # Update means
                                    if (!missing(means)) {
-                                     private$..means <- unlist(means)
+                                     # Extract old coefficients
+                                     new_coefs <- self$means
+                                     # Extract names
+                                     names_old <- names(new_coefs)
+                                     names_new <- names(means)
+                                     # Update only if they are present
+                                     for(i in 1:length(means)){
+                                       condition <- names_new[i] %in% names_old
+                                       if (condition) {
+                                         old_coef <- private[["..means"]][names_new[i]]
+                                         if (old_coef != means[i]){
+                                           private[["..std.errors.means"]][names_new[i]] <- NA_integer_
+                                           private[["..means"]][names_new[i]] <- means[i]
+                                         }
+                                       }
+                                     }
                                    }
-                                   # Update Std. deviations parameters
+                                   # ************************************************
+                                   # Update std. deviations
                                    if (!missing(sd)) {
-                                     private$..sd <- unlist(sd)
+                                     # Extract old coefficients
+                                     new_coefs <- self$sd
+                                     # Extract names
+                                     names_old <- names(new_coefs)
+                                     names_new <- names(sd)
+                                     # Update only if they are present
+                                     for(i in 1:length(sd)){
+                                       condition <- names_new[i] %in% names_old
+                                       if (condition) {
+                                         old_coef <- private[["..sd"]][names_new[i]]
+                                         if (old_coef != sd[i]){
+                                           private[["..std.errors.sd"]][names_new[i]] <- NA_integer_
+                                           private[["..sd"]][names_new[i]] <- sd[i]
+                                         }
+                                       }
+                                     }
                                    }
-                                   # Update probability parameters
+                                   # ************************************************
+                                   # Update probabilities
                                    if (!missing(p)) {
-                                     private$..p <- unlist(p)
+                                     # Extract old coefficients
+                                     new_coefs <- self$p
+                                     # Extract names
+                                     names_old <- names(new_coefs)
+                                     names_new <- names(p)
+                                     # Update only if they are present
+                                     for(i in 1:length(p)){
+                                       condition <- names_new[i] %in% names_old
+                                       old_coef <- private[["..p"]][names_new[i]]
+                                       if (old_coef != p[i]){
+                                         private[["..std.errors.p"]][names_new[i]] <- NA_integer_
+                                         private[["..p"]][names_new[i]] <- p[i]
+                                       }
+                                     }
                                    }
-                                   # Assign a unique name to the parameters
-                                   names(private$..means) <- paste0("mu", 1:self$components)
-                                   names(private$..sd) <- paste0("sd", 1:self$components)
-                                   names(private$..p) <- paste0("p", 1:self$components)
                                  },
                                  #' @description
                                  #' Update the log-likelihood with the current parameters
@@ -319,103 +382,75 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    # Set NA weights equal to zero
                                    w[is.na(x)] <- 0
                                    # Update log-likelihood
-                                   private$..loglik <- self$logLik(x[w!=0])
-                                 },
-                                 #' @description
-                                 #' Compute the parameters on the classified time series.
-                                 #' @details Applied after updating the parameters
-                                 update_empiric_parameters = function(){
-                                   # Compute empiric parameters
-                                   df_emp <- private$..fitted %>%
-                                     dplyr::mutate(x = private$x) %>%
-                                     dplyr::group_by(classification) %>%
-                                     dplyr::arrange(classification) %>%
-                                     dplyr::summarise(mu = mean(x, na.rm = TRUE),
-                                                      sd = sd(x, na.rm = TRUE),
-                                                      p = dplyr::n()/nrow(private$..fitted))
-                                   if (length(df_emp$mu) < self$components) {
-                                     cli::cli_alert_warning("Classification with ML gives only one class!")
-                                     # Store the parameters
-                                     private$empiric_params$means <- private$..means
-                                     private$empiric_params$sd <- private$..sd
-                                     private$empiric_params$p <- private$..p
-                                   } else {
-                                     # Store the parameters
-                                     private$empiric_params$means <- df_emp$mu
-                                     private$empiric_params$sd <- df_emp$sd
-                                     private$empiric_params$p <- df_emp$p
-                                   }
-                                   # Standard names
-                                   names(private$empiric_params$means) <- names(private$..means)
-                                   names(private$empiric_params$sd) <- names(private$..sd)
-                                   names(private$empiric_params$p) <- names(private$..p)
+                                   private[["..loglik"]] <- self$logLik(x[w!=0])
                                  },
                                  #' @description
                                  #' Update the responsibilities, the log-likelihood, classify again the points and recompute empiric parameters.
                                  #' @details Applied after updating the parameters
                                  filter = function(){
                                    # Update posterior probabilities
-                                   private$responsabilities <- self$E_step()
+                                   private[["..responsabilities"]] <- self$E_step()
                                    # Update log-likelihood
                                    self$update_logLik()
                                    # Final classification of each component
-                                   private$..fitted <- self$classify()
-                                   # Update empiric parameters
-                                   self$update_empiric_parameters()
+                                   private[["..fitted"]] <- self$classify()
                                    # Compute hessian matrix
                                    self$Hessian()
                                  },
                                  #' @description
                                  #' Hessian matrix `gaussianMixture` class.
                                  Hessian = function(){
-                                   # Estimated parameters
+                                   # Estimated ML parameters
                                    params <- self$coefficients
                                    # Remove last probability
                                    params$p <- params$p[-c(2)]
-                                   params <- unlist(c(params$means, params$sd, params$p))
+                                   # Vectorize
+                                   params <- unlist(purrr::flatten(params))
+                                   # Time series to use for the computation
+                                   y <- private$x[private$w != 0]
                                    # Log likelihood
-                                   logLik <- function(params, per_obs = FALSE){
+                                   logLik <- function(params, y, per_obs = FALSE){
                                      par <- list()
                                      par$means <- params[stringr::str_detect(names(params), "mu")]
                                      par$sd <- params[stringr::str_detect(names(params), "sd")]
                                      par$p <- params[stringr::str_detect(names(params), "p")]
                                      par$p <- c(par$p, 1-sum(par$p))
-                                     self$logLik(x = private$x[private$w != 0], params = par, per_obs = per_obs)
+                                     self$logLik(x = y, params = par, per_obs = per_obs)
                                    }
-                                   # Numeric computation of the Hessian
-                                   H <- numDeriv::hessian(logLik, x = params)
-                                   colnames(H) <- rownames(H) <- names(params)
-                                   # Numeric computation of the Jacobian
-                                   J <- numDeriv::jacobian(logLik, x = params, per_obs = TRUE)
-                                   colnames(J) <- names(params)
-                                   # Robust variance covariance
-                                   S <- 0
-                                   for(i in 1:nrow(J)){
-                                     S <- S + J[i,] %*% t(J[i,])
+                                   # ************************************************
+                                   coefs_names <- names(params)
+                                   # Numerical Hessian matrix at MLE
+                                   H <- numDeriv::hessian(logLik, x = params, y = y, per_obs = FALSE)
+                                   colnames(H) <- rownames(H) <- coefs_names
+                                   # Numerical Score at MLE
+                                   S <- numDeriv::jacobian(logLik, x = params, y = y, per_obs = TRUE)
+                                   colnames(S) <- coefs_names
+                                   # Cross products of the score
+                                   B <- S[1,] %*% t(S[1,])
+                                   for(i in 2:nrow(S)){
+                                     B <- B + S[i,] %*% t(S[i,])
                                    }
-                                   colnames(S) <- rownames(S) <- names(params)
+                                   colnames(B) <- rownames(B) <- coefs_names
                                    # Variance covariance matrix
-                                   Cv <- solve(H) %*% (S) %*% solve(H)
+                                   V <-  solve(-H)
+                                   # Sandwitch var-cov matrix
+                                   V_rob <- V %*% B %*% V
                                    # Jacobian for last probability
-                                   Jac <- diag(1, nrow(Cv)+1, nrow(Cv))
-                                   Jac[nrow(Cv)+1,nrow(Cv)] <- -1
-                                   colnames(Jac) <- names(params)
-                                   rownames(Jac) <- names(unlist(c(self$coefficients[[1]], self$coefficients[[2]],self$coefficients[[3]])))
+                                   d <- nrow(V_rob)
+                                   J <- diag(1, d + 1, d)
+                                   J[d + 1, d] <- -1
+                                   colnames(J) <- coefs_names
+                                   rownames(J) <- names(unlist(c(self$coefficients[[1]], self$coefficients[[2]],self$coefficients[[3]])))
+                                   # Sandwitch var-cov matrix (original)
+                                   V_rob <- J %*% V_rob %*% t(J)
                                    # Store var-cov matrix
-                                   private[["..vcov"]] <- Jac %*% Cv %*% t(Jac)
+                                   private[["..vcov"]] <- V_rob
                                    # Standard errors
-                                   std.errors <-  sqrt(diag(private[["..vcov"]]))
+                                   std.errors <-  sqrt(diag(V_rob))
                                    # Store the std. errors
-                                   private$..std.means <- std.errors[stringr::str_detect(names(std.errors), "mu")]
-                                   private$..std.sd <- std.errors[stringr::str_detect(names(std.errors), "sd")]
-                                   private$..std.p <- std.errors[stringr::str_detect(names(std.errors), "p")]
-                                   names(private$..std.p) <- names(self$p)
-                                 },
-                                 #' @description
-                                 #' Substitute the empiric parameters with EM parameters. If evaluated again
-                                 #' the EM parameters will be substituted back.
-                                 use_empiric_parameters = function(){
-                                   private$..use_empiric <- !private$..use_empiric
+                                   private$..std.errors.means <- std.errors[stringr::str_detect(names(std.errors), "mu")]
+                                   private$..std.errors.sd <- std.errors[stringr::str_detect(names(std.errors), "sd")]
+                                   private$..std.errors.p <- setNames(std.errors[stringr::str_detect(names(std.errors), "p")], names(self$p))
                                  },
                                  #' @description
                                  #' Print method for `gaussianMixture` class.
@@ -431,16 +466,15 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                    msg_2 <- paste0("Stddev: ", paste0(sd, collapse = " "), " \n")
                                    msg_3 <- paste0("Probs: ", paste0(p, collapse = " "), " \n")
                                    msg_4 <- paste0("Nobs: ", length(private$x), "\n")
-                                   msg_5 <- paste0("Use empirical moments: ", self$use_empiric, "\n")
-                                   msg_6 <- paste0("Log-Likelihood: ", format(self$loglik, digits = 3), "\n")
-                                   msg_7 <- paste0("Version: ", private$version, "\n")
+                                   msg_5 <- paste0("Log-Likelihood: ", format(self$loglik, digits = 3), "\n")
+                                   msg_6 <- paste0("Version: ", private$version, "\n")
                                    line <- paste0(c(rep("-", ifelse(missing(label), 0, -11) + length(strsplit(msg_0, "")[[1]])), "\n"), collapse = "")
                                    cat(paste0(line, msg_0, line, msg_1, msg_2, msg_3, line,
-                                              msg_4, msg_5, line, msg_6, msg_7))
+                                              msg_4, msg_5, line, msg_6))
                                  }
                                ),
                                private  = list(
-                                 version = "1.0.0",
+                                 version = "1.0.2",
                                  x = NA,
                                  w = NA,
                                  ..loglik = NA,
@@ -449,53 +483,37 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  ..sd = NA,
                                  ..p = NA,
                                  ..vcov = NA,
-                                 ..std.means = NA,
-                                 ..std.sd = NA,
-                                 ..std.p = NA,
-                                 ..use_empiric = FALSE,
-                                 empiric_params = list(),
-                                 responsabilities = NA,
-                                 ..moments = list(m1 = NA, m2 = NA, m3 = NA, m4 = NA,
-                                                  mean = NA, variance = NA, skewness = NA, kurtosis = NA, nobs = NA)
+                                 ..std.errors.means = NA,
+                                 ..std.errors.sd = NA,
+                                 ..std.errors.p = NA,
+                                 ..responsabilities = NA
                                ),
                                active = list(
                                  #' @field means Numeric vector containing the location parameter for each component.
                                  means = function(){
-                                   if (self$use_empiric) {
-                                     private$empiric_params$means
-                                   } else {
-                                     private$..means
-                                   }
+                                   private$..means
                                  },
                                  #' @field sd Numeric vector containing the scale parameter for each component.
                                  sd = function(){
-                                   if (self$use_empiric) {
-                                     private$empiric_params$sd
-                                   } else {
-                                     private$..sd
-                                   }
+                                   private$..sd
                                  },
                                  #' @field p Numeric vector containing the probability for each component.
                                  p = function(){
-                                   if (self$use_empiric) {
-                                     private$empiric_params$p
-                                   } else {
-                                     private$..p
-                                   }
+                                   private$..p
                                  },
                                  #' @field coefficients named list with mixture coefficients.
                                  coefficients = function(){
                                    # Output data
-                                   list(means = self$means, sd = self$sd, p = self$p)
-                                 },
-                                 #' @field use_empiric logical to denote if empiric parameters are currently used
-                                 use_empiric = function(){
-                                   private$..use_empiric
+                                   list(means = self$means,
+                                        sd = self$sd,
+                                        p = self$p)
                                  },
                                  #' @field std.errors named list with mixture parameters.
                                  std.errors = function(){
                                    # Output data
-                                   list(means = private$..std.means, sd = private$..std.sd, p = private$..std.p)
+                                   list(means = private$..std.errors.means,
+                                        sd = private$..std.errors.sd,
+                                        p = private$..std.errors.p)
                                  },
                                  #' @field model Tibble with mixture parameters, in order means, sd, p.
                                  model = function(){
@@ -508,19 +526,26 @@ gaussianMixture <- R6::R6Class("gaussianMixture",
                                  #' @field fitted fitted series
                                  fitted = function(){
                                    df <- private$..fitted
-                                   limit_uncertanty <- median(df$uncertanty)
-                                   dplyr::mutate(df, uncertanty = ifelse(uncertanty < limit_uncertanty, uncertanty, 0.5))
+                                   if (!is.na(df)) {
+                                     limit_uncertanty <- median(df$uncertanty)
+                                     df <- dplyr::mutate(df, uncertanty = ifelse(uncertanty < limit_uncertanty, uncertanty, 0.5))
+                                   }
+                                   return(df)
+                                 },
+                                 #' @field responsabilities resp
+                                 responsabilities = function(){
+                                   private$..responsabilities
                                  },
                                  #' @field moments Tibble with the theoric moments and the number of observations used for fit.
                                  moments = function(){
                                    # Compute the mixture moments
-                                   private$..moments <- GM_moments(self$means, self$sd, self$p)
+                                   moments <- GM_moments(self$means, self$sd, self$p)
                                    # Add number of observations
-                                   private$..moments$nobs <- length(private$x[private$w!=0])
-                                   return(dplyr::bind_cols(private$..moments))
+                                   moments$nobs <- length(private$x[private$w!=0])
+                                   return(moments)
                                  },
-                                 #' @field summary Tibble with estimated parameters, std.errors and statistics
-                                 summary = function(){
+                                 #' @field tidy Tibble with estimated parameters, std.errors and statistics
+                                 tidy = function(){
                                    df <- dplyr::bind_rows(
                                      dplyr::bind_cols(term = names(self$means), estimate = unlist(self$means), std.error = unlist(self$std.errors$means)),
                                      dplyr::bind_cols(term = names(self$sd), estimate = unlist(self$sd), std.error = unlist(self$std.errors$sd)),

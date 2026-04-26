@@ -9,7 +9,7 @@ Bounded transformation functions
 Bounded transformation functions
 }
 \note{
-Version 1.0.0.
+Version 1.0.3
 }
 \examples{
 st <- boundTransform$new()
@@ -30,9 +30,9 @@ st <- boundTransform$new()
 
 \item{\code{beta}}{Numeric, \eqn{\beta} transformation parameter.}
 
-\item{\code{monotonicity}}{Character, type of monotonicity of \eqn{g}.}
-
 \item{\code{link}}{Character, name of the link function \eqn{g}.}
+
+\item{\code{monotonicity}}{Character, type of monotonicity of \eqn{g}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -59,7 +59,7 @@ st <- boundTransform$new()
 \if{html}{\out{<a id="method-boundTransform-new"></a>}}
 \if{latex}{\out{\hypertarget{method-boundTransform-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a \code{solarTransform} object.
+Initialize a \code{boundTransform} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{boundTransform$new(alpha = 0, beta = 1, link = "invgumbel")}\if{html}{\out{</div>}}
 }
@@ -338,7 +338,7 @@ Update the slots \verb{$alpha} and \verb{$beta}.
 \if{html}{\out{<a id="method-boundTransform-print"></a>}}
 \if{latex}{\out{\hypertarget{method-boundTransform-print}{}}}
 \subsection{Method \code{print()}}{
-Print method for the class \code{solarTransform}
+Print method for the class \code{boundTransform}
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{boundTransform$print()}\if{html}{\out{</div>}}
 }

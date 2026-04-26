@@ -2,47 +2,53 @@
 % Please edit documentation in R/ARMA_model-R6.R
 \name{ARMA_modelR6}
 \alias{ARMA_modelR6}
-\title{R6 class for ARMA(p, q) model}
+\title{ARMA model}
 \description{
-R6 class for ARMA(p, q) model
-
 R6 class for ARMA(p, q) model
 }
 \note{
-Version 1.0.1
+Version 1.0.2
 }
 \seealso{
 \code{\link[stats:arima]{stats::arima()}} which is wrapped in the method \code{fit}.
 }
 \keyword{ARMA}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{control}}{list, to contain custom control parameters.}
+
+\item{\code{model_name}}{character(1), standard model name.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{model}}{An object with the fitted ARMA model from the function \code{\link[stats:arima]{stats::arima()}}.}
+\item{\code{arOrder}}{integer(1), Autoregressive order.}
 
-\item{\code{arOrder}}{Numeric scalar, Autoregressive order.}
+\item{\code{maOrder}}{integer(1), Moving-Average order.}
 
-\item{\code{maOrder}}{Numeric scalar, Moving Average order.}
+\item{\code{order}}{named numeric vector of size 2. Orders of the ARMA model: the first element is the \code{arOrder}, while the second the \code{maOrder}.}
 
-\item{\code{order}}{Numeric named vector, orders of the ARMA model. The first element is the AR order, while the second the MA order.}
+\item{\code{intercept}}{named integer(1), intercept of the model.}
 
-\item{\code{intercept}}{Numeric named scalar, intercept of the model.}
+\item{\code{phi}}{named numeric vector of size arOrder, AR parameters. If \code{arOrder = 0}, the parameter is zero.}
 
-\item{\code{phi}}{Numeric named vector, AR parameters.}
+\item{\code{theta}}{named numeric vector of size maOrder, MA parameters. If \code{maOrder = 0}, the parameter is zero.}
 
-\item{\code{theta}}{Numeric named vector, MA parameters.}
+\item{\code{coefficients}}{named numeric vector of size arOrder + maOrder + 1.
+The first element ie sthe intercept, then the ARMA parameters.}
 
-\item{\code{coefficients}}{Numeric named vector, intercept and ARMA parameters.}
+\item{\code{std.errors}}{Numeric named vector, standard errors of the intercept and ARMA parameters.}
 
-\item{\code{std.errors}}{Numeric named vector, std.errors of the intercept and ARMA parameters.}
+\item{\code{sigma2}}{integer(1), std.errors of the residuals.}
 
-\item{\code{sigma2}}{Numeric scalar, std.errors of the residuals.}
+\item{\code{A}}{numeric matrix of size (arOrder + maOrder) x (arOrder + maOrder). See the function \code{\link{ARMA_companion_matrix}} for more details.}
 
-\item{\code{A}}{Numeric matrix, companion matrix to govern the transition between two time steps.  See the function \code{\link[=ARMA_companion_matrix]{ARMA_companion_matrix()}}.}
+\item{\code{b}}{numeric vector of size arOrder + maOrder. See the function \code{\link{ARMA_vector_b}} for more details.}
 
-\item{\code{b}}{Numeric vector, unitary vector for the residuals. See the function \code{\link[=ARMA_vector_b]{ARMA_vector_b()}}.}
-
-\item{\code{tidy}}{Tibble with estimated parameters and relative std. errors.}
+\item{\code{tidy}}{Tibble with estimated parameters and standard errors.}
 }
 \if{html}{\out{</div>}}
 }
@@ -74,11 +80,11 @@ Initialize an ARMA model
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{arOrder}}{Numeric scalar, order for Autoregressive component.}
+\item{\code{arOrder}}{integer(1), order of the Autoregressive component.}
 
-\item{\code{maOrder}}{Numeric scalar, order for Moving-Average component.}
+\item{\code{maOrder}}{integer(1), order of the Moving-Average component.}
 
-\item{\code{include.intercept}}{Logical. When \code{TRUE} the intercept will be included. The default is \code{FALSE}.}
+\item{\code{include.intercept}}{logical(1), the default is \code{FALSE}. When \code{TRUE} the intercept will be included.}
 }
 \if{html}{\out{</div>}}
 }
@@ -95,7 +101,7 @@ Fit the ARMA model with \code{arima} function.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{Numeric vector, time series to fit.}
+\item{\code{x}}{numeric vector, time series to fit.}
 }
 \if{html}{\out{</div>}}
 }
@@ -104,7 +110,7 @@ Fit the ARMA model with \code{arima} function.
 \if{html}{\out{<a id="method-ARMA_modelR6-filter"></a>}}
 \if{latex}{\out{\hypertarget{method-ARMA_modelR6-filter}{}}}
 \subsection{Method \code{filter()}}{
-Filter the time-series and compute fitted values and residuals.
+Filter the time-series and compute fitted values and residuals. See the function \code{\link{ARMA_filter}} for more details.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ARMA_modelR6$filter(x)}\if{html}{\out{</div>}}
 }
@@ -112,7 +118,7 @@ Filter the time-series and compute fitted values and residuals.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{x}}{Numeric vector, time series to filter.}
+\item{\code{x}}{numeric vector, time series to filter.}
 }
 \if{html}{\out{</div>}}
 }
@@ -121,7 +127,7 @@ Filter the time-series and compute fitted values and residuals.
 \if{html}{\out{<a id="method-ARMA_modelR6-next_step"></a>}}
 \if{latex}{\out{\hypertarget{method-ARMA_modelR6-next_step}{}}}
 \subsection{Method \code{next_step()}}{
-Next step function
+Next step function. See the function \code{\link{ARMA_next_step}} for more details.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ARMA_modelR6$next_step(x, n.ahead = 1, eps = 0)}\if{html}{\out{</div>}}
 }
@@ -131,9 +137,9 @@ Next step function
 \describe{
 \item{\code{x}}{Numeric vector, state vector with past observations and residuals.}
 
-\item{\code{n.ahead}}{Numeric scalar, forecasted steps ahead.}
+\item{\code{n.ahead}}{integer(1), number of steps ahead.}
 
-\item{\code{eps}}{Numeric vector, optional realized residuals.}
+\item{\code{eps}}{optional numeric vector of length n.ahead, next step realized residuals.}
 }
 \if{html}{\out{</div>}}
 }
@@ -142,7 +148,7 @@ Next step function
 \if{html}{\out{<a id="method-ARMA_modelR6-expectation"></a>}}
 \if{latex}{\out{\hypertarget{method-ARMA_modelR6-expectation}{}}}
 \subsection{Method \code{expectation()}}{
-Forecast expected value
+Forecast expected value. See the function \code{\link{ARMA_expectation}} for more details.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ARMA_modelR6$expectation(h = 1, X0)}\if{html}{\out{</div>}}
 }
@@ -150,9 +156,9 @@ Forecast expected value
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{h}}{Numeric scalar, number of steps ahead.}
+\item{\code{h}}{integer(1), number of steps ahead.}
 
-\item{\code{X0}}{Numeric vector with length \code{p + q}, state vector of past values.}
+\item{\code{X0}}{numeric vector of size p + q. State vector of past values.}
 }
 \if{html}{\out{</div>}}
 }
@@ -161,7 +167,7 @@ Forecast expected value
 \if{html}{\out{<a id="method-ARMA_modelR6-variance"></a>}}
 \if{latex}{\out{\hypertarget{method-ARMA_modelR6-variance}{}}}
 \subsection{Method \code{variance()}}{
-Forecast variance
+Forecast variance. See the function \code{\link{ARMA_variance}} for more details.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ARMA_modelR6$variance(h = 1, sigma2 = 1)}\if{html}{\out{</div>}}
 }
@@ -169,9 +175,9 @@ Forecast variance
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{h}}{Numeric scalar, number of steps ahead.}
+\item{\code{h}}{integer(1), number of steps ahead.}
 
-\item{\code{sigma2}}{Numeric scalar, std. deviation of the residuals.}
+\item{\code{sigma2}}{integer(1), standard deviation of the residuals.}
 }
 \if{html}{\out{</div>}}
 }
@@ -222,7 +228,7 @@ Update the variance of the residuals.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{sigma2}}{Numeric scalar, variance of the residuals.}
+\item{\code{sigma2}}{integer(1), variance of the residuals.}
 }
 \if{html}{\out{</div>}}
 }
@@ -231,7 +237,7 @@ Update the variance of the residuals.
 \if{html}{\out{<a id="method-ARMA_modelR6-print"></a>}}
 \if{latex}{\out{\hypertarget{method-ARMA_modelR6-print}{}}}
 \subsection{Method \code{print()}}{
-Print method for \code{AR_modelR6} class.
+Print method for \code{ARMA_modelR6} class.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ARMA_modelR6$print()}\if{html}{\out{</div>}}
 }
