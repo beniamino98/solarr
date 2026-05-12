@@ -16,6 +16,12 @@ psugeno(cdf, lambda = 0)
 
 \item{lambda}{Numeric, distortion parameter.}
 }
+\value{
+\itemize{
+\item \code{dsugeno()} returns a density function.
+\item \code{psugeno()} returns a distribution function.
+}
+}
 \description{
 Compute the Sugeno-distorted distribution for a given distribution or density.
 }
@@ -23,12 +29,11 @@ Compute the Sugeno-distorted distribution for a given distribution or density.
 Version 1.0.0.
 }
 \examples{
-# Distribution and density
 cdf <- function(x) pnorm(x)
 pdf <- function(x) dnorm(x)
-x <- seq(-4, 4, 0.01)
-plot(x, psugeno(cdf, lambda = -0.2)(x))
-plot(x, dsugeno(pdf, cdf, lambda = -0.2)(x))
+x <- c(-1, 0, 1)
+psugeno(cdf, lambda = -0.2)(x)
+dsugeno(pdf, cdf, lambda = -0.2)(x)
 
 }
 \keyword{distributions}

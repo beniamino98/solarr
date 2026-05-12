@@ -9,6 +9,9 @@ sugeno_bounds(lambda)
 \arguments{
 \item{lambda}{Numeric, distortion parameter.}
 }
+\value{
+A named list with positive, average, and negative parameter values.
+}
 \description{
 Sugeno upper and lower parameters.
 }

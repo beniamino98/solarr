@@ -10,11 +10,11 @@ desscherMixture(mean = c(0, 0), sd = c(1, 1), alpha = c(0.5, 0.5), theta = 0)
 pesscherMixture(mean = c(0, 0), sd = c(1, 1), alpha = c(0.5, 0.5), theta = 0)
 }
 \arguments{
-\item{mean}{vector of means parameters.}
+\item{mean}{Numeric vector of component means.}
 
-\item{sd}{vector of std. deviation parameters.}
+\item{sd}{Numeric vector of component standard deviations.}
 
-\item{alpha}{vector of probability parameters for each component.}
+\item{alpha}{Numeric vector of component probabilities.}
 
 \item{theta}{Numeric, distortion parameter.}
 }

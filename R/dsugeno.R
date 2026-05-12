@@ -5,13 +5,17 @@
 #' @param cdf Function, distribution function.
 #' @param pdf Function, density function.
 #' @param lambda Numeric, distortion parameter.
+#'
+#' @return
+#' - `dsugeno()` returns a density function.
+#' - `psugeno()` returns a distribution function.
+#'
 #' @examples
-#' # Distribution and density
 #' cdf <- function(x) pnorm(x)
 #' pdf <- function(x) dnorm(x)
-#' x <- seq(-4, 4, 0.01)
-#' plot(x, psugeno(cdf, lambda = -0.2)(x))
-#' plot(x, dsugeno(pdf, cdf, lambda = -0.2)(x))
+#' x <- c(-1, 0, 1)
+#' psugeno(cdf, lambda = -0.2)(x)
+#' dsugeno(pdf, cdf, lambda = -0.2)(x)
 #'
 #' @rdname dsugeno
 #' @name dsugeno
@@ -39,6 +43,7 @@ psugeno <- function(cdf, lambda = 0){
 #' Sugeno upper and lower parameters.
 #'
 #' @param lambda Numeric, distortion parameter.
+#' @return A named list with positive, average, and negative parameter values.
 #' @rdname sugeno_bounds
 #' @name sugeno_bounds
 #' @export

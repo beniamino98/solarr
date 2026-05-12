@@ -5,7 +5,7 @@
 \alias{pmixnorm}
 \alias{qmixnorm}
 \alias{rmixnorm}
-\title{Gaussian mixture random variable}
+\title{Gaussian mixture distribution}
 \usage{
 dmixnorm(x, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), log = FALSE)
 
@@ -30,43 +30,54 @@ qmixnorm(
 rmixnorm(n, mean = rep(0, 3), sd = rep(1, 3), alpha = rep(1/3, 3))
 }
 \arguments{
-\item{x, q}{vector of quantiles.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{mean}{vector of means parameters.}
+\item{mean}{Numeric vector of component means.}
 
-\item{sd}{vector of std. deviation parameters.}
+\item{sd}{Numeric vector of component standard deviations.}
 
-\item{alpha}{vector of probability parameters for each component.}
+\item{alpha}{Numeric vector of component probabilities.}
 
-\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dmixnorm()} returns log-densities.}
 
-\item{lower.tail}{logical; if TRUE (default), probabilities are \eqn{\mathbb{P}(X < x)}, otherwise \eqn{\mathbb{P}(X \ge x)}.}
+\item{q}{Numeric vector of quantiles.}
 
-\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
 
-\item{p}{vector of probabilities.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
 
-\item{n}{number of observations. If \code{length(n) > 1}, the length is taken to be the number required.}
+\item{p}{Numeric vector of probabilities.}
+
+\item{n}{Number of observations.}
+}
+\value{
+\itemize{
+\item \code{dmixnorm()} returns a numeric vector of density values.
+\item \code{pmixnorm()} returns a numeric vector of probabilities.
+\item \code{qmixnorm()} returns a numeric vector of quantiles.
+\item \code{rmixnorm()} returns a tibble with simulated component values, component
+indicators, and the combined random draw.
+}
 }
 \description{
-Gaussian mixture density, distribution, quantile and random generator.
+Density, distribution function, quantile function, and random generation for
+a univariate Gaussian mixture.
 }
 \details{
 Version 1.0.1.
 }
 \examples{
-# Parameters
-mean = c(-3,0,3)
-sd = rep(1, 3)
-alpha = c(0.2, 0.3, 0.5)
-# Density function
-dmixnorm(3, mean, sd, alpha)
-# Distribution function
-dmixnorm(c(1.2, -3), mean, sd, alpha)
-# Quantile function
-qmixnorm(0.2, mean, sd, alpha)
-# Random generator
-rmixnorm(1000, mean, sd, alpha)
+mean <- c(-1, 1)
+sd <- c(0.5, 1)
+alpha <- c(0.4, 0.6)
+dmixnorm(c(-1, 0, 1), mean, sd, alpha)
+pmixnorm(c(-1, 0, 1), mean, sd, alpha)
+qmixnorm(c(0.25, 0.75), mean, sd, alpha)
+
+set.seed(1)
+rmixnorm(3, mean, sd, alpha)
 
 }
 \keyword{distributions}

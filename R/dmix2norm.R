@@ -1,23 +1,39 @@
-#' Density of a bivariate Gaussian mixture with 2 components.
+#' Bivariate Gaussian mixture distribution
 #'
-#' @param x matrix, on the rows the observations, on the columns the locations.
-#' @param means matrix of means for each state.
-#' @param Sigma List of variance-covariance matrices for each state.
-#' @param probs vector of joint probabilities for each state.
-#' @param log Logical, when `TRUE`, probabilities are returned as `log(p)`.
-#' @param log.p Logical, when `TRUE`, probabilities p are given as `log(p)`.
-#' @param lower.tail Logical, when `TRUE`, the default, the computed probabilities are \eqn{\mathbb{P}(X < x)}, otherwise \eqn{\mathbb{P}(X \ge x)}.
+#' Density, distribution function, and directional quantile approximation for a
+#' bivariate Gaussian mixture with four joint states.
+#'
+#' @param x Numeric matrix. Rows are observations and columns are the two
+#'   locations/components.
+#' @param p Numeric vector of probabilities.
+#' @param means Numeric matrix of component means.
+#' @param Sigma List of variance-covariance matrices.
+#' @param probs Numeric vector of joint state probabilities.
+#' @param log Logical. If `TRUE`, `dmix2norm()` or `pmix2norm()` returns values
+#'   on the log scale.
+#' @param log.p Logical. If `TRUE`, probabilities are supplied on the log scale.
+#' @param lower.tail Logical. If `TRUE`, probabilities are \eqn{P[X \le x]};
+#'   otherwise, \eqn{P[X > x]}.
+#' @param v Optional numeric direction vector used by `qmix2norm()`.
+#' @param x0 Numeric reference point used by `qmix2norm()`.
+#' @param range_s Numeric vector of length two giving the search interval for
+#'   the scalar root used by `qmix2norm()`.
+#'
+#' @return
+#' - `dmix2norm()` returns a numeric vector of density values.
+#' - `pmix2norm()` returns a numeric vector of probabilities.
+#' - `qmix2norm()` returns a numeric matrix of directional quantiles.
+#'
 #' @examples
-#' library(tidyverse)
-#' x <- matrix(runif(200, -3, 3), ncol = 2)
+#' x <- matrix(c(-1, 0, 0, 1), ncol = 2, byrow = TRUE)
 #' dmix2norm(x)
 #' pmix2norm(x)
-#' qmix2norm(x)
+#' qmix2norm(c(0.25, 0.75))
 #'
-#' @rdname d2mixnorm
-#' @aliases d2mixnorm
-#' @aliases p2mixnorm
-#' @aliases q2mixnorm
+#' @rdname dmix2norm
+#' @aliases dmix2norm
+#' @aliases pmix2norm
+#' @aliases qmix2norm
 #' @keywords distributions
 #' @details Version 1.0.0.
 #' @export

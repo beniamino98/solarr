@@ -1,32 +1,40 @@
-#' Gaussian mixture random variable
+#' Gaussian mixture distribution
 #'
-#' Gaussian mixture density, distribution, quantile and random generator.
+#' Density, distribution function, quantile function, and random generation for
+#' a univariate Gaussian mixture.
 #'
-#' @param x,q vector of quantiles.
-#' @param p vector of probabilities.
-#' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
-#' @param mean vector of means parameters.
-#' @param sd vector of std. deviation parameters.
-#' @param alpha vector of probability parameters for each component.
-#' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
-#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
-#' @param lower.tail logical; if TRUE (default), probabilities are \eqn{\mathbb{P}(X < x)}, otherwise \eqn{\mathbb{P}(X \ge x)}.
+#' @param x Numeric vector of quantiles.
+#' @param q Numeric vector of quantiles.
+#' @param p Numeric vector of probabilities.
+#' @param n Number of observations.
+#' @param mean Numeric vector of component means.
+#' @param sd Numeric vector of component standard deviations.
+#' @param alpha Numeric vector of component probabilities.
+#' @param log.p Logical. If `TRUE`, probabilities are supplied or returned on
+#'   the log scale.
+#' @param log Logical. If `TRUE`, `dmixnorm()` returns log-densities.
+#' @param lower.tail Logical. If `TRUE`, probabilities are \eqn{P[X \le x]};
+#'   otherwise, \eqn{P[X > x]}.
+#'
+#' @return
+#' - `dmixnorm()` returns a numeric vector of density values.
+#' - `pmixnorm()` returns a numeric vector of probabilities.
+#' - `qmixnorm()` returns a numeric vector of quantiles.
+#' - `rmixnorm()` returns a tibble with simulated component values, component
+#'   indicators, and the combined random draw.
 #'
 # @references Mixture Models [\href{https://en.wikipedia.org/wiki/Mixture_model}{W}].
 #'
 #' @examples
-#' # Parameters
-#' mean = c(-3,0,3)
-#' sd = rep(1, 3)
-#' alpha = c(0.2, 0.3, 0.5)
-#' # Density function
-#' dmixnorm(3, mean, sd, alpha)
-#' # Distribution function
-#' dmixnorm(c(1.2, -3), mean, sd, alpha)
-#' # Quantile function
-#' qmixnorm(0.2, mean, sd, alpha)
-#' # Random generator
-#' rmixnorm(1000, mean, sd, alpha)
+#' mean <- c(-1, 1)
+#' sd <- c(0.5, 1)
+#' alpha <- c(0.4, 0.6)
+#' dmixnorm(c(-1, 0, 1), mean, sd, alpha)
+#' pmixnorm(c(-1, 0, 1), mean, sd, alpha)
+#' qmixnorm(c(0.25, 0.75), mean, sd, alpha)
+#'
+#' set.seed(1)
+#' rmixnorm(3, mean, sd, alpha)
 #'
 #' @rdname dmixnorm
 #' @name dmixnorm

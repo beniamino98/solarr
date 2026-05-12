@@ -1,32 +1,18 @@
-#' Gaussian mixture
+#' Gaussian mixture model
 #'
-#' Fit the parameters of a gaussian mixture with k-components.
+#' R6 class for fitting and storing a univariate Gaussian mixture model.
+#'
+#' @return An R6 object of class `gaussianMixture`.
 #'
 #' @examples
-#' means = c(0.5,2)
-#' sd = rep(1, 2)
-#' p = c(0.2,  0.8)
-#' # Grid
-#' grid <- seq(-4, 4, 0.01)
-#' plot(dmixnorm(grid, means, sd, p))
-#' # Simulated sample
-#' x <- rmixnorm(5000, means, sd, p)
-#' # Gaussian mixture model
-#' gm <- gaussianMixture$new(components=2)
-#' # Fit the model
-#' gm$fit(x$X)
-#' gm
-#' self <- gm$.__enclos_env__$self
-#' private <- gm$.__enclos_env__$private
-#' # EM-algo
-#' gm$EM(x$X)
-#' # Model parameters
+#' gm <- gaussianMixture$new(components = 2)
+#' gm$update(
+#'   means = c(mu1 = -1, mu2 = 1),
+#'   sd = c(sd1 = 0.5, sd2 = 1),
+#'   p = c(p1 = 0.4, p2 = 0.6)
+#' )
 #' gm$coefficients
-#' # Fitted series
-#' gm$fitted
-#' # Theoric moments
 #' gm$moments
-#' gm$update(means = c(-2, 0, 2))
 #' @rdname gaussianMixture
 #' @name gaussianMixture
 #' @keywords gaussianMixture
