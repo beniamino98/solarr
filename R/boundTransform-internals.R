@@ -1,10 +1,11 @@
 #' List all the available link functions
 #'
-#' @example
+#' @examples
 #' boundTransform_av_links()
 #'
 #' @keywords utils
 #' @note Version 1.0.0
+#'
 #' @export
 boundTransform_av_links <- function(){
   av_links <- ls(pattern = "boundTransform_link\\.", envir = .GlobalEnv)

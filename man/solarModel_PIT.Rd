@@ -10,6 +10,6 @@ solarModel_PIT(model, moments)
 Compute the Probability Integral Transform (PIT)
 }
 \note{
-Version 1.0.3
+Version 1.0.4
 }
 \keyword{solarModel}

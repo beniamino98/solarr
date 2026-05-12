@@ -1,9 +1,17 @@
-#' GARCH_vector_b(0,2)
+#' GARCH_vector_b
 #'
+#' @param archOrder Integer, ARCH order.
+#' @param garchOrder Integer, GARCH order.
+#' @examples
+#' GARCH_vector_b(1,0)
+#' GARCH_vector_b(0,1)
+#' GARCH_vector_b(1,2)
+#' GARCH_vector_b(1,3)
 #' @rdname GARCH_vector_b
 #' @name GARCH_vector_b
+#'
 #' @keywords GARCH
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @noRd
 #' @export
 GARCH_vector_b <- function(archOrder = 1, garchOrder = 0){
@@ -11,17 +19,52 @@ GARCH_vector_b <- function(archOrder = 1, garchOrder = 0){
   p <- archOrder
   # Basis vector
   e_p <- c(1)
-  if (p > 0){
+  if (p > 0) {
     e_p <- c(e_p, rep(0, p - 1))
   }
   # Garch order
   q <- garchOrder
   # Zero vector
-  e_q <- c()
+  e_q <- c(0)
   if (q > 0){
-    e_q <- rep(0, q)
+    e_q <- c(e_q, rep(0, q - 1))
   }
   matrix(c(e_q, e_p), ncol = 1)
+}
+
+#' Construct the companion matrix of an GARCH model
+#'
+#' @param phi numeric vector of length p, AR parameters.
+#' @param theta numeric vector of length q, MA parameters.
+#' @return numeric matrix of size p+q x p+q.
+#' @examples
+#' # ARCH(1) / GARCH(1) ~ Base 2 x 2
+#' GARCH_companion_matrix(alpha = c(0.4))
+#' GARCH_companion_matrix(beta = c(0.4))
+#' # Only ARCH + 1 column of zero
+#' GARCH_companion_matrix(alpha = c(0.4, 0.3, 0.1))
+#' # Only GARCH + 1 column of zero
+#' GARCH_companion_matrix(beta = c(0.4, 0.3, 0.1))
+#' # FULL
+#' GARCH_companion_matrix(c(0.4, 0.2), c(0.3, 0))
+#' @keywords GARCH
+#' @note Version 1.0.3
+#' @rdname GARCH_companion_matrix
+#' @name GARCH_companion_matrix
+#' @export
+GARCH_companion_matrix <- function(alpha = 0, beta = 0){
+  # ARCH order
+  archOrder  <- length(alpha)
+  # GARCH order
+  garchOrder <- length(beta)
+  # Base companion matrix
+  A <- ARMA_companion_matrix(rep(1, archOrder), rep(1, garchOrder))
+  # Substitue values
+  A[1,] <- c(beta, alpha)
+  # Add attributes
+  attr(A, "arOrder") <- garchOrder
+  attr(A, "maOrder") <- archOrder
+  return(A)
 }
 
 #' Fast sGARCH filter (C)
@@ -39,15 +82,15 @@ GARCH_vector_b <- function(archOrder = 1, garchOrder = 0){
 #' x <- rnorm(1000)
 #' omega <- 0.1; alpha <- 0.05; beta <- 0.9
 #' sGARCH_filter(x, omega, alpha, beta)  # no initials
-#'
 #' # With initials (k=max(p,q)=1)
 #' sGARCH_filter(x, omega, alpha, beta, eps0 = 0, sigma20 = 0.2)
+#'
 #' @keywords GARCH
 #' @note Version 1.0.2
 #' @noRd
 #' @export
 sGARCH_filter <- function(x, omega, alpha, beta, eps0 = NULL, sigma20 = NULL) {
-  if (is.null(eps0) != is.null(sigma20)){
+  if (is.null(eps0) != is.null(sigma20)) {
     stop("Either provide both eps0 and sigma20, or neither.")
   }
   .Call("sGARCH_filter_c",
@@ -87,7 +130,6 @@ sGARCH_next_step <- function(omega, alpha, beta, eps0 = 0, sigma20 = 1){
   return(c(sigma2 = sigma2[[1]]))
 }
 
-
 #' Simulate scenarios for an sGARCH(p, q) with 2-component Gaussian mixture shocks
 #'
 #' Generates \code{B} Monte Carlo paths of length \code{n} from an sGARCH process
@@ -107,10 +149,13 @@ sGARCH_next_step <- function(omega, alpha, beta, eps0 = 0, sigma20 = 1){
 #' @examples
 #' set.seed(123)
 #' sim <- sGARCH_scenarios(B = 10, n = 500,
-#' omega = 0.05, alpha = 0.05, beta = 0.9,
-#' mu = c(0, 0), sd = c(1, 2), p_mix = 0.2)
+#' sigma2_0 = 1,
+#' omega = 0.75, alpha = 0.05, beta = 0.2,
+#' mu = c(0, 0), sd = c(1, 2), probs = 0.2)
+#' plot(sim[,"eps",2], type = "l")
+#'
 #' @keywords GARCH
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @noRd
 #' @export
 sGARCH_scenarios <- function(B = 100, n = 1000, eps0 = 0, sigma2_0, omega, alpha, beta, mu, sd, probs){
@@ -120,14 +165,15 @@ sGARCH_scenarios <- function(B = 100, n = 1000, eps0 = 0, sigma2_0, omega, alpha
   q <- length(beta)
   # Maximum lag
   k <- max(c(p, q))
-  # Simulate scenarios
-  scenarios <- list()
+  # Array of scenarios
+  sim <- array(0, dim = c(n, 5, B), dimnames = list(1:n, c("eps", "sigma2", "u", "z", "Bt"), paste0("ens", 1:B)))
   for(b in 1:B){
+    # Simulated Bernoulli
     Bt <- rbinom(n, 1, probs[1])
-    # Standardized normal residuals
+    # Simulated standardized normal residuals
     z <- rnorm(n, 0, 1)
     # Mixture simulation
-    u <- (mu[1]*Bt + mu[2]*(1-Bt)) + (sd[1]*Bt + sd[2]*(1-Bt)) * z
+    u <- (mu[1]* + mu[2]*(1-Bt)) + (sd[1]*Bt + sd[2]*(1-Bt)) * z
     # Initialization
     eps <- c(eps0)
     sigma2 <- c(sigma2_0)
@@ -135,9 +181,14 @@ sGARCH_scenarios <- function(B = 100, n = 1000, eps0 = 0, sigma2_0, omega, alpha
       sigma2[t] <- omega + sum(alpha * eps[(t-1):(t-1-p+1)]^2) + sum(beta * sigma2[(t-1):(t-1-q+1)])
       eps[t] <- sqrt(sigma2[t]) * u[t]
     }
-    scenarios[[b]] <- dplyr::tibble(t = 1:n, j = b, x = eps, sigma2 = sigma2)
+    # Store scenarios
+    sim[, "Bt",b] <- Bt
+    sim[, "z",b] <- z
+    sim[, "u",b] <- u
+    sim[, "sigma2",b] <- sigma2
+    sim[, "eps",b] <- eps
   }
-  return(scenarios)
+  return(sim)
 }
 
 #' Map unconstrained parameters to constrained GARCH coefficients
@@ -158,55 +209,71 @@ sGARCH_scenarios <- function(B = 100, n = 1000, eps0 = 0, sigma2_0, omega, alpha
 #' @return Named numeric vector \code{c(omega, alpha_1..alpha_p, beta_1..beta_q)}.
 #'
 #' @examples
-#' # eta0, kappa1..kappa2 for p+q=2
-#' zeta <- c(0, rep(0, 2))
-#' GARCH_params_to_phi(zeta, p = 1, q = 1)
+#' # eta0, kappa1 for p+q=2
+#' zeta <- rep(0, 2)
+#' sGARCH_params_to_phi(zeta, p = 1, q = 1)
+#'
+#' # eta0, p+q=1
+#' zeta <- rep(0, 1)
+#' sGARCH_params_to_phi(zeta, p = 1, q = 0)
+#' sGARCH_params_to_phi(zeta, p = 0, q = 1)
+#'
 #' @keywords GARCH
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @noRd
 #' @export
 sGARCH_params_to_phi <- function(zeta, p, q, mode = "unitOmega", eps = 0) {
 
-  sigmoid <- function(x) 1/(1 + exp(-x))
-  softmax <- function(kappa) {
-    z <- kappa - max(kappa)
-    ez <- exp(z)
-    ez / sum(ez)
+  invlogit <- function(x) 1 / (1 + exp(-x))
+
+  mode <- match.arg(mode, c("unitOmega", "targetSigma2", "freeOmega"))
+
+  m <- p + q
+  stopifnot(m >= 1)
+
+  n_required <- if (mode == "unitOmega") m else m + 1
+  if (length(zeta) != n_required) {
+    stop("Invalid zeta length.")
   }
 
-  mode <- match.arg(mode, choices = c("unitOmega","targetSigma2","freeOmega"))
-  m <- q + p
-  stopifnot(length(zeta) >= 1 + m)
+  eta0 <- unname(zeta[1])
+  tau <- eps + (1 - eps) * invlogit(eta0)
 
-  eta0  <- zeta[1]
-  kappa <- zeta[1 + seq_len(m)]
-  s  <- sigmoid(eta0)                  # in (0,1)
-  tau <- eps + (1 - eps) * s           # in (eps,1)
-  w   <- softmax(kappa)                # length m, sums to 1
+  if (m == 1) {
+    w <- 1
+    extra_start <- 2
+  } else {
+    kappa_star <- unname(zeta[2:m])
+    den <- 1 + sum(exp(kappa_star))
+    w <- c(exp(kappa_star) / den, 1 / den)
+    extra_start <- m + 1
+  }
 
-  alpha <- c(alpha1 = 0)
-  if (p > 0) {
-    alpha <- tau * w[seq_len(p)]
-    names(alpha) <- paste0("alpha",  1:p)
-  }
-  beta <- c(beta1 = 0)
-  if (q > 0) {
-    beta  <- tau * w[p + seq_len(q)]
-    names(beta) <- paste0("beta",  1:q)
-  }
+  alpha <- if (p > 0) tau * w[seq_len(p)] else numeric(0)
+  beta  <- if (q > 0) tau * w[p + seq_len(q)] else numeric(0)
 
   if (mode == "unitOmega") {
     omega <- 1 - tau
   } else if (mode == "targetSigma2") {
-    xi     <- zeta[1 + m + 1]
-    sigma2 <- exp(xi)
-    omega  <- sigma2 * (1 - tau)
-  } else { # freeOmega
-    psi   <- zeta[1 + m + 1]
-    omega <- exp(psi)
+    sigma2 <- exp(unname(zeta[extra_start]))
+    omega <- sigma2 * (1 - tau)
+  } else {
+    omega <- exp(unname(zeta[extra_start]))
   }
 
-  c(omega = omega[[1]], alpha, beta)
+  out <- c(
+    omega,
+    alpha,
+    beta
+  )
+
+  names(out) <- c(
+    "omega",
+    if (p > 0) paste0("alpha", seq_len(p)) else character(0),
+    if (q > 0) paste0("beta", seq_len(q)) else character(0)
+  )
+
+  out
 }
 
 #' Map constrained GARCH coefficients back to unconstrained parameters
@@ -221,58 +288,79 @@ sGARCH_params_to_phi <- function(zeta, p, q, mode = "unitOmega", eps = 0) {
 #' @return Numeric vector \code{(eta0, kappa_1..kappa_{p+q}, [xi|psi])}.
 #'
 #' @examples
-#' phi <- c(omega = 0.1, alpha1 = 0.05, beta1 = 0.9)
-#' GARCH_params_to_zeta(phi, p = 1, q = 1)
+#' # Original GARCH parameters
+#' phi <- c(omega = 0.15, alpha1 = 0.05, beta1 = 0.8)
+#' sGARCH_params_to_zeta(phi, p = 1, q = 1)
+#'
+#' # Original GARCH parameters
+#' phi <- c(omega = 0.85, alpha1 = 0.15)
+#' sGARCH_params_to_zeta(phi, p = 1, q = 0)
+#' phi <- c(omega = 0.85, beta1 = 0.15)
+#' sGARCH_params_to_zeta(phi, p = 0, q = 1)
+#'
 #' @keywords GARCH
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @noRd
 #' @export
 sGARCH_params_to_zeta <- function(phi, p, q, mode = "unitOmega", eps = 0) {
 
-  logit   <- function(p) log(p/(1-p))
+  logit <- function(x) log(x / (1 - x))
 
-  mode <- match.arg(mode, choices = c("unitOmega","targetSigma2","freeOmega"))
-  m <- q + p
+  mode <- match.arg(mode, c("unitOmega", "targetSigma2", "freeOmega"))
+
+  m <- p + q
   stopifnot(length(phi) == 1 + m)
 
   omega <- phi[1]
-  alpha <- phi[1 + seq_len(p)]
-  beta  <- phi[1 + p + seq_len(q)]
+  alpha <- if (p > 0) phi[1 + seq_len(p)] else numeric(0)
+  beta  <- if (q > 0) phi[1 + p + seq_len(q)] else numeric(0)
 
-  tau <- sum(alpha) + sum(beta)        # must be in (eps,1)
-  if (!(tau > eps && tau < 1)) stop("Invalid tau: sum(alpha)+sum(beta) must be in (eps,1).")
+  tau <- sum(alpha) + sum(beta)
 
-  # Recover eta0 from tau = eps + (1-eps)*sigmoid(eta0)
-  s    <- (tau - eps) / (1 - eps)
-  if (!(s > 0 && s < 1)) stop("Invalid s from tau; check eps.")
+  if (!(tau > eps && tau < 1))
+    stop("Invalid tau: sum(alpha)+sum(beta) must be in (eps,1).")
+
+  s <- (tau - eps) / (1 - eps)
   eta0 <- logit(s)
 
-  # Weights and kappa (softmax inverse up to a constant -> fix last to 0)
   w <- c(alpha, beta) / tau
-  if (any(w <= 0)) stop("All alpha/beta must be > 0 to invert softmax (or jitter).")
-  kappa <- c(log(w[1:(m-1)] / w[m]), 0)
+
+  if (any(w <= 0))
+    stop("All alpha/beta must be strictly positive.")
+
+  if (m == 1) {
+    kappa_star <- numeric(0)
+  } else {
+    kappa_star <- log(w[seq_len(m - 1)] / w[m])
+  }
 
   if (mode == "unitOmega") {
-    # Consistency check: omega should equal 1 - tau
     if (abs(omega - (1 - tau)) > 1e-10)
       stop("phi not consistent with unitOmega: omega != 1 - sum(alpha,beta).")
-    zeta <- c(eta0, kappa)
-    names(zeta) <- c("eta0", paste0("kappa", 1:m))
+
+    zeta <- c(eta0, kappa_star)
+    name_kappa <- if (length(kappa_star) > 0) {
+      paste0("kappa", seq_along(kappa_star))
+    } else {
+      character(0)
+    }
+    names(zeta) <- c("eta0", name_kappa)
     return(zeta)
   }
 
   if (mode == "targetSigma2") {
-    sigma2 <- omega / (1 - tau)        # target unconditional variance
+    sigma2 <- omega / (1 - tau)
     xi <- log(sigma2)
-    zeta <- c(eta0, kappa, xi)
-    names(zeta) <- c("eta0", paste0("kappa", 1:m), "xi")
+
+    zeta <- c(eta0, kappa_star, xi)
+    names(zeta) <- c("eta0", name_kappa, "xi")
     return(zeta)
   }
 
-  # freeOmega
-  psi  <- log(omega)
-  zeta <- c(eta0, kappa, psi)
-  names(zeta) <- c("eta0", paste0("kappa", 1:m), "psi")
+  psi <- log(omega)
+
+  zeta <- c(eta0, kappa_star, psi)
+  names(zeta) <- c("eta0", name_kappa, "psi")
   zeta
 }
 
@@ -289,10 +377,11 @@ sGARCH_params_to_zeta <- function(phi, p, q, mode = "unitOmega", eps = 0) {
 #'   where \code{extra} is 0, 1 for \code{xi}, or 1 for \code{psi} depending on \code{mode}.
 #'
 #' @examples
-#' zeta <- c(0, 0, 0)  # eta0, kappa1 (since last fixed), and psi/xi if needed
-#' GARCH_params_to_zeta_jacobian(zeta, p = 1, q = 1)
+#' # eta0, kappa1
+#' zeta <- c(0, 0, 0)
+#' sGARCH_params_to_zeta_jacobian(zeta, p = 1, q = 1)
 #' @keywords GARCH
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @noRd
 #' @export
 sGARCH_params_to_zeta_jacobian <- function(zeta, p, q, mode = "unitOmega", eps = 0) {
@@ -395,8 +484,8 @@ sGARCH_params_to_zeta_jacobian <- function(zeta, p, q, mode = "unitOmega", eps =
 #' @note Version 1.0.2
 #' @noRd
 #' @export
-sGARCH_loglik <- function(y, weights, omega, alpha, beta, eps0 = NULL, sigma20 = NULL, per_obs = FALSE){
-  if (missing(weights)){
+sGARCH_loglik <- function(y, weights = NULL, omega, alpha, beta, eps0 = NULL, sigma20 = NULL, per_obs = FALSE){
+  if (is.null(weights)) {
     weights <- rep(1, length(y))
   }
   # GARCH filter
@@ -437,10 +526,10 @@ sGARCH_loglik <- function(y, weights, omega, alpha, beta, eps0 = NULL, sigma20 =
 #' x <- rnorm(500)
 #' fit <- sGARCH_fit(x, archOrder = 1, garchOrder = 1)
 #' @keywords GARCH
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @noRd
 #' @export
-sGARCH_fit <- function(y, weights, archOrder = 1, garchOrder = 1, mode = c("unitOmega","targetSigma2","freeOmega")){
+sGARCH_fit <- function(y, weights = NULL, archOrder = 1, garchOrder = 1, mode = c("unitOmega","targetSigma2","freeOmega")){
   # Match argument
   mode <- match.arg(mode, choices = c("unitOmega","targetSigma2","freeOmega"))
   # Initial random parameters
@@ -455,15 +544,16 @@ sGARCH_fit <- function(y, weights, archOrder = 1, garchOrder = 1, mode = c("unit
   }
   # ***************************************************************
   # Log likelihood function
-  logLik_ <- function(x, per_obs = FALSE){
+  logLik_ <- function(x,  weights = NULL, per_obs = FALSE){
     # Convert bound parameters into unbounded parameters
+    zeta <- x
     if (mode == "unitOmega") {
-      zeta <- c(x, 0)
+      #zeta <- c(x, 0)
     } else {
-      zeta <- c(x[-length(x)], 0, x[length(x)])
+      #zeta <- c(x[-length(x)], 0, x[length(x)])
     }
     # Unconstraint parameters
-    phi <-  sGARCH_params_to_phi(zeta, archOrder, garchOrder, mode)
+    phi <- sGARCH_params_to_phi(zeta, archOrder, garchOrder, mode)
     # Parameters names
     params_names <- names(phi)
     # GARCH filter
@@ -472,32 +562,28 @@ sGARCH_fit <- function(y, weights, archOrder = 1, garchOrder = 1, mode = c("unit
     beta <- phi[stringr::str_detect(params_names, "beta")]
     sGARCH_loglik(y, weights, omega, alpha, beta, eps0 = NULL, sigma20 = NULL, per_obs = per_obs)
   }
-
   # Optimal parameters
   if (pq == 1){
-    opt <- optim(zeta, function(params) -logLik_(params, per_obs = FALSE),
+    opt <- optim(zeta, function(params) -logLik_(params,  weights = weights, per_obs = FALSE),
                  lower = -10, upper = 10, method = "Brent")
   } else {
-    opt <- optim(zeta, function(params) -logLik_(params, per_obs = FALSE))
+    opt <- optim(zeta, function(params) -logLik_(params, weights = weights, per_obs = FALSE))
   }
-
   # QMLE params (unconstraint)
   theta_star_qmle <- opt$par
-
   # Convert bound parameters into unbounded parameters
   if (mode == "unitOmega") {
-    theta_star_qmle_full <- c(theta_star_qmle, 0)
+    #theta_star_qmle_full <- c(theta_star_qmle, 0)
   } else {
-    theta_star_qmle_full <- c(theta_star_qmle[-length(theta_star_qmle)], 0, theta_star_qmle[length(theta_star_qmle)])
+    #theta_star_qmle_full <- c(theta_star_qmle[-length(theta_star_qmle)], 0, theta_star_qmle[length(theta_star_qmle)])
   }
 
   # QMLE params (constraint)
-  theta_qmle <- sGARCH_params_to_phi(theta_star_qmle_full, archOrder, garchOrder, mode)
+  theta_qmle <- sGARCH_params_to_phi(theta_star_qmle, archOrder, garchOrder, mode)
   # Jacobian
   J <- sGARCH_params_to_zeta_jacobian(theta_star_qmle, archOrder, garchOrder, mode)
   # Hessian and robust std. errors
   sandwitch <- logLik_std.errors(theta_star_qmle, logLik_, robust = TRUE)
-
   # Sandwitch var-cov matrix (constraint)
   V_orig <- J %*% sandwitch$V %*% t(J)
   std.errors <- sqrt(diag(V_orig))
@@ -560,7 +646,6 @@ sGARCH_fit_rugarch <- function(y, archOrder = 1, garchOrder = 0, mode = "unitOme
   safe_GARCH <- purrr::safely(rugarch::ugarchfit)
   # Fitted model
   model <- safe_GARCH(data = y, spec = spec)$result
-
   # Check convergence
   if (model@fit$convergence == 0) {
     # cli::cli_alert_success("GARCH routine converged!")
@@ -606,7 +691,6 @@ sGARCH_fit_rugarch <- function(y, archOrder = 1, garchOrder = 0, mode = "unitOme
   )
 }
 
-
 #' sGARCH Gaussian QMLE with rugarch or manual routine
 #'
 #' Fits an sGARCH(p, q) by Gaussian QMLE using the unconstrained parameterization
@@ -637,14 +721,12 @@ sGARCH_fit_rugarch <- function(y, archOrder = 1, garchOrder = 0, mode = "unitOme
 #' @noRd
 #' @export
 sGARCH_robust_fit <- function(y, weights, archOrder = 1, garchOrder = 0, mode = "unitOmega", method = "rugarch") {
-
   res <- NULL
   if (missing(weights)){
     if (method == "rugarch") {
       res <- sGARCH_fit_rugarch(y, archOrder, garchOrder, mode)
     }
   }
-
   if (is.null(res) | method != "rugarch") {
     if (is.null(res) && method == "rugarch" & missing(weights)) cli::cli_alert_danger("GARCH routine do not converged!")
     model <- sGARCH_fit(y, weights, archOrder, garchOrder, mode)

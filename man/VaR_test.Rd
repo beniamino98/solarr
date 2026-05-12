@@ -2,10 +2,18 @@
 % Please edit documentation in R/VaR_tests.R
 \name{VaR_test}
 \alias{VaR_test}
-\title{Evaluate VaR test}
+\title{Bernoulli test on the violations of the VaR}
 \usage{
-VaR_test(et, VaR, ci)
+VaR_test(et, VaR, ci = 0.01)
+}
+\arguments{
+\item{et}{vector or matrix of violations. On the columns different VaR on the rows observations.}
+
+\item{VaR}{vector of values at risk}
+
+\item{ci}{confidence level for the test}
 }
 \description{
-Evaluate VaR test
+Bernoulli test on the violations of the VaR
 }
+\keyword{diagnostic}

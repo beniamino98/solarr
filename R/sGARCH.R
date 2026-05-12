@@ -3,7 +3,7 @@
 #' @rdname sGARCH
 #' @name sGARCH
 #' @keywords GARCH
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @export
 sGARCH <- R6::R6Class("sGARCH",
                              public = list(
@@ -29,10 +29,12 @@ sGARCH <- R6::R6Class("sGARCH",
                                  self$model_name <- paste0("sGARCH", " (", archOrder, ", ", garchOrder, ")")
                                  # Matrix components
                                  # Companion matrix
-                                 private[["..A"]] <- ARMA_companion_matrix(rep(0, garchOrder), rep(0, archOrder))
+                                 private[["..A"]] <- GARCH_companion_matrix(alpha = rep(0, archOrder), beta = rep(0, garchOrder))
                                  # Intercept vector
-                                 private[["..d"]] <- matrix(rep(0, max(self$order)+1), ncol = 1)
-                                 private[["..d"]][1,1] <- self$omega
+                                 d <- rep(0, length(private[["..b"]]))
+                                 d[1] <- self$omega
+                                 d <- matrix(d, ncol = 1)
+                                 private[["..d"]] <- matrix(d, ncol = 1)
                                },
                                #' @description
                                #' Fit the GARCH model with `rugarch` function.
@@ -46,21 +48,24 @@ sGARCH <- R6::R6Class("sGARCH",
                                    w <- ifelse(weights == 0, 0, 1)
                                  }
                                  # GARCH fit
-                                 model <- sGARCH_robust_fit(x, w, self$archOrder, self$garchOrder, mode = self$control[["mode"]])
+                                 model <- sGARCH_robust_fit(y = x, weights = w, archOrder = self$archOrder, garchOrder = self$garchOrder,
+                                                            mode = self$control[["mode"]], method = "rugarch")
                                  # Update coefficients
                                  private[["..omega"]] <- model$omega
                                  private[["..alpha"]] <- model$alpha
-                                 private[["..beta"]] <- model$beta
+                                 private[["..beta"]]  <- model$beta
                                  # Log-likelihods
                                  private[["..log.likelihoods"]] <- model$loglik
                                  # Std. errors
                                  private[["..std.errors"]] <- model$std.errors
                                  # Matrix components
                                  # Companion matrix
-                                 private[["..A"]] <- ARMA_companion_matrix(self$beta, self$alpha)
+                                 private[["..A"]] <- GARCH_companion_matrix(alpha = self$alpha, beta = self$beta)
                                  # Intercept vector
-                                 private[["..d"]] <- matrix(rep(0, max(self$order)+1), ncol = 1)
-                                 private[["..d"]][1,1] <- self$omega
+                                 d <- rep(0, length(private[["..b"]]))
+                                 d[1] <- self$omega
+                                 d <- matrix(d, ncol = 1)
+                                 private[["..d"]] <- matrix(d, ncol = 1)
                                },
                                #' @description
                                #' Filter method from `rugarch` package to compute GARCH variance, residuals and log-likelihoods.
@@ -108,10 +113,12 @@ sGARCH <- R6::R6Class("sGARCH",
                                  }
                                  # Matrix components
                                  # Companion matrix
-                                 private[["..A"]] <- ARMA_companion_matrix(self$beta[self$beta != 0], self$alpha[self$alpha != 0])
+                                 private[["..A"]] <- GARCH_companion_matrix(alpha = self$alpha, beta = self$beta)
                                  # Intercept vector
-                                 private[["..d"]] <- matrix(rep(0, max(self$order)+1), ncol = 1)
-                                 private[["..d"]][1,1] <- self$omega
+                                 d <- rep(0, length(private[["..b"]]))
+                                 d[1] <- self$omega
+                                 d <- matrix(d, ncol = 1)
+                                 private[["..d"]] <- matrix(d, ncol = 1)
                                },
                                #' @description
                                #' Numerical computation of the std. errors of the parameters.
@@ -174,7 +181,7 @@ sGARCH <- R6::R6Class("sGARCH",
                                }
                              ),
                              private = list(
-                               version = "1.0.2",
+                               version = "1.0.3",
                                ..archOrder = 0,
                                ..garchOrder = 0,
                                ..omega = c(omega = 1),

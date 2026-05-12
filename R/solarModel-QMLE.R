@@ -44,7 +44,7 @@ solarModel_params_to_zeta <- function(model){
     }
     coefs <- c(model$spec$variance.model$omega, coefs)
     coefs_star <- sGARCH_params_to_zeta(coefs, model$spec$variance.model$archOrder, model$spec$variance.model$garchOrder)
-    coefs_star <- head(coefs_star, length(coefs_star)-1)
+    #coefs_star <- head(coefs_star, length(coefs_star)-1)
     #names(coefs_star) <- paste0(names(coefs)[-1], "_star")
     params <- c(params, coefs_star)
     params_names <- c(params_names, names(coefs))
@@ -132,7 +132,7 @@ solarModel_params_to_phi <- function(params, orig_names, GARCH_order){
   alpha <- c(alpha1 = 0)
   beta  <- c(beta1 = 0)
   if (!purrr::is_empty(coef_star)) {
-    coef_star <- c(coef_star, 0)
+    #coef_star <- c(coef_star, 0)
     # GARCH parameters
     par <- sGARCH_params_to_phi(coef_star, GARCH_order[1], GARCH_order[2])
     coefs <- c(coefs, par)
@@ -157,6 +157,7 @@ solarModel_params_to_phi <- function(params, orig_names, GARCH_order){
     )
   )
 }
+
 
 #' Quasi-likelihood function
 #'
@@ -260,7 +261,14 @@ solarModel_QMLE <- function(model, maxrestarts = 1, seed = 1, quiet = TRUE){
   # Information matrix (star)
   I <- -H
   # Var-cov matrix (star)
-  V_star <- solve(I)
+  safe_solve <- purrr::safely(solve)
+  V_star <- safe_solve(I)
+  if (is.null(V_star$result)){
+    cli::cli_alert_danger(V_star$error)
+    V_star <- H * NA
+  } else {
+    V_star <- V_star$result
+  }
   # Sandwitch var-cov matrix (star)
   V_rob_star <- V_star %*% B %*% V_star
   # Sandwitch var-cov matrix (original)
@@ -292,6 +300,5 @@ solarModel_QMLE <- function(model, maxrestarts = 1, seed = 1, quiet = TRUE){
   rownames(V_rob_star) <- colnames(V_rob_star) <- colnames(J_qmle)
   model_upd$.__enclos_env__$private$..spec$.__enclos_env__$private$..hessian  <- V_rob_star
   model_upd$.__enclos_env__$private$..spec$.__enclos_env__$private$..jacobian <- J_qmle
-
   return(model_upd)
 }

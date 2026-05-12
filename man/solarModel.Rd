@@ -15,7 +15,7 @@ models to GARCH models for residual analysis. It utilizes various private and pu
 clearsky model, compute risk drivers, detect outliers, and apply time-series models.
 }
 \note{
-Version 1.0.3
+Version 1.0.4
 }
 \examples{
 
@@ -27,7 +27,8 @@ spec
 # Model fit
 Bologna <- solarModel$new(spec)
 Bologna$fit()
-Bologna
+
+Bologna <- solarModel_QMLE(Bologna)
 solarOption_model(Bologna, Bologna$moments$conditional[1:365,])
 
 # save(spec, file = "data/Bologna.RData")
@@ -79,10 +80,6 @@ model$fit()
 \item{\code{moments}}{Get a list containing the conditional moments.}
 
 \item{\code{coefficients}}{Get the model parameters as a named list.}
-
-\item{\code{hessian}}{Get the model hessian}
-
-\item{\code{jacobian}}{Get the model jacobian}
 }
 \if{html}{\out{</div>}}
 }
@@ -108,8 +105,6 @@ model$fit()
 \item \href{#method-solarModel-update_risk_drivers}{\code{solarModel$update_risk_drivers()}}
 \item \href{#method-solarModel-update_classification}{\code{solarModel$update_classification()}}
 \item \href{#method-solarModel-filter}{\code{solarModel$filter()}}
-\item \href{#method-solarModel-Moments}{\code{solarModel$Moments()}}
-\item \href{#method-solarModel-VaR}{\code{solarModel$VaR()}}
 \item \href{#method-solarModel-logLik}{\code{solarModel$logLik()}}
 \item \href{#method-solarModel-print}{\code{solarModel$print()}}
 \item \href{#method-solarModel-clone}{\code{solarModel$clone()}}
@@ -344,54 +339,6 @@ such that the total variance of the deseasonalized residuals is zero.}
 }
 \subsection{Returns}{
 Update the slots \verb{$data}, \verb{$seasonal_data}, \verb{$monthly_data}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-Moments"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-Moments}{}}}
-\subsection{Method \code{Moments()}}{
-Compute the conditional moments
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$Moments(t_now, t_hor, theta = 0, quiet = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{t_now}}{Character date. Today date.}
-
-\item{\code{t_hor}}{Character date. Horizon date.}
-
-\item{\code{theta}}{Numeric, shift parameter for the mixture.}
-
-\item{\code{quiet}}{Logical for verbose messages.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarModel-VaR"></a>}}
-\if{latex}{\out{\hypertarget{method-solarModel-VaR}{}}}
-\subsection{Method \code{VaR()}}{
-Value at Risk for a \code{solarModel}
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarModel$VaR(moments, t_now, t_hor, theta = 0, ci = 0.05)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{moments}}{moments dataset}
-
-\item{\code{t_now}}{Character date. Today date.}
-
-\item{\code{t_hor}}{Character date. Horizon date.}
-
-\item{\code{theta}}{Numeric, shift parameter for the mixture.}
-
-\item{\code{ci}}{Confidence interval (one tail).}
-}
-\if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}

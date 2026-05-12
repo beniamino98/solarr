@@ -62,7 +62,6 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
                                    if (!quiet) warning(msg)
                                    return(NULL)
                                  }
-
                                  # Initialize simulation dataset
                                  df_sim <- df_emp[, cols_sim]
                                  # Initialize lambda
@@ -72,7 +71,6 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
                                  if (exclude_known) {
                                    df_emp <- dplyr::filter(df_emp, date >= from & date <= to)
                                  }
-
                                  # Reference location
                                  self$location <- spec$location
                                  # Reference target variable
@@ -118,7 +116,7 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
                                print = function(){
                                  cat("---------------- solarScenario Specification ----------------  \n")
                                  cat(paste0("Place: ", self$place, "\n"))
-                                 cat(paste0("From - To: ", from, " - ", to, "\n"))
+                                 cat(paste0("From - To: ", self$control[["from"]], " - ", self$control[["to"]], "\n"))
                                  cat(paste0("Number of simulations: ", self$nsim, "\n"))
                                  cat(paste0("Version: ", private$version, "\n"))
                                }

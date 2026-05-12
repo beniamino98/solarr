@@ -19,18 +19,23 @@ solarMoment <- R6::R6Class("solarMoment",
                              weights = NA,
                              X0 = NA,
                              H0 = NA,
-                             date = "",
+                             t_now = "",
+                             t_hor = "",
+                             place = "",
+                             step = 1,
                              initialize = function(model, t_now, t_hor){
+                               # Reference place
+                               place <- model$spec$place
                                # Pricing date
                                t_now <- as.Date(t_now)
+                               self$t_now <- t_now
                                # Horizon date
                                t_hor <- as.Date(t_hor)
-                               self$date <- t_hor
+                               self$t_hor <- t_hor
                                # ARMA model
                                ARMA <- model$spec$mean.model
                                # GARCH model
                                GARCH <- model$spec$variance.model
-
                                # Maximum order of AR / GARCH
                                lag_max <- max(c(ARMA$order, GARCH$order))
                                # Filter data between (t_now - lag_max + 1) and t_hor
@@ -45,10 +50,10 @@ solarMoment <- R6::R6Class("solarMoment",
                                                      n = number_of_day(date),
                                                      isTrain = FALSE,
                                                      weights = 0,
-                                                     Ct = model$seasonal_model_Ct$predict(n),
-                                                     Yt_bar = model$seasonal_model_Yt$predict(n),
-                                                     sigma_bar = sqrt(model$seasonal_variance$predict(n)),
-                                                     GHI_bar = model$transform$iRY(Yt_bar, Ct)) %>%
+                                                     Ct = model$spec$seasonal_model_Ct$predict(n),
+                                                     Yt_bar = model$spec$seasonal.mean$predict(n),
+                                                     sigma_bar = sqrt(model$spec$seasonal.variance$predict(n)),
+                                                     GHI_bar = model$spec$transform$iRY(Yt_bar, Ct)) %>%
                                    dplyr::left_join(model$monthly_data, by = "Month")
                                  data <- dplyr::bind_rows(data, new_dates)
                                }
@@ -58,10 +63,7 @@ solarMoment <- R6::R6Class("solarMoment",
                                Ct <- tail(data$Ct, 1)[[1]]
                                alpha <- model$spec$transform$alpha[[1]]
                                beta <- model$spec$transform$beta[[1]]
-                               private$..bounds <- list(Ct = Ct, alpha = alpha, beta = beta)
                                private$..R_min_max <- list(R_min = Ct * (1 - alpha - beta), R_max = Ct * (1 - alpha))
-                               # Store link
-                               private$..link <- model$spec$transform$link
                                # ****************************************************************
                                # Initialize derived columns
                                weights <- data[-c(1:lag_max), c("date", "Month", "Yt_tilde_hat", "sigma_bar", "Yt_bar", "Yt_tilde_uncond",
@@ -108,13 +110,20 @@ solarMoment <- R6::R6Class("solarMoment",
                                }
                                # Store state vector
                                self$X0 <- c(Y0, eps0)
-                               self$H0 <- c(data$eps_tilde[lag_max]^2, data$sigma[lag_max]^2)
-                               names(self$H0) <- paste0(c("eps2_tilde_0_", "sigma2_0_"), data$date[lag_max])
+                               #self$H0 <- c(data$eps_tilde[lag_max]^2, data$sigma[lag_max]^2)
+                               #names(self$H0) <- paste0(c("eps2_tilde_0_", "sigma2_0_"), data$date[lag_max])
+                               lag.arch  <- max(c(1, GARCH$archOrder))
+                               lag.garch <- max(c(1, GARCH$garchOrder))
+                               self$H0 <- c(df_t$sigma[1:lag.garch]^2, df_t$eps_tilde[1:lag.arch]^2)
+                               lab.arch <- paste0("eps2_tilde_0_", df_t$date[1:lag.arch])
+                               lab.garch <- paste0("sigma2_0_", df_t$date[1:lag.garch])
+                               names(self$H0) <- c(lab.garch, lab.arch)
                                # ****************************************************************
                                # Initialize moments data
                                df_T <- dplyr::filter(data, date == t_hor)
                                # Numbers of steps ahead
                                h <- nrow(weights)
+                               self$step <- h
                                # Remove all the known points except t
                                if (lag_max > 1){
                                  data <- data[-c(1:min(c(1, lag_max-1))),]
@@ -134,7 +143,10 @@ solarMoment <- R6::R6Class("solarMoment",
                                  M_Y0 = 1,
                                  S_Y0 = 0,
                                  p1 = df_T$p1[1],
-                                 GHI_bar = df_T$GHI_bar[1]
+                                 GHI_bar = df_T$GHI_bar[1],
+                                 Ct = Ct,
+                                 alpha = alpha,
+                                 beta = beta
                                )
                                # *******************************************************************************
                                #  0) ARMA summations
@@ -146,7 +158,7 @@ solarMoment <- R6::R6Class("solarMoment",
                                                        beta = GARCH$beta, e1 = c(1, GARCH$d[-1]))
 
                              },
-                             filter = function(theta = 0, B, t_cond){
+                             filter = function(theta = 0, B = NULL, t_cond = NULL){
                                self$filter_ARMA()
                                self$filter_NM(theta, B, t_cond)
                                self$filter_GARCH()
@@ -154,25 +166,25 @@ solarMoment <- R6::R6Class("solarMoment",
                              },
                              filter_ARMA = function(){
                                # Extract horizon
-                               h <- nrow(self$weights)
+                               # h <- nrow(self$weights)
                                # ARMA data
                                ARMA <- self$ARMA
                                # ARMA forecast
-                               df_tT <- ARMA_forecast(h, self$X0, ARMA$A, ARMA$b, intercept = ARMA$intercept)$weights[[1]]
+                               df_tT <- ARMA_forecast(self$step, self$X0, ARMA$A, ARMA$b, intercept = ARMA$intercept)$weights[[1]]
                                # *******************************************************************************
                                # Store ARMA summations
                                self$weights$psi_j <- df_tT$psi_j
                                self$weights$psi2_j <- df_tT$psi2_j
                                self$weights$Yt_tilde_hat <- df_tT$Yt_tilde_hat
                              },
-                             filter_NM = function(theta = 0, B, t_cond){
+                             filter_NM = function(theta = 0, B = NULL, t_cond = NULL){
                                # Extract weights
                                df_tT <- self$weights
                                # *******************************************************************************
                                #  1) Conditioning variable
                                # *******************************************************************************
-                               B1 <- B0 <- rep(1, nrow(df_tT))
-                               if (!missing(t_cond)) {
+                               B1 <- B0 <- rep(1, self$step)
+                               if (!is.null(t_cond)) {
                                  if (length(t_cond) == length(B)) {
                                    idx_cond <- df_tT$date %in% t_cond
                                    B1[idx_cond] <- B / df_tT$p1[idx_cond]
@@ -182,7 +194,7 @@ solarMoment <- R6::R6Class("solarMoment",
                                # *******************************************************************************
                                #  2) Mixture moments
                                # *******************************************************************************
-                               if (any(theta != 0)){
+                               if (any(theta != 0)) {
                                  df_tT$mu1 <- df_tT$mu1 + df_tT$sd1 * theta
                                  df_tT$mu2 <- df_tT$mu2 + df_tT$sd2 * theta
                                }
@@ -198,7 +210,7 @@ solarMoment <- R6::R6Class("solarMoment",
                              },
                              filter_GARCH = function(){
                                # Extract horizon
-                               h <- nrow(self$weights)
+                               h <- self$step # nrow(self$weights)
                                # Extract GARCH parameters
                                GARCH <- self$GARCH
                                # *******************************************************************************
@@ -219,7 +231,7 @@ solarMoment <- R6::R6Class("solarMoment",
                              },
                              filter_weights = function(){
                                df_tT <- self$weights
-                               h <- nrow(df_tT)
+                               h <- self$step # nrow(df_tT)
                                # *******************************************************************************
                                #  3)  Compute the series of psi
                                # *******************************************************************************
@@ -266,100 +278,23 @@ solarMoment <- R6::R6Class("solarMoment",
                                # Update psi_j
                                self$weights <- df_tT
                              },
-                             pdf_Y = function(type = c("mix", "up", "dw")){
-                               mom <- self$data
-                               type <- match.arg(type, choices = c("mix", "up", "dw"))
-                               if (type == "mix"){
-                                 means <- c(mom$M_Y1, mom$M_Y0)
-                                 sd <- c(mom$S_Y1, mom$S_Y0)
-                                 probs <- c(mom$p1, 1-mom$p1)
-                                 function(x) dmixnorm(x, means, sd, probs)
-                               } else if (type == "up"){
-                                 means <- mom$M_Y1
-                                 sd <- mom$S_Y1
-                                 function(x) dnorm(x, means, sd)
-                               } else if (type == "dw"){
-                                 means <- mom$M_Y0
-                                 sd <- mom$S_Y0
-                                 function(x) dnorm(x, means, sd)
-                               }
-                             },
-                             cdf_Y = function(type = c("mix", "up", "dw")){
-                               mom <- self$data
-                               type <- match.arg(type, choices = c("mix", "up", "dw"))
-                               if (type == "mix"){
-                                 means <- c(mom$M_Y1, mom$M_Y0)
-                                 sd <- c(mom$S_Y1, mom$S_Y0)
-                                 probs <- c(mom$p1, 1-mom$p1)
-                                 function(x) pmixnorm(x, means, sd, probs)
-                               } else if (type == "up"){
-                                 means <- mom$M_Y1
-                                 sd <- mom$S_Y1
-                                 function(x) pnorm(x, means, sd)
-                               } else if (type == "dw"){
-                                 means <- mom$M_Y0
-                                 sd <- mom$S_Y0
-                                 function(x) pnorm(x, means, sd)
-                               }
-                             },
-                             pdf_R = function(type = c("mix", "up", "dw")){
-                               type <- match.arg(type, choices = c("mix", "up", "dw"))
-                               # Pdf of Yt
-                               pdf_Y <- self$pdf_Y(type)
-                               # Extract bounds
-                               bounds <- private$..bounds
-                               Ct <- bounds$Ct
-                               alpha <- bounds$alpha
-                               beta <- bounds$beta
-                               link <- private$..link
-                               # Density of Rt
-                               function(x) dsolarGHI(x, Ct, alpha, beta, pdf_Y, link = link)
-                             },
-                             cdf_R = function(type = c("mix", "up", "dw")){
-                               type <- match.arg(type, choices = c("mix", "up", "dw"))
-                               # Pdf of Yt
-                               cdf_Y <- self$cdf_Y(type)
-                               # Extract bounds
-                               bounds <- private$..bounds
-                               Ct <- bounds$Ct
-                               alpha <- bounds$alpha
-                               beta <- bounds$beta
-                               link <- private$..link
-                               # Density of Rt
-                               function(x) psolarGHI(x, Ct, alpha, beta, cdf_Y, link = link)
-                             },
-                             Q_R = function(type = c("mix", "up", "dw")){
-                               type <- match.arg(type, choices = c("mix", "up", "dw"))
-                               # Pdf of Yt
-                               cdf_Y <- self$cdf_Y(type)
-                               # Extract bounds
-                               bounds <- private$..bounds
-                               Ct <- bounds$Ct
-                               alpha <- bounds$alpha
-                               beta <- bounds$beta
-                               link <- private$..link
-                               # Density of Rt
-                               function(p) qsolarGHI(p, Ct, alpha, beta, cdf_Y, link = link)
-                             },
                              print = function(){
-                               h <- nrow(self$weights)
-                               cat("------------- Solar Moments ------------- \n")
-                               cat(paste0("Time to maturity: ", h, "\n"))
-                               cat(paste0("t_now: ", self$data$date-h, "\n"))
-                               cat(paste0("t_hor: ", self$data$date, "\n"))
+                               cat("----------------- Solar Moment  ----------------- \n")
+                               cat(paste0("Location: ", self$place, "\n"))
+                               cat(paste0("t_now: ", self$t_now, "\n"))
+                               cat(paste0("t_hor: ", self$t_hor, "\n"))
+                               cat(paste0("Steps ahead: ", self$step, "\n"))
                              }
                            ),
                            private = list(
                              ..data = NA,
-                             ..bounds = c(),
-                             ..link = "",
                              ..R_min_max = c(),
                              ..ARMA = list(),
                              ..GARCH = list()
                            ),
                            active = list(
                              data = function(){
-                               dplyr::bind_cols(private$..data, dplyr::bind_rows(private$..bounds))
+                               private$..data
                              },
                              ARMA = function(){
                                private$..ARMA
@@ -369,9 +304,17 @@ solarMoment <- R6::R6Class("solarMoment",
                              },
                              R_min_max = function(){
                                private$..R_min_max
+                             },
+                             M_Y = function(){
+                               c(private$..data$M_Y1, private$..data$M_Y0)
+                             },
+                             S_Y = function(){
+                               c(private$..data$S_Y1, private$..data$S_Y0)
+                             },
+                             probs = function(){
+                               c(private$..data$p1, private$..data$p1)
                              }
                            ))
-
 
 
 

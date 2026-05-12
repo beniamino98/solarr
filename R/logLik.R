@@ -16,7 +16,14 @@ logLik_std.errors <- function(params, logLik, robust = TRUE){
   }
   # ***************************************************************
   # Var-cov matrix
-  V <- solve(-H)
+  safe_solve <- purrr::safely(solve)
+  V <- safe_solve(-H)
+  if (is.null(V$result)){
+    cli::cli_alert_danger(V$error)
+    V <- H * NA
+  } else {
+    V <- V$result
+  }
   rownames(V) <- colnames(V) <-params_names
   # Standard errors
   if (robust) {

@@ -144,16 +144,18 @@ detect_pattern_files <- function(dir_, pattern, file.format = "R"){
   for(file in all.files){
     file_txt <- readLines(file.path(dir_, file))
     idx.line <- which(stringr::str_detect(file_txt, pattern = pattern))
+
     if (!purrr::is_empty(idx.line)) {
       idx.commented_lines <- which(purrr::map_chr(strsplit(file_txt, ""), ~.x[1]) == "#")
-      idx.line.commented <- idx.line[idx.line %in% idx.commented_lines]
+      idx.line.commented <- NA
+      if (any(idx.line %in% idx.commented_lines)){
+        idx.line.commented <- idx.line[idx.line %in% idx.commented_lines]
+      }
       idx.line <- idx.line[!(idx.line %in% idx.commented_lines)]
       info[[as.character(file)]] <- dplyr::tibble(dir = dir_, file = file, lines = paste0(idx.line, collapse = ", "), comment = idx.line.commented)
     }
   }
   dplyr::bind_rows(info)
 }
-
-
 
 

@@ -283,9 +283,9 @@ solarModel_match_params <- function(vec_params, params){
 #' @rdname solarModel_PIT
 #' @name solarModel_PIT
 #' @keywords solarModel
-#' @note Version 1.0.3
+#' @note Version 1.0.4
 #' @export
-solarModel_PIT <- function(model, moments){
+solarModel_PIT <-  function(model, moments){
   # Reference link function
   link <- model$spec$transform$link
   # Default moments
@@ -296,21 +296,20 @@ solarModel_PIT <- function(model, moments){
   }
   # Number of observations
   N <- nrow(grades)
+  # List of moments
+  M_Y <- as.matrix(grades[, c("M_Y1", "M_Y0")])
+  S_Y <- as.matrix(grades[, c("S_Y1", "S_Y0")])
+  p1  <- as.matrix(grades[, c("p1", "p1")])
+  p1[,2] <- 1-p1[,1]
   # Realized radiation
   Rt <- dplyr::filter(model$data, date %in% grades$date)$GHI
+  # Realized clearsky
+  Ct <- dplyr::filter(model$data, date %in% grades$date)$Ct
+  # Transform parameters
+  alpha <- model$spec$transform$alpha
+  beta  <- model$spec$transform$beta
   # PIT grades
-  grade <- vector("numeric", length = N)
-  for(n in 1:N){
-    # Moments
-    df_n <- grades[n,]
-    # Distribution of Yt
-    cdf_Y <- function(x) pmixnorm(x, mean = c(df_n$M_Y1, df_n$M_Y0), sd = c(df_n$S_Y1, df_n$S_Y0), alpha = c(df_n$p1, 1-df_n$p1))
-    # Grades on Rt
-    grade[n] <- psolarGHI(Rt[n], df_n$Ct, df_n$alpha, df_n$beta, cdf_Y, link = link)
-  }
-  # Add grades
-  grades$grade <- grade
+  grades$grade <- PIT_psolarGHI(Rt, Ct, alpha, beta, M_Y, S_Y, p1, link = link)
   # Select only relevant variables
   grades[, c("date", "Year", "Month", "Day", "grade")]
 }
-

@@ -9,7 +9,7 @@ Implementation of \code{rugarch} methods for a GARCH(p,q) as R6 class
 Implementation of \code{rugarch} methods for a GARCH(p,q) as R6 class
 }
 \note{
-Version 1.0.2
+Version 1.0.3
 }
 \keyword{GARCH}
 \section{Public fields}{

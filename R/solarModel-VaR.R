@@ -73,9 +73,11 @@ solarModel_VaR <- function(model, alpha = 0.05, ci = 0.05, ES = FALSE, type = "f
     }
   }
 
+  VaR_test(Viol_VaR_alpha, alpha, ci = ci)
+
   # 2) Perform the tests on the violations
   # Tests on the VaR
-  VaR_tests <- purrr::map_df(1:length(alpha), ~VaR_test(Viol_VaR_alpha[,.x], alpha[.x], ci = ci))
+  VaR_tests <- VaR_test(Viol_VaR_alpha, alpha, ci = ci)
 
   # 3) Summarise the results
   # Initialize a matrix to store the VaR
@@ -118,4 +120,3 @@ solarModel_VaR <- function(model, alpha = 0.05, ci = 0.05, ES = FALSE, type = "f
   }
   return(output)
 }
-

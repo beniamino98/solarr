@@ -145,12 +145,18 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' @param archOrder Integer. An integer specifying the order of the ARCH component. The default is `1`.
                                  #' @param garchOrder Integer. An integer specifying the order of the GARCH component. The default is `1`.
                                  set_variance.model = function(archOrder = 1, garchOrder = 1){
-                                   # 1) Initialize a GARCH model
-                                   private$..variance.model <- sGARCH$new(archOrder = archOrder, garchOrder = garchOrder, mode = "unitOmega")
                                    # 2) Store extra control parameters
                                    if (archOrder == 0 & garchOrder == 0){
+                                     # 1) Initialize a GARCH model
+                                     private$..variance.model <- sGARCH$new(archOrder = 1, garchOrder = 1, mode = "unitOmega")
+                                     private$..variance.model$.__enclos_env__$private$..archOrder <- 0
+                                     private$..variance.model$.__enclos_env__$private$..garchOrder <- 0
+                                     # Set garch_variance = FALSE
                                      private$..variance.model$control[["garch_variance"]] <- FALSE
                                    } else {
+                                     # 1) Initialize a GARCH model
+                                     private$..variance.model <- sGARCH$new(archOrder = archOrder, garchOrder = garchOrder, mode = "unitOmega")
+                                     # Set garch_variance = TRUE
                                      private$..variance.model$control[["garch_variance"]] <- TRUE
                                    }
                                  },

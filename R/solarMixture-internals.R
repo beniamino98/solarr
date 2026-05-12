@@ -58,7 +58,7 @@ solarMixture_moments_match <- function(coefficients, e_target, v_target, sk_targ
 #' @export
 solarMixture_VaR <- function(solarMix, date, x, alpha = 0.05, ci = 0.05, ES = FALSE){
   # Create a base dataset
-  data <- tibble(date = date, x = x)
+  data <- dplyr::tibble(date = date, x = x)
   # Number of observations
   N <- length(date)
   # Number of VaRs
@@ -66,20 +66,14 @@ solarMixture_VaR <- function(solarMix, date, x, alpha = 0.05, ci = 0.05, ES = FA
   # 1) Compute VaR, Violations and ES
   VaR_alpha <- solarMix$VaR(date, alpha)
   # Violations of the VaR
-  Viol_VaR_alpha <- VaR_alpha
-  for(i in 1:k){
-    Viol_VaR_alpha[,i] <- ifelse(x < VaR_alpha[,1], 1, 0)
-  }
+  Viol_VaR_alpha <- VaR_viol(x, VaR_alpha)
   colnames(Viol_VaR_alpha) <- paste0("e_", alpha)
+  # 2) Perform the tests on the violations
+  VaR_tests <- VaR_test(Viol_VaR_alpha, alpha, ci = ci)
   # Expected shortfall
   if (ES) {
-    ES_alpha <- sm$ES(date, alpha)
+    ES_alpha <- solarMix$ES(date, alpha)
   }
-
-  # 2) Perform the tests on the violations
-  # Tests on the VaR
-  VaR_tests <- purrr::map_df(1:length(alpha), ~VaR_test(Viol_VaR_alpha[,.x], alpha[.x], ci = ci))
-
   # 3) Summarise the results
   # Initialize a matrix to store the VaR
   VaR_alpha_emp <- dplyr::bind_rows(VaR_alpha[1,])
@@ -107,14 +101,14 @@ solarMixture_VaR <- function(solarMix, date, x, alpha = 0.05, ci = 0.05, ES = FA
   # Standard output
   output <- structure(
     list(
-      VaR = bind_cols(data, VaR_alpha),
-      Viol = bind_cols(data, Viol_VaR_alpha),
+      VaR = dplyr::bind_cols(data, VaR_alpha),
+      Viol = dplyr::bind_cols(data, Viol_VaR_alpha),
       VaR_emp = VaR_alpha_emp,
       VaR_test = VaR_tests
     )
   )
   if (ES) {
-    output$ES <- bind_cols(data, ES_alpha)
+    output$ES <- dplyr::bind_cols(data, ES_alpha)
     output$ES_tot <- dplyr::bind_cols(Type = c("Model", "Empiric"),
                                       dplyr::bind_rows(ES_alpha_mod, ES_alpha_emp))
   }

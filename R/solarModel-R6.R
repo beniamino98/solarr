@@ -21,7 +21,8 @@
 #' # Model fit
 #' Bologna <- solarModel$new(spec)
 #' Bologna$fit()
-#' Bologna
+#'
+#' Bologna <- solarModel_QMLE(Bologna)
 #' solarOption_model(Bologna, Bologna$moments$conditional[1:365,])
 #'
 #' # save(spec, file = "data/Bologna.RData")
@@ -51,7 +52,7 @@
 #' @rdname solarModel
 #' @name solarModel
 #' @keywords solarModel
-#' @note Version 1.0.3
+#' @note Version 1.0.4
 #' @export
 solarModel <- R6::R6Class("solarModel",
                           # ====================================================================================================== #
@@ -547,51 +548,6 @@ solarModel <- R6::R6Class("solarModel",
                               private$..data[["u_tilde"]] <- private$..data[["eps_tilde"]] / private$..data[["sigma"]]
                             },
                             #' @description
-                            #' Compute the conditional moments
-                            #' @param t_now Character date. Today date.
-                            #' @param t_hor Character date. Horizon date.
-                            #' @param theta Numeric, shift parameter for the mixture.
-                            #' @param quiet Logical for verbose messages.
-                            Moments = function(t_now, t_hor, theta = 0, quiet = FALSE){
-                              purrr::map_df(t_hor, ~solarMoments(t_now, .x,
-                                                                 self$data, self$spec$mean.model,
-                                                                 self$spec$variance.model,
-                                                                 self$spec$mixture.model,
-                                                                 self$spec$transform, theta = theta, quiet = quiet))
-                            },
-                            #' @description
-                            #' Value at Risk for a `solarModel`
-                            #' @param moments moments dataset
-                            #' @param t_now Character date. Today date.
-                            #' @param t_hor Character date. Horizon date.
-                            #' @param theta Numeric, shift parameter for the mixture.
-                            #' @param ci Confidence interval (one tail).
-                            VaR = function(moments, t_now, t_hor, theta = 0, ci = 0.05){
-                              # Moments
-                              if (missing(moments)) {
-                                t_seq <- seq.Date(as.Date(t_now), as.Date(t_hor), 1)[-1]
-                                moments <- purrr::map_df(t_seq, ~self$Moments(t_now, .x, theta, quiet = FALSE))
-                              }
-                              # Add realized GHI
-                              moments <- dplyr::left_join(moments, self$data[,c("date", "GHI")], by = "date")
-                              # Initialize the VaR
-                              moments$VaR <- NA
-                              for(i in 1:nrow(moments)){
-                                # Moments
-                                df_n <- moments[i,]
-                                # Quantile of Yt
-                                cdf_Y <- function(x) pmixnorm(x, mean = c(df_n$M_Y1, df_n$M_Y0), sd = c(df_n$S_Y1, df_n$S_Y0), alpha = c(df_n$p1, 1-df_n$p1))
-                                # Value at Risk with probability `ci`
-                                # moments$VaR[i] <- qsolarGHI(ci, df_n$Ct, df_n$alpha, df_n$beta, cdf_Yt)
-                                moments$VaR[i] <- qsolarGHI(ci, df_n$Ct, df_n$alpha, df_n$beta, cdf_Y, link = self$spec$transform$link)
-                              }
-                              # Violations of VaR
-                              moments$et <- ifelse(moments$GHI < moments$VaR, 1, 0)
-                              # Select only relevant variables
-                              moments <- dplyr::select(moments, date, Year, Month, Day, GHI, VaR, et)
-                              return(moments)
-                            },
-                            #' @description
                             #' Compute the log-likelihood of the model and update the slot `$loglik`.
                             #' @param moments Dataset containing the moments to use for computation.
                             #' @param target Character. Target variable to use "Yt" or "GHI".
@@ -681,7 +637,7 @@ solarModel <- R6::R6Class("solarModel",
                           #                                             Private slots
                           # ====================================================================================================== #
                           private = list(
-                            version = "1.0.3",
+                            version = "1.0.4",
                             ..spec = NA,
                             ..data = NA,
                             ..seasonal_data = NA,
@@ -724,7 +680,7 @@ solarModel <- R6::R6Class("solarModel",
                             moments = function(){
                               moments <- private$..moments
                               # Extra data to add
-                              data_extra <- dplyr::select(self$data, date, GHI_bar, Ct, p1)
+                              data_extra <- dplyr::select(self$data, date, p1, GHI_bar, Ct)
                               data_extra <- dplyr::mutate(data_extra, alpha = self$spec$transform$alpha, beta = self$spec$transform$beta)
                               # Conditional moments
                               if (length(moments$conditional) != 1) {
@@ -735,15 +691,7 @@ solarModel <- R6::R6Class("solarModel",
                             #' @field coefficients Get the model parameters as a named list.
                             coefficients = function(){
                               private$..spec$coefficients
-                            },
-                            #' @field hessian Get the model hessian
-                            hessian = function(){
-                              private$..spec$hessian
-                            },
-                            #' @field jacobian Get the model jacobian
-                            jacobian = function(){
-                              private$..spec$jacobian
                             }
                           )
-)
+                        )
 

@@ -31,11 +31,6 @@ solarOption_model(model, mom$data)
 \item \href{#method-solarMoment-filter_NM}{\code{solarMoment$filter_NM()}}
 \item \href{#method-solarMoment-filter_GARCH}{\code{solarMoment$filter_GARCH()}}
 \item \href{#method-solarMoment-filter_weights}{\code{solarMoment$filter_weights()}}
-\item \href{#method-solarMoment-pdf_Y}{\code{solarMoment$pdf_Y()}}
-\item \href{#method-solarMoment-cdf_Y}{\code{solarMoment$cdf_Y()}}
-\item \href{#method-solarMoment-pdf_R}{\code{solarMoment$pdf_R()}}
-\item \href{#method-solarMoment-cdf_R}{\code{solarMoment$cdf_R()}}
-\item \href{#method-solarMoment-Q_R}{\code{solarMoment$Q_R()}}
 \item \href{#method-solarMoment-print}{\code{solarMoment$print()}}
 \item \href{#method-solarMoment-clone}{\code{solarMoment$clone()}}
 }
@@ -54,7 +49,7 @@ solarOption_model(model, mom$data)
 \if{latex}{\out{\hypertarget{method-solarMoment-filter}{}}}
 \subsection{Method \code{filter()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter(theta = 0, B, t_cond)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter(theta = 0, B = NULL, t_cond = NULL)}\if{html}{\out{</div>}}
 }
 
 }
@@ -72,7 +67,7 @@ solarOption_model(model, mom$data)
 \if{latex}{\out{\hypertarget{method-solarMoment-filter_NM}{}}}
 \subsection{Method \code{filter_NM()}}{
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter_NM(theta = 0, B, t_cond)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter_NM(theta = 0, B = NULL, t_cond = NULL)}\if{html}{\out{</div>}}
 }
 
 }
@@ -91,51 +86,6 @@ solarOption_model(model, mom$data)
 \subsection{Method \code{filter_weights()}}{
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter_weights()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarMoment-pdf_Y"></a>}}
-\if{latex}{\out{\hypertarget{method-solarMoment-pdf_Y}{}}}
-\subsection{Method \code{pdf_Y()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMoment$pdf_Y(type = c("mix", "up", "dw"))}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarMoment-cdf_Y"></a>}}
-\if{latex}{\out{\hypertarget{method-solarMoment-cdf_Y}{}}}
-\subsection{Method \code{cdf_Y()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMoment$cdf_Y(type = c("mix", "up", "dw"))}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarMoment-pdf_R"></a>}}
-\if{latex}{\out{\hypertarget{method-solarMoment-pdf_R}{}}}
-\subsection{Method \code{pdf_R()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMoment$pdf_R(type = c("mix", "up", "dw"))}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarMoment-cdf_R"></a>}}
-\if{latex}{\out{\hypertarget{method-solarMoment-cdf_R}{}}}
-\subsection{Method \code{cdf_R()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMoment$cdf_R(type = c("mix", "up", "dw"))}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-solarMoment-Q_R"></a>}}
-\if{latex}{\out{\hypertarget{method-solarMoment-Q_R}{}}}
-\subsection{Method \code{Q_R()}}{
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{solarMoment$Q_R(type = c("mix", "up", "dw"))}\if{html}{\out{</div>}}
 }
 
 }
