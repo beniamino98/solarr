@@ -1,36 +1,35 @@
-#' Kumaraswamy random variable
+#' Kumaraswamy distribution
 #'
-#' Kumaraswamy density, distribution, quantile and random generator.
+#' Density, distribution function, quantile function, and random generation for
+#' the Kumaraswamy distribution.
 #'
-#' @param x,q vector of quantiles.
-#' @param p vector of probabilities.
-#' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
-#' @param a parameter `a > 0`.
-#' @param b parameter `b > 0`.
-#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
-#' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
-#' @param lower.tail logical; if `TRUE`, the default, the computed probabilities are `P[X < x]`. Otherwise, `P[X > x]`.
+#' @param x Numeric vector of quantiles.
+#' @param q Numeric vector of quantiles.
+#' @param p Numeric vector of probabilities.
+#' @param n Number of observations.
+#' @param a Numeric shape parameter. Must be positive.
+#' @param b Numeric shape parameter. Must be positive.
+#' @param log Logical. If `TRUE`, `dkumaraswamy()` returns log-densities.
+#' @param log.p Logical. If `TRUE`, probabilities are supplied or returned on
+#'   the log scale.
+#' @param lower.tail Logical. If `TRUE`, probabilities are \eqn{P[X \le x]};
+#'   otherwise, \eqn{P[X > x]}.
+#'
+#' @return
+#' - `dkumaraswamy()` returns a numeric vector of density values.
+#' - `pkumaraswamy()` returns a numeric vector of probabilities.
+#' - `qkumaraswamy()` returns a numeric vector of quantiles.
+#' - `rkumaraswamy()` returns a numeric vector of random draws.
 #'
 # @references Kumaraswamy Distribution \href{https://en.wikipedia.org/wiki/Kumaraswamy_distribution}{W}.
 #'
 #' @examples
-#' # Grid
-#' x <- seq(0, 1, 0.01)
+#' dkumaraswamy(c(0.25, 0.5), a = 2, b = 1.5)
+#' pkumaraswamy(c(0.25, 0.5), a = 2, b = 1.5)
+#' qkumaraswamy(c(0.25, 0.75), a = 2, b = 1.5)
 #'
-#' # Density function
-#' plot(x, dkumaraswamy(x, 0.2, 0.3), type = "l")
-#' plot(x, dkumaraswamy(x, 2, 1.1), type = "l")
-#'
-#' # Distribution function
-#' plot(x, pkumaraswamy(x, 2, 1.1), type = "l")
-#'
-#' # Quantile function
-#' qkumaraswamy(0.2, 0.4, 1.4)
-#' qkumaraswamy(pkumaraswamy(0.4, 2, 1.1),2, 1.1)
-#'
-#' # Random generator
-#' rkumaraswamy(20, 0.4, 1.4)
-#'
+#' set.seed(1)
+#' rkumaraswamy(3, a = 2, b = 1.5)
 #' @name dkumaraswamy
 #' @rdname dkumaraswamy
 #' @aliases dkumaraswamy

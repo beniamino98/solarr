@@ -5,7 +5,7 @@
 \alias{ptnorm}
 \alias{qtnorm}
 \alias{rtnorm}
-\title{Truncated Normal random variable}
+\title{Truncated normal distribution}
 \usage{
 dtnorm(x, mean = 0, sd = 1, a = -3, b = 3, log = FALSE)
 
@@ -16,50 +16,49 @@ qtnorm(p, mean = 0, sd = 1, a = -3, b = 3, log.p = FALSE, lower.tail = TRUE)
 rtnorm(n, mean = 0, sd = 1, a = -100, b = 100)
 }
 \arguments{
-\item{x}{vector of quantiles.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{mean}{vector of means.}
+\item{mean}{Numeric mean parameter.}
 
-\item{sd}{vector of standard deviations.}
+\item{sd}{Numeric standard deviation parameter.}
 
-\item{a}{lower bound.}
+\item{a}{Numeric lower truncation bound.}
 
-\item{b}{upper bound.}
+\item{b}{Numeric upper truncation bound.}
 
-\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dtnorm()} returns log-densities.}
 
-\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
 
-\item{lower.tail}{logical; if TRUE (default), probabilities are \code{P[X < x]} otherwise, \code{P[X > x]}.}
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
 
-\item{p}{vector of probabilities.}
+\item{p}{Numeric vector of probabilities.}
 
-\item{n}{number of observations. If \code{length(n) > 1}, the length is taken to be the number required.}
+\item{n}{Number of observations.}
+}
+\value{
+\itemize{
+\item \code{dtnorm()} returns a numeric vector of density values.
+\item \code{ptnorm()} returns a numeric vector of probabilities.
+\item \code{qtnorm()} returns a numeric vector of quantiles.
+\item \code{rtnorm()} returns a numeric vector of random draws.
+}
 }
 \description{
-Truncated Normal density, distribution, quantile and random generator.
+Density, distribution function, quantile function, and random generation for
+a normal distribution truncated to an interval.
 }
 \details{
 Version 1.0.0.
 }
 \examples{
-x <- seq(-5, 5, 0.01)
+dtnorm(c(-1, 0, 1), mean = 0, sd = 1, a = -2, b = 2)
+ptnorm(c(-1, 0, 1), mean = 0, sd = 1, a = -2, b = 2)
+qtnorm(c(0.25, 0.75), mean = 0, sd = 1, a = -2, b = 2)
 
-# Density function
-p <- dtnorm(x, mean = 0, sd = 1, a = -1)
-plot(x, p, type = "l")
-
-# Distribution function
-p <- ptnorm(x, mean = 0, sd = 1, b = 1)
-plot(x, p, type = "l")
-
-# Quantile function
-dtnorm(0.1)
-ptnorm(qtnorm(0.1))
-
-# Random Numbers
-rtnorm(1000)
-plot(rtnorm(100, mean = 0, sd = 1, a = 0, b = 1), type = "l")
-
+set.seed(1)
+rtnorm(3, mean = 0, sd = 1, a = -2, b = 2)
 }
 \keyword{distributions}

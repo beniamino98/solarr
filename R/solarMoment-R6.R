@@ -1,28 +1,35 @@
-#' Compute the generic conditional moments of a solarModel object
+#' Conditional moments for a solar model
 #'
+#' R6 class used to compute and store conditional moment quantities from a
+#' fitted `solarModel` object over a forecast horizon.
+#'
+#' @return An R6 object of class `solarMoment`.
 #' @keywords solarMoments
 #' @details Version 1.0.1.
-#' @examples
-#' model <- solarModel$new(spec)
-#' model$fit()
-#' # Conditional moments
-#' mom <- solarMoment$new(model, "2022-01-01", "2025-01-01")
-#' mom$filter()
-#' mom$data
-#' solarOption_model(model, mom$data)
-#'
 #' @rdname solarMoment
 #' @name solarMoment
 #' @export
 solarMoment <- R6::R6Class("solarMoment",
                            public = list(
+                             #' @field weights Tibble containing intermediate forecast weights and moment components.
                              weights = NA,
+                             #' @field X0 Numeric vector used as the initial ARMA state.
                              X0 = NA,
+                             #' @field H0 Numeric vector used as the initial GARCH state.
                              H0 = NA,
+                             #' @field t_now Date used as the conditioning date.
                              t_now = "",
+                             #' @field t_hor Date used as the forecast horizon.
                              t_hor = "",
+                             #' @field place Character value identifying the reference place.
                              place = "",
+                             #' @field step Integer number of forecast steps.
                              step = 1,
+                             #' @description
+                             #' Initialize a `solarMoment` object.
+                             #' @param model A fitted `solarModel` object.
+                             #' @param t_now Date or character value coercible to `Date`. Conditioning date.
+                             #' @param t_hor Date or character value coercible to `Date`. Forecast horizon date.
                              initialize = function(model, t_now, t_hor){
                                # Reference place
                                place <- model$spec$place
@@ -158,12 +165,21 @@ solarMoment <- R6::R6Class("solarMoment",
                                                        beta = GARCH$beta, e1 = c(1, GARCH$d[-1]))
 
                              },
+                             #' @description
+                             #' Run the moment filtering steps.
+                             #' @param theta Numeric value passed to `filter_NM()`.
+                             #' @param B Optional vector or value passed to `filter_NM()`.
+                             #' @param t_cond Optional date vector passed to `filter_NM()`.
+                             #' @return Updates the object in place.
                              filter = function(theta = 0, B = NULL, t_cond = NULL){
                                self$filter_ARMA()
                                self$filter_NM(theta, B, t_cond)
                                self$filter_GARCH()
                                self$filter_weights()
                              },
+                             #' @description
+                             #' Update ARMA forecast weights.
+                             #' @return Updates the `weights` field in place.
                              filter_ARMA = function(){
                                # Extract horizon
                                # h <- nrow(self$weights)
@@ -177,6 +193,12 @@ solarMoment <- R6::R6Class("solarMoment",
                                self$weights$psi2_j <- df_tT$psi2_j
                                self$weights$Yt_tilde_hat <- df_tT$Yt_tilde_hat
                              },
+                             #' @description
+                             #' Update mixture moment components.
+                             #' @param theta Numeric value used to shift mixture component means.
+                             #' @param B Optional vector or value used with `t_cond` to condition mixture weights.
+                             #' @param t_cond Optional date vector identifying conditioning dates.
+                             #' @return Updates the `weights` field in place.
                              filter_NM = function(theta = 0, B = NULL, t_cond = NULL){
                                # Extract weights
                                df_tT <- self$weights
@@ -208,6 +230,9 @@ solarMoment <- R6::R6Class("solarMoment",
                                df_tT$v_u <- df_tT$e_u2 - df_tT$e_u^2
                                self$weights <- df_tT
                              },
+                             #' @description
+                             #' Update GARCH moment components.
+                             #' @return Updates the `weights` field in place.
                              filter_GARCH = function(){
                                # Extract horizon
                                h <- self$step # nrow(self$weights)
@@ -229,6 +254,9 @@ solarMoment <- R6::R6Class("solarMoment",
                                  self$weights$psi_hs[j] <- sum(df_tT$cv_sigma[[j]] * psi_j[j] * psi_j[-j])
                                }
                              },
+                             #' @description
+                             #' Combine forecast weights into stored moment summaries.
+                             #' @return Updates the `weights` field and active `data` summary in place.
                              filter_weights = function(){
                                df_tT <- self$weights
                                h <- self$step # nrow(df_tT)
@@ -278,6 +306,9 @@ solarMoment <- R6::R6Class("solarMoment",
                                # Update psi_j
                                self$weights <- df_tT
                              },
+                             #' @description
+                             #' Print a summary of the conditional moment object.
+                             #' @return Invisibly returns `NULL`.
                              print = function(){
                                cat("----------------- Solar Moment  ----------------- \n")
                                cat(paste0("Location: ", self$place, "\n"))
@@ -293,24 +324,31 @@ solarMoment <- R6::R6Class("solarMoment",
                              ..GARCH = list()
                            ),
                            active = list(
+                             #' @field data Tibble containing the stored moment summary for the horizon date.
                              data = function(){
                                private$..data
                              },
+                             #' @field ARMA List of stored ARMA components used in moment calculations.
                              ARMA = function(){
                                private$..ARMA
                              },
+                             #' @field GARCH List of stored GARCH components used in moment calculations.
                              GARCH = function(){
                                private$..GARCH
                              },
+                             #' @field R_min_max List containing stored minimum and maximum radiation bounds.
                              R_min_max = function(){
                                private$..R_min_max
                              },
+                             #' @field M_Y Numeric vector built from `M_Y1` and `M_Y0` in the stored data summary.
                              M_Y = function(){
                                c(private$..data$M_Y1, private$..data$M_Y0)
                              },
+                             #' @field S_Y Numeric vector built from `S_Y1` and `S_Y0` in the stored data summary.
                              S_Y = function(){
                                c(private$..data$S_Y1, private$..data$S_Y0)
                              },
+                             #' @field probs Numeric vector currently built from the stored `p1` value.
                              probs = function(){
                                c(private$..data$p1, private$..data$p1)
                              }

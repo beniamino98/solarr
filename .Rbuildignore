@@ -1,2 +1,7 @@
 ^.*\.Rproj$
 ^\.Rproj\.user$
+^\.DS_Store$
+^\.Rhistory$
+^docs$
+^img/.*\.psd$
+^tests/testthat/Rplots\.pdf$

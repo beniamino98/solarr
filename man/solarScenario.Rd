@@ -2,14 +2,36 @@
 % Please edit documentation in R/solarScenario-R6.R
 \name{solarScenario}
 \alias{solarScenario}
-\title{R6 Class implementation for \code{solarScenario}}
+\title{Solar scenario simulation}
 \description{
-Specification of scenarios of a \code{solarModel}
+Solar scenario simulation
+
+Solar scenario simulation
+}
+\details{
+R6 class used to simulate residuals and store filtered scenario paths from a
+\code{solarScenario_spec} object.
 }
 \note{
 Version 1.0.3
 }
 \keyword{solarScenario}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{seed}}{Integer seed used when simulating residuals.}
+
+\item{\code{residuals}}{Tibble or list-like object containing simulated residuals waiting to be filtered.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{spec}}{Stored \code{solarScenario_spec} object.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -23,28 +45,60 @@ Version 1.0.3
 \if{html}{\out{<a id="method-solarScenario-new"></a>}}
 \if{latex}{\out{\hypertarget{method-solarScenario-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a \code{solarScenario} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarScenario$new(simSpec, seed = 1)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{simSpec}}{A \code{solarScenario_spec} object.}
+
+\item{\code{seed}}{Integer seed used for residual simulation.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarScenario-simulate_residuals"></a>}}
 \if{latex}{\out{\hypertarget{method-solarScenario-simulate_residuals}{}}}
 \subsection{Method \code{simulate_residuals()}}{
+Simulate residuals for scenario generation.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarScenario$simulate_residuals(nsim = 1)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{nsim}}{Integer number of residual paths to simulate.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the \code{residuals} field.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarScenario-filter"></a>}}
 \if{latex}{\out{\hypertarget{method-solarScenario-filter}{}}}
 \subsection{Method \code{filter()}}{
+Filter simulated residuals into scenario paths.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarScenario$filter(all = FALSE)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{all}}{Logical. If \code{TRUE}, filter all stored residuals; otherwise, filter residuals marked for filtering.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Appends filtered scenario paths to \code{spec$simulations} and updates residual flags.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarScenario-clone"></a>}}

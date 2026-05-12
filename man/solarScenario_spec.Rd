@@ -2,14 +2,15 @@
 % Please edit documentation in R/solarScenario-R6.R
 \name{solarScenario_spec}
 \alias{solarScenario_spec}
-\title{R6 Class implementation for \code{solarScenario_spec}}
+\title{Scenario specification}
 \description{
-R6 Class implementation for \code{solarScenario_spec}
+Scenario specification
 
-R6 Class implementation for \code{solarScenario_spec}
+Scenario specification
 }
 \details{
-Specification of scenarios of a \code{solarModel}
+R6 class used to store the data and model components needed to simulate
+scenarios from a fitted \code{solarModel} object.
 }
 \note{
 Version 1.0.3
@@ -22,11 +23,32 @@ Version 1.0.3
 
 \item{\code{target}}{Character, target variable.}
 
-\item{\code{quiet}}{Logical}
+\item{\code{quiet}}{Logical. If \code{TRUE}, suppress selected messages and warnings.}
 
-\item{\code{control}}{Named list}
+\item{\code{control}}{Named list with date range and simulation setup values.}
 
-\item{\code{simulations}}{List with simulations}
+\item{\code{simulations}}{List of simulated scenario data sets.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{place}}{Character value with the reference place.}
+
+\item{\code{ARMA}}{List of stored ARMA model parameters used for simulation.}
+
+\item{\code{GARCH}}{List of stored GARCH model parameters used for simulation.}
+
+\item{\code{transform}}{Transformation object copied from the model specification.}
+
+\item{\code{data_sim}}{Tibble containing the data used as the simulation template.}
+
+\item{\code{emp}}{Tibble containing empirical data stored in the specification.}
+
+\item{\code{nsim}}{Integer number of stored simulations.}
+
+\item{\code{scenarios}}{Nested tibble built from stored simulations.}
 }
 \if{html}{\out{</div>}}
 }
@@ -43,7 +65,7 @@ Version 1.0.3
 \if{html}{\out{<a id="method-solarScenario_spec-new"></a>}}
 \if{latex}{\out{\hypertarget{method-solarScenario_spec-new}{}}}
 \subsection{Method \code{new()}}{
-Initialize a \code{solarScenario_spec}
+Initialize a \code{solarScenario_spec} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarScenario_spec$new(
   model,
@@ -56,12 +78,31 @@ Initialize a \code{solarScenario_spec}
 )}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{model}}{A fitted \code{solarModel} object.}
+
+\item{\code{from}}{Date or character value coercible to \code{Date}. First date of the scenario period.}
+
+\item{\code{to}}{Date or character value coercible to \code{Date}. Last date of the scenario period.}
+
+\item{\code{theta}}{Numeric value stored in the simulation data as \code{theta}.}
+
+\item{\code{exclude_known}}{Logical. If \code{TRUE}, empirical data stored in the specification are restricted to dates from \code{from} to \code{to}.}
+
+\item{\code{seed}}{Integer seed stored for scenario simulation.}
+
+\item{\code{quiet}}{Logical. If \code{TRUE}, suppress selected messages and warnings.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarScenario_spec-prob"></a>}}
 \if{latex}{\out{\hypertarget{method-solarScenario_spec-prob}{}}}
 \subsection{Method \code{prob()}}{
-Marginal mixture probabilities
+Marginal mixture probabilities.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarScenario_spec$prob(nmonth)}\if{html}{\out{</div>}}
 }
@@ -69,20 +110,26 @@ Marginal mixture probabilities
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{nmonth}}{Integer, number of month.}
+\item{\code{nmonth}}{Integer vector of month numbers.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector or object returned by the stored probability model's \code{predict()} method.
 }
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarScenario_spec-print"></a>}}
 \if{latex}{\out{\hypertarget{method-solarScenario_spec-print}{}}}
 \subsection{Method \code{print()}}{
-Print method for the class \code{solarScenario_spec}
+Print a summary of the scenario specification.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarScenario_spec$print()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Invisibly returns \code{NULL}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarScenario_spec-clone"></a>}}

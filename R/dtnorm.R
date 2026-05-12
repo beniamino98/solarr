@@ -1,37 +1,34 @@
-#' Truncated Normal random variable
+#' Truncated normal distribution
 #'
-#' Truncated Normal density, distribution, quantile and random generator.
+#' Density, distribution function, quantile function, and random generation for
+#' a normal distribution truncated to an interval.
 #'
-#' @param x vector of quantiles.
-#' @param p vector of probabilities.
-#' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
-#' @param mean vector of means.
-#' @param sd vector of standard deviations.
-#' @param a lower bound.
-#' @param b upper bound.
-#' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
-#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
-#' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
+#' @param x Numeric vector of quantiles.
+#' @param p Numeric vector of probabilities.
+#' @param n Number of observations.
+#' @param mean Numeric mean parameter.
+#' @param sd Numeric standard deviation parameter.
+#' @param a Numeric lower truncation bound.
+#' @param b Numeric upper truncation bound.
+#' @param log.p Logical. If `TRUE`, probabilities are supplied or returned on
+#'   the log scale.
+#' @param log Logical. If `TRUE`, `dtnorm()` returns log-densities.
+#' @param lower.tail Logical. If `TRUE`, probabilities are \eqn{P[X \le x]};
+#'   otherwise, \eqn{P[X > x]}.
+#'
+#' @return
+#' - `dtnorm()` returns a numeric vector of density values.
+#' - `ptnorm()` returns a numeric vector of probabilities.
+#' - `qtnorm()` returns a numeric vector of quantiles.
+#' - `rtnorm()` returns a numeric vector of random draws.
 #'
 #' @examples
-#' x <- seq(-5, 5, 0.01)
+#' dtnorm(c(-1, 0, 1), mean = 0, sd = 1, a = -2, b = 2)
+#' ptnorm(c(-1, 0, 1), mean = 0, sd = 1, a = -2, b = 2)
+#' qtnorm(c(0.25, 0.75), mean = 0, sd = 1, a = -2, b = 2)
 #'
-#' # Density function
-#' p <- dtnorm(x, mean = 0, sd = 1, a = -1)
-#' plot(x, p, type = "l")
-#'
-#' # Distribution function
-#' p <- ptnorm(x, mean = 0, sd = 1, b = 1)
-#' plot(x, p, type = "l")
-#'
-#' # Quantile function
-#' dtnorm(0.1)
-#' ptnorm(qtnorm(0.1))
-#'
-#' # Random Numbers
-#' rtnorm(1000)
-#' plot(rtnorm(100, mean = 0, sd = 1, a = 0, b = 1), type = "l")
-#'
+#' set.seed(1)
+#' rtnorm(3, mean = 0, sd = 1, a = -2, b = 2)
 #' @name dtnorm
 #' @rdname dtnorm
 #' @aliases dtnorm

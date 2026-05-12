@@ -1,36 +1,33 @@
-#' Inverted Gumbel random variable
+#' Inverted Gumbel distribution
 #'
-#' Inverted Gumbel density, distribution, quantile and random generator.
+#' Density, distribution function, quantile function, and random generation for
+#' the inverted Gumbel distribution.
 #'
-#' @param x,q vector of quantiles.
-#' @param p vector of probabilities.
-#' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
-#' @param location location parameter.
-#' @param scale scale parameter.
-#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
-#' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
-#' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
+#' @param x Numeric vector of quantiles.
+#' @param q Numeric vector of quantiles.
+#' @param p Numeric vector of probabilities.
+#' @param n Number of observations.
+#' @param location Numeric location parameter.
+#' @param scale Numeric scale parameter.
+#' @param log Logical. If `TRUE`, `dinvgumbel()` returns log-densities.
+#' @param log.p Logical. If `TRUE`, probabilities are supplied or returned on
+#'   the log scale.
+#' @param lower.tail Logical. If `TRUE`, probabilities are \eqn{P[X \le x]};
+#'   otherwise, \eqn{P[X > x]}.
+#'
+#' @return
+#' - `dinvgumbel()` returns a numeric vector of density values.
+#' - `pinvgumbel()` returns a numeric vector of probabilities.
+#' - `qinvgumbel()` returns a numeric vector of quantiles.
+#' - `rinvgumbel()` returns a numeric vector of random draws.
 #'
 #' @examples
-#' # Grid
-#' x <- seq(-5, 5, 0.01)
+#' dinvgumbel(c(-1, 0, 1), location = 0, scale = 1)
+#' pinvgumbel(c(-1, 0, 1), location = 0, scale = 1)
+#' qinvgumbel(c(0.25, 0.75), location = 0, scale = 1)
 #'
-#' # Density function
-#' p <- dinvgumbel(x, location = 0, scale = 1)
-#' plot(x, p, type = "l")
-#'
-#' # Distribution function
-#' p <- pinvgumbel(x, location = 0, scale = 1)
-#' plot(x, p, type = "l")
-#'
-#' # Quantile function
-#' qgumbel(0.1)
-#' pinvgumbel(qinvgumbel(0.1))
-#'
-#' # Random Numbers
-#' rinvgumbel(1000)
-#' plot(rinvgumbel(1000), type = "l")
-#'
+#' set.seed(1)
+#' rinvgumbel(3, location = 0, scale = 1)
 #' @name dinvgumbel
 #' @rdname dinvgumbel
 #' @aliases dinvgumbel

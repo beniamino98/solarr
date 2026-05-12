@@ -5,7 +5,7 @@
 \alias{psolarK}
 \alias{qsolarK}
 \alias{rsolarK}
-\title{Clearness index random variable}
+\title{Clearness index distribution}
 \usage{
 dsolarK(x, alpha, beta, pdf_Y, log = FALSE)
 
@@ -16,64 +16,55 @@ qsolarK(p, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE)
 rsolarK(n, alpha, beta, cdf_Y)
 }
 \arguments{
-\item{x}{vector of quantiles.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{alpha}{parameter \code{alpha > 0}.}
+\item{alpha}{Numeric scalar. Lower transformation parameter.}
 
-\item{beta}{parameter \code{beta > 0} and \code{alpha + beta < 1}.}
+\item{beta}{Numeric scalar. Scale transformation parameter. Typically
+\code{beta > 0} and \code{alpha + beta < 1}.}
 
-\item{pdf_Y}{density function of Y.}
+\item{pdf_Y}{Function. Density function of the latent variable \code{Y}.}
 
-\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dsolarK()} returns log-densities.}
 
-\item{cdf_Y}{distribution function of Y.}
+\item{cdf_Y}{Function. Distribution function of the latent variable \code{Y}.}
 
-\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
 
-\item{lower.tail}{logical; if \code{TRUE}, the default, the computed probabilities are \code{P[X < x]}. Otherwise, \code{P[X > x]}.}
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
 
-\item{p}{vector of probabilities.}
+\item{p}{Numeric vector of probabilities.}
+}
+\value{
+\itemize{
+\item \code{dsolarK()} returns a numeric vector of density values.
+\item \code{psolarK()} returns a numeric vector of probabilities.
+\item \code{qsolarK()} returns a numeric vector of quantiles.
+\item \code{rsolarK()} returns a numeric vector of random draws.
+}
 }
 \description{
-Clearness index density, distribution, quantile and random generator.
+Density, distribution function, quantile function, and random generation for
+the clearness index.
 }
 \details{
-Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function \code{pdf_Y}. Then
-the funtion \code{dsolarK} compute the density function of the following transformed random variable, i.e.
+Consider a latent random variable \eqn{Y} with density \code{pdf_Y} and
+distribution function \code{cdf_Y}. The clearness index is modeled as
 \deqn{K(Y) = 1-\alpha-\beta \exp(-\exp(Y))}
-where \eqn{K(Y) \in [1-\alpha-\beta, 1-\alpha]}.
+with support \eqn{[1-\alpha-\beta, 1-\alpha]}.
 
 Version 1.0.0.
 }
 \examples{
-# Parameters
-alpha = 0.001
-beta = 0.9
-# Grid of points
-grid <- seq(1-alpha-beta, 1-alpha, length.out = 50)[-50]
+alpha <- 0.001
+beta <- 0.9
+dsolarK(c(0.2, 0.5), alpha, beta, dnorm)
+psolarK(c(0.2, 0.5), alpha, beta, pnorm)
+qsolarK(c(0.1, 0.9), alpha, beta, pnorm)
 
-# Density
-dsolarK(0.4, alpha, beta, function(x) dnorm(x))
-dsolarK(0.4, alpha, beta, function(x) dnorm(x, sd = 2))
-plot(grid, dsolarK(grid, alpha, beta, function(x) dnorm(x, sd = 0.2)), type="l")
-
-# Distribution
-psolarK(0.493, alpha, beta, function(x) pnorm(x))
-psolarK(0.493, alpha, beta, function(x) pnorm(x, sd = 2))
-plot(grid, psolarK(grid, alpha, beta, function(x) pt(0.2*x, 3)), type="l")
-plot(grid, psolarK(grid, alpha, beta, function(x) pnorm(x, sd = 0.2)), type="l")
-
-# Quantile
-qsolarK(c(0.05, 0.95), alpha, beta, function(x) pnorm(x))
-qsolarK(c(0.05, 0.95), alpha, beta, function(x) pnorm(x, sd = 2))
-
-# Random generator (I)
-Kt <- rsolarK(366, alpha, beta, function(x) pnorm(x, sd = 1.3))
-plot(1:366, Kt, type="l")
-
-# Random generator (II)
-pdf <- function(x) pmixnorm(x, c(-1.8, 0.8), c(0.5, 0.7), c(0.6, 0.4))
-Kt <- rsolarK(36, alpha, beta, pdf)
-plot(1:36, Kt, type="l")
+set.seed(1)
+rsolarK(3, alpha, beta, pnorm)
 }
 \keyword{distributions}

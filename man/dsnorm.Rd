@@ -5,7 +5,7 @@
 \alias{psnorm}
 \alias{qsnorm}
 \alias{rsnorm}
-\title{Skewed Normal random variable}
+\title{Skew-normal distribution}
 \usage{
 dsnorm(x, location = 0, scale = 1, shape = 0, log = FALSE)
 
@@ -16,52 +16,49 @@ qsnorm(p, location = 0, scale = 1, shape = 0, log.p = FALSE, lower.tail = TRUE)
 rsnorm(n, location = 0, scale = 1, shape = 0)
 }
 \arguments{
-\item{x, q}{vector of quantiles.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{location}{location parameter.}
+\item{location}{Numeric location parameter.}
 
-\item{scale}{scale parameter.}
+\item{scale}{Numeric scale parameter.}
 
-\item{shape}{skewness parameter.}
+\item{shape}{Numeric shape parameter controlling skewness.}
 
-\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dsnorm()} returns log-densities.}
 
-\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{q}{Numeric vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE (default), probabilities are \code{P[X < x]} otherwise, \code{P[X > x]}.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
 
-\item{p}{vector of probabilities.}
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
 
-\item{n}{number of observations. If \code{length(n) > 1}, the length is taken to be the number required.}
+\item{p}{Numeric vector of probabilities.}
+
+\item{n}{Number of observations.}
+}
+\value{
+\itemize{
+\item \code{dsnorm()} returns a numeric vector of density values.
+\item \code{psnorm()} returns a numeric vector of probabilities.
+\item \code{qsnorm()} returns a numeric vector of quantiles.
+\item \code{rsnorm()} returns a numeric vector of random draws.
+}
 }
 \description{
-Skewed Normal density, distribution, quantile and random generator.
+Density, distribution function, quantile function, and random generation for
+the skew-normal distribution.
 }
 \details{
 Version 1.0.0.
 }
 \examples{
-# Grid of points
-x <- seq(-5, 5, 0.01)
+dsnorm(c(-1, 0, 1), shape = 2)
+psnorm(c(-1, 0, 1), shape = 2)
+qsnorm(c(0.25, 0.75), shape = 2)
 
-# Density function
-# right tailed
-plot(x, dsnorm(x, shape = 1.9), type = "l")
-# left tailed
-plot(x, dsnorm(x, shape = -1.9), type = "l")
-
-# Distribution function
-plot(x, psnorm(x, shape = 4.9), type = "l")
-plot(x, psnorm(x, shape = -4.9), type = "l")
-
-# Quantile function
-dsnorm(0.1, shape = 4.9)
-dsnorm(0.1, shape = -4.9)
-psnorm(qsnorm(0.9, shape = 3), shape = 3)
-
-# Random generator
 set.seed(1)
-plot(rsnorm(100, shape = 5), type = "l")
-
+rsnorm(3, shape = 2)
 }
 \keyword{distributions}

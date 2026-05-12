@@ -5,7 +5,7 @@
 \alias{psolarGHI}
 \alias{qsolarGHI}
 \alias{rsolarGHI}
-\title{Density, distribution, quantile and random generator of Solar Radiation}
+\title{Solar radiation distribution}
 \usage{
 dsolarGHI(x, Ct, alpha, beta, pdf_Y, log = FALSE, link = "invgumbel")
 
@@ -34,71 +34,62 @@ qsolarGHI(
 rsolarGHI(n, Ct, alpha, beta, cdf_Y, link = "invgumbel")
 }
 \arguments{
-\item{x, p}{Numeric vector of quantiles or probabilities.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{Ct}{Numeric scalar, clear sky radiation}
+\item{Ct}{Numeric scalar or vector of clear-sky radiation values.}
 
-\item{alpha}{Numeric scalar, parameter \code{alpha > 0}.}
+\item{alpha}{Numeric scalar. Lower transformation parameter.}
 
-\item{beta}{Numeric scalar, parameter \code{beta > 0} and \code{alpha + beta < 1}.}
+\item{beta}{Numeric scalar. Scale transformation parameter. Typically
+\code{beta > 0} and \code{alpha + beta < 1}.}
 
-\item{pdf_Y}{Function, density of Y.}
+\item{pdf_Y}{Function. Density function of the latent variable \code{Y}.}
 
-\item{log}{Logical, when \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dsolarGHI()} returns log-densities.}
 
-\item{cdf_Y}{Function, distribution of Y.}
+\item{link}{Character string specifying the transformation link. Supported
+values are \code{"invgumbel"}, \code{"gumbel"}, \code{"logis"}, and \code{"norm"}.}
 
-\item{log.p}{Logical, when \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{cdf_Y}{Function. Distribution function of the latent variable \code{Y}.}
 
-\item{lower.tail}{Logical, when \code{TRUE}, the default, the computed probabilities are \eqn{\mathbb{P}(X < x)}, otherwise \eqn{\mathbb{P}(X \ge x)}.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
+
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
+
+\item{p}{Numeric vector of probabilities.}
+}
+\value{
+\itemize{
+\item \code{dsolarGHI()} returns a numeric vector of density values.
+\item \code{psolarGHI()} returns a numeric vector of probabilities.
+\item \code{qsolarGHI()} returns a numeric vector of quantiles.
+\item \code{rsolarGHI()} returns a numeric vector of random draws.
+}
 }
 \description{
-Density, distribution, quantile and random generator of Solar Radiation
-
-Distribution function for the GHI
-
-Quantile function for the GHI
-
-Random generator function for the GHI
+Density, distribution function, quantile function, and random generation for
+transformed global horizontal irradiance (GHI).
 }
 \details{
-Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function \code{pdf_Y}. Then
-the funtion \code{dsolarGHI} compute the density function of the following transformed random variable, i.e.
+Consider a latent random variable \eqn{Y} with density \code{pdf_Y} and
+distribution function \code{cdf_Y}. With the inverse Gumbel link, the transformed
+solar radiation variable is
 \deqn{R_t(y) = C(t) (1-\alpha-\beta \exp(-\exp(y)))}
-where \eqn{R_t(y) \in [C(t)(1-\alpha-\beta), C(t)(1-\alpha)]}.
+with support \eqn{[C(t)(1-\alpha-\beta), C(t)(1-\alpha)]}.
 
 Version 1.0.0.
 }
 \examples{
-# Parameters
-alpha = 0
-beta = 0.9
+alpha <- 0.001
+beta <- 0.9
 Ct <- 7
-# Grid of points
-grid <- seq(Ct*(1-alpha-beta), Ct*(1-alpha), by = 0.01)
+dsolarGHI(c(3, 5), Ct, alpha, beta, dnorm)
+psolarGHI(c(3, 5), Ct, alpha, beta, pnorm)
+qsolarGHI(c(0.1, 0.9), Ct, alpha, beta, pnorm)
 
-# Density
-dsolarGHI(5, Ct, alpha, beta, function(x) dnorm(x))
-dsolarGHI(5, Ct, alpha, beta, function(x) dnorm(x, sd=2))
-plot(grid, dsolarGHI(grid, Ct, alpha, beta, function(x) dnorm(x, mean = -1, sd = 0.9)), type="l")
-
-# Distribution
-psolarGHI(3.993, 7, 0.001, 0.9, function(x) pnorm(x))
-psolarGHI(3.993, 7, 0.001, 0.9, function(x) pnorm(x, sd=2))
-plot(grid, psolarGHI(grid, Ct, alpha, beta, function(x) pnorm(x, sd = 0.2)), type="l")
-
-# Quantile
-qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) pnorm(x))
-qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) pnorm(x, sd=2))
-
-# Random generator (I)
-Ct <- Bologna$seasonal_data$Ct
-GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, alpha, beta, function(x) pnorm(x, sd=1.4)))
-plot(1:366, GHI, type="l")
-
-# Random generator (II)
-cdf <- function(x) pmixnorm(x, c(-0.8, 0.5), c(1.2, 0.7), c(0.3, 0.7))
-GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, 0.001, 0.9, cdf))
-plot(1:366, GHI, type="l")
+set.seed(1)
+rsolarGHI(3, Ct, alpha, beta, pnorm)
 }
 \keyword{distributions}

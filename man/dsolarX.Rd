@@ -5,7 +5,7 @@
 \alias{psolarX}
 \alias{qsolarX}
 \alias{rsolarX}
-\title{Solar risk driver random variable}
+\title{Solar risk driver distribution}
 \usage{
 dsolarX(x, alpha, beta, pdf_Y, log = FALSE)
 
@@ -16,64 +16,55 @@ qsolarX(p, alpha, beta, cdf_Y, log.p = FALSE, lower.tail = TRUE)
 rsolarX(n, alpha, beta, cdf_Y)
 }
 \arguments{
-\item{x}{vector of quantiles.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{alpha}{parameter \code{alpha > 0}.}
+\item{alpha}{Numeric scalar. Lower transformation parameter.}
 
-\item{beta}{parameter \code{beta > 0} and \code{alpha + beta < 1}.}
+\item{beta}{Numeric scalar. Scale transformation parameter. Typically
+\code{beta > 0} and \code{alpha + beta < 1}.}
 
-\item{pdf_Y}{density of Y.}
+\item{pdf_Y}{Function. Density function of the latent variable \code{Y}.}
 
-\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dsolarX()} returns log-densities.}
 
-\item{cdf_Y}{distribution function of Y.}
+\item{cdf_Y}{Function. Distribution function of the latent variable \code{Y}.}
 
-\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
 
-\item{lower.tail}{logical; if \code{TRUE}, the default, the computed probabilities are \code{P[X < x]}. Otherwise, \code{P[X > x]}.}
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
 
-\item{p}{vector of probabilities.}
+\item{p}{Numeric vector of probabilities.}
+}
+\value{
+\itemize{
+\item \code{dsolarX()} returns a numeric vector of density values.
+\item \code{psolarX()} returns a numeric vector of probabilities.
+\item \code{qsolarX()} returns a numeric vector of quantiles.
+\item \code{rsolarX()} returns a numeric vector of random draws.
+}
 }
 \description{
-Solar risk driver density, distribution, quantile and random generator.
+Density, distribution function, quantile function, and random generation for
+the solar risk driver.
 }
 \details{
-Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function \code{pdf_Y}. Then
-the funtion \code{dsolarX} compute the density function of the following transformed random variable, i.e.
+Consider a latent random variable \eqn{Y} with density \code{pdf_Y} and
+distribution function \code{cdf_Y}. The solar risk driver is modeled as
 \deqn{X(Y) = \alpha+\beta \exp(-\exp(Y))}
-where \eqn{X(Y) \in [\alpha, \alpha+\beta]}.
+with support \eqn{[\alpha, \alpha+\beta]}.
 
 Version 1.0.0.
 }
 \examples{
-# Parameters
-alpha = 0.001
-beta = 0.9
-# Grid of points
-grid <- seq(alpha, alpha+beta, length.out = 50)[-50]
+alpha <- 0.001
+beta <- 0.9
+dsolarX(c(0.2, 0.5), alpha, beta, dnorm)
+psolarX(c(0.2, 0.5), alpha, beta, pnorm)
+qsolarX(c(0.1, 0.9), alpha, beta, pnorm)
 
-# Density
-dsolarX(0.4, alpha, beta, function(x) dnorm(x))
-dsolarX(0.4, alpha, beta, function(x) dnorm(x, sd = 2))
-plot(grid, dsolarX(grid, alpha, beta, function(x) dnorm(x, sd = 0.2)), type="l")
-
-# Distribution
-psolarX(0.493, alpha, beta, function(x) pnorm(x))
-dsolarX(0.493, alpha, beta, function(x) pnorm(x, sd = 2))
-plot(grid, psolarX(grid, alpha, beta, function(x) pnorm(x, sd = 0.2)), type="l")
-
-# Quantile
-qsolarX(c(0.05, 0.95), alpha, beta, function(x) pnorm(x))
-qsolarX(c(0.05, 0.95), alpha, beta, function(x) pnorm(x, sd = 1.3))
-
-# Random generator (I)
 set.seed(1)
-Kt <- rsolarX(366, alpha, beta, function(x) pnorm(x, sd = 0.8))
-plot(1:366, Kt, type="l")
-
-# Random generator (II)
-cdf <- function(x) pmixnorm(x, c(-1.8, 0.9), c(0.5, 0.7), c(0.6, 0.4))
-Kt <- rsolarX(366, alpha, beta, cdf)
-plot(1:366, Kt, type="l")
+rsolarX(3, alpha, beta, pnorm)
 }
 \keyword{distributions}

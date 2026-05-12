@@ -5,7 +5,7 @@
 \alias{pinvgumbel}
 \alias{qinvgumbel}
 \alias{rinvgumbel}
-\title{Inverted Gumbel random variable}
+\title{Inverted Gumbel distribution}
 \usage{
 dinvgumbel(x, location = 0, scale = 1, log = FALSE)
 
@@ -16,47 +16,47 @@ qinvgumbel(p, location = 0, scale = 1, log.p = FALSE, lower.tail = TRUE)
 rinvgumbel(n, location = 0, scale = 1)
 }
 \arguments{
-\item{x, q}{vector of quantiles.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{location}{location parameter.}
+\item{location}{Numeric location parameter.}
 
-\item{scale}{scale parameter.}
+\item{scale}{Numeric scale parameter.}
 
-\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dinvgumbel()} returns log-densities.}
 
-\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{q}{Numeric vector of quantiles.}
 
-\item{lower.tail}{logical; if TRUE (default), probabilities are \code{P[X < x]} otherwise, \code{P[X > x]}.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
 
-\item{p}{vector of probabilities.}
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
 
-\item{n}{number of observations. If \code{length(n) > 1}, the length is taken to be the number required.}
+\item{p}{Numeric vector of probabilities.}
+
+\item{n}{Number of observations.}
+}
+\value{
+\itemize{
+\item \code{dinvgumbel()} returns a numeric vector of density values.
+\item \code{pinvgumbel()} returns a numeric vector of probabilities.
+\item \code{qinvgumbel()} returns a numeric vector of quantiles.
+\item \code{rinvgumbel()} returns a numeric vector of random draws.
+}
 }
 \description{
-Inverted Gumbel density, distribution, quantile and random generator.
+Density, distribution function, quantile function, and random generation for
+the inverted Gumbel distribution.
 }
 \details{
 Version 1.0.0.
 }
 \examples{
-# Grid
-x <- seq(-5, 5, 0.01)
+dinvgumbel(c(-1, 0, 1), location = 0, scale = 1)
+pinvgumbel(c(-1, 0, 1), location = 0, scale = 1)
+qinvgumbel(c(0.25, 0.75), location = 0, scale = 1)
 
-# Density function
-p <- dinvgumbel(x, location = 0, scale = 1)
-plot(x, p, type = "l")
-
-# Distribution function
-p <- pinvgumbel(x, location = 0, scale = 1)
-plot(x, p, type = "l")
-
-# Quantile function
-qgumbel(0.1)
-pinvgumbel(qinvgumbel(0.1))
-
-# Random Numbers
-rinvgumbel(1000)
-plot(rinvgumbel(1000), type = "l")
-
+set.seed(1)
+rinvgumbel(3, location = 0, scale = 1)
 }
 \keyword{distributions}

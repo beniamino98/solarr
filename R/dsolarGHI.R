@@ -1,50 +1,46 @@
-#' Density, distribution, quantile and random generator of Solar Radiation
+#' Solar radiation distribution
 #'
-#' @param x,p Numeric vector of quantiles or probabilities.
-#' @param Ct Numeric scalar, clear sky radiation
-#' @param alpha Numeric scalar, parameter `alpha > 0`.
-#' @param beta Numeric scalar, parameter `beta > 0` and `alpha + beta < 1`.
-#' @param pdf_Y Function, density of Y.
-#' @param cdf_Y Function, distribution of Y.
-#' @param log Logical, when `TRUE`, probabilities are returned as `log(p)`.
-#' @param log.p Logical, when `TRUE`, probabilities p are given as `log(p)`.
-#' @param lower.tail Logical, when `TRUE`, the default, the computed probabilities are \eqn{\mathbb{P}(X < x)}, otherwise \eqn{\mathbb{P}(X \ge x)}.
+#' Density, distribution function, quantile function, and random generation for
+#' transformed global horizontal irradiance (GHI).
 #'
-#' @details Consider a random variable \eqn{Y \in [-\infty, \infty]} with a known density function `pdf_Y`. Then
-#' the funtion `dsolarGHI` compute the density function of the following transformed random variable, i.e.
+#' @param x Numeric vector of quantiles.
+#' @param p Numeric vector of probabilities.
+#' @param Ct Numeric scalar or vector of clear-sky radiation values.
+#' @param alpha Numeric scalar. Lower transformation parameter.
+#' @param beta Numeric scalar. Scale transformation parameter. Typically
+#'   `beta > 0` and `alpha + beta < 1`.
+#' @param pdf_Y Function. Density function of the latent variable `Y`.
+#' @param cdf_Y Function. Distribution function of the latent variable `Y`.
+#' @param log Logical. If `TRUE`, `dsolarGHI()` returns log-densities.
+#' @param log.p Logical. If `TRUE`, probabilities are supplied or returned on
+#'   the log scale.
+#' @param lower.tail Logical. If `TRUE`, probabilities are \eqn{P[X \le x]};
+#'   otherwise, \eqn{P[X > x]}.
+#' @param link Character string specifying the transformation link. Supported
+#'   values are `"invgumbel"`, `"gumbel"`, `"logis"`, and `"norm"`.
+#'
+#' @return
+#' - `dsolarGHI()` returns a numeric vector of density values.
+#' - `psolarGHI()` returns a numeric vector of probabilities.
+#' - `qsolarGHI()` returns a numeric vector of quantiles.
+#' - `rsolarGHI()` returns a numeric vector of random draws.
+#'
+#' @details Consider a latent random variable \eqn{Y} with density `pdf_Y` and
+#' distribution function `cdf_Y`. With the inverse Gumbel link, the transformed
+#' solar radiation variable is
 #' \deqn{R_t(y) = C(t) (1-\alpha-\beta \exp(-\exp(y)))}
-#' where \eqn{R_t(y) \in [C(t)(1-\alpha-\beta), C(t)(1-\alpha)]}.
+#' with support \eqn{[C(t)(1-\alpha-\beta), C(t)(1-\alpha)]}.
+#'
 #' @examples
-#' # Parameters
-#' alpha = 0
-#' beta = 0.9
+#' alpha <- 0.001
+#' beta <- 0.9
 #' Ct <- 7
-#' # Grid of points
-#' grid <- seq(Ct*(1-alpha-beta), Ct*(1-alpha), by = 0.01)
+#' dsolarGHI(c(3, 5), Ct, alpha, beta, dnorm)
+#' psolarGHI(c(3, 5), Ct, alpha, beta, pnorm)
+#' qsolarGHI(c(0.1, 0.9), Ct, alpha, beta, pnorm)
 #'
-#' # Density
-#' dsolarGHI(5, Ct, alpha, beta, function(x) dnorm(x))
-#' dsolarGHI(5, Ct, alpha, beta, function(x) dnorm(x, sd=2))
-#' plot(grid, dsolarGHI(grid, Ct, alpha, beta, function(x) dnorm(x, mean = -1, sd = 0.9)), type="l")
-#'
-#' # Distribution
-#' psolarGHI(3.993, 7, 0.001, 0.9, function(x) pnorm(x))
-#' psolarGHI(3.993, 7, 0.001, 0.9, function(x) pnorm(x, sd=2))
-#' plot(grid, psolarGHI(grid, Ct, alpha, beta, function(x) pnorm(x, sd = 0.2)), type="l")
-#'
-#' # Quantile
-#' qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) pnorm(x))
-#' qsolarGHI(c(0.05, 0.95), 7, 0.001, 0.9, function(x) pnorm(x, sd=2))
-#'
-#' # Random generator (I)
-#' Ct <- Bologna$seasonal_data$Ct
-#' GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, alpha, beta, function(x) pnorm(x, sd=1.4)))
-#' plot(1:366, GHI, type="l")
-#'
-#' # Random generator (II)
-#' cdf <- function(x) pmixnorm(x, c(-0.8, 0.5), c(1.2, 0.7), c(0.3, 0.7))
-#' GHI <- purrr::map(Ct, ~rsolarGHI(1, .x, 0.001, 0.9, cdf))
-#' plot(1:366, GHI, type="l")
+#' set.seed(1)
+#' rsolarGHI(3, Ct, alpha, beta, pnorm)
 #' @rdname dsolarGHI
 #' @aliases dsolarGHI
 #' @aliases psolarGHI

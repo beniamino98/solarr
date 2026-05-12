@@ -1,6 +1,7 @@
-#' R6 Class implementation for `solarScenario_spec`
+#' Scenario specification
 #'
-#' Specification of scenarios of a `solarModel`
+#' R6 class used to store the data and model components needed to simulate
+#' scenarios from a fitted `solarModel` object.
 #'
 #' @rdname solarScenario_spec
 #' @name solarScenario_spec
@@ -13,14 +14,21 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
                                location = dplyr::tibble(),
                                #' @field target Character, target variable.
                                target = "",
-                               #' @field quiet Logical
+                               #' @field quiet Logical. If `TRUE`, suppress selected messages and warnings.
                                quiet = FALSE,
-                               #' @field control Named list
+                               #' @field control Named list with date range and simulation setup values.
                                control = list(from = "", to = "", i_start = 1, exclude_known = FALSE),
-                               #' @field simulations List with simulations
+                               #' @field simulations List of simulated scenario data sets.
                                simulations = list(),
                                #' @description
-                               #' Initialize a `solarScenario_spec`
+                               #' Initialize a `solarScenario_spec` object.
+                               #' @param model A fitted `solarModel` object.
+                               #' @param from Date or character value coercible to `Date`. First date of the scenario period.
+                               #' @param to Date or character value coercible to `Date`. Last date of the scenario period.
+                               #' @param theta Numeric value stored in the simulation data as `theta`.
+                               #' @param exclude_known Logical. If `TRUE`, empirical data stored in the specification are restricted to dates from `from` to `to`.
+                               #' @param seed Integer seed stored for scenario simulation.
+                               #' @param quiet Logical. If `TRUE`, suppress selected messages and warnings.
                                initialize = function(model, from = "2010-01-01", to = "2010-12-31", theta = 0, exclude_known = FALSE, seed = 1, quiet = FALSE){
                                  # Model's specification
                                  spec <- model$spec
@@ -106,13 +114,15 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
                                  private[["..prob"]] <- spec$mixture.model$prob$clone(TRUE)
                                },
                                #' @description
-                               #' Marginal mixture probabilities
-                               #' @param nmonth Integer, number of month.
+                               #' Marginal mixture probabilities.
+                               #' @param nmonth Integer vector of month numbers.
+                               #' @return A numeric vector or object returned by the stored probability model's `predict()` method.
                                prob = function(nmonth){
                                  private[["..prob"]]$predict(nmonth)
                                },
                                #' @description
-                               #' Print method for the class `solarScenario_spec`
+                               #' Print a summary of the scenario specification.
+                               #' @return Invisibly returns `NULL`.
                                print = function(){
                                  cat("---------------- solarScenario Specification ----------------  \n")
                                  cat(paste0("Place: ", self$place, "\n"))
@@ -131,27 +141,35 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
                                ..prob = NA
                              ),
                              active = list(
+                               #' @field place Character value with the reference place.
                                place = function(){
                                  self$location$place
                                },
+                               #' @field ARMA List of stored ARMA model parameters used for simulation.
                                ARMA = function(){
                                  private$..ARMA
                                },
+                               #' @field GARCH List of stored GARCH model parameters used for simulation.
                                GARCH = function(){
                                  private$..GARCH
                                },
+                               #' @field transform Transformation object copied from the model specification.
                                transform = function(){
                                  private$..transform
                                },
+                               #' @field data_sim Tibble containing the data used as the simulation template.
                                data_sim = function(){
                                  private$..data_sim
                                },
+                               #' @field emp Tibble containing empirical data stored in the specification.
                                emp = function(){
                                  private$..data_emp
                                },
+                               #' @field nsim Integer number of stored simulations.
                                nsim = function(){
                                  length(self$simulations)
                                },
+                               #' @field scenarios Nested tibble built from stored simulations.
                                scenarios = function() {
                                  simulations <- self$simulations
                                  if (purrr::is_empty(simulations)) {
@@ -165,9 +183,10 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
                                }
                              ))
 
-#' R6 Class implementation for `solarScenario`
+#' Solar scenario simulation
 #'
-#' Specification of scenarios of a `solarModel`
+#' R6 class used to simulate residuals and store filtered scenario paths from a
+#' `solarScenario_spec` object.
 #'
 #' @rdname solarScenario
 #' @name solarScenario
@@ -176,14 +195,24 @@ solarScenario_spec <- R6::R6Class("solarScenario_spec",
 #' @export
 solarScenario <- R6::R6Class("solarScenario",
                              public = list(
+                               #' @field seed Integer seed used when simulating residuals.
                                seed = 1,
+                               #' @field residuals Tibble or list-like object containing simulated residuals waiting to be filtered.
                                residuals = list(),
+                               #' @description
+                               #' Initialize a `solarScenario` object.
+                               #' @param simSpec A `solarScenario_spec` object.
+                               #' @param seed Integer seed used for residual simulation.
                                initialize = function(simSpec, seed = 1){
                                  # Random seed
                                  self$seed <- seed
                                  # Model specification
                                  private[["..spec"]] <- simSpec$clone(TRUE)
                                },
+                               #' @description
+                               #' Simulate residuals for scenario generation.
+                               #' @param nsim Integer number of residual paths to simulate.
+                               #' @return Updates the `residuals` field.
                                simulate_residuals = function(nsim = 1){
                                  # First time simulation
                                  if (purrr::is_empty(self$residuals)) {
@@ -196,6 +225,10 @@ solarScenario <- R6::R6Class("solarScenario",
                                    self$residuals <- dplyr::bind_rows(self$residuals, new_residuals)
                                  }
                                },
+                               #' @description
+                               #' Filter simulated residuals into scenario paths.
+                               #' @param all Logical. If `TRUE`, filter all stored residuals; otherwise, filter residuals marked for filtering.
+                               #' @return Appends filtered scenario paths to `spec$simulations` and updates residual flags.
                                filter = function(all = FALSE){
                                  if (all) {
                                    index_filter <- 1:nrow(self$residuals)
@@ -218,11 +251,11 @@ solarScenario <- R6::R6Class("solarScenario",
                                ..spec = NA
                              ),
                              active = list(
+                               #' @field spec Stored `solarScenario_spec` object.
                                spec = function(){
                                  private$..spec
                                }
                              ))
-
 
 
 

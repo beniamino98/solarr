@@ -2,26 +2,60 @@
 % Please edit documentation in R/solarMoment-R6.R
 \name{solarMoment}
 \alias{solarMoment}
-\title{Compute the generic conditional moments of a solarModel object}
+\title{Conditional moments for a solar model}
+\value{
+An R6 object of class \code{solarMoment}.
+}
 \description{
-Compute the generic conditional moments of a solarModel object
+Conditional moments for a solar model
 
-Compute the generic conditional moments of a solarModel object
+Conditional moments for a solar model
 }
 \details{
+R6 class used to compute and store conditional moment quantities from a
+fitted \code{solarModel} object over a forecast horizon.
+
 Version 1.0.1.
 }
-\examples{
-model <- solarModel$new(spec)
-model$fit()
-# Conditional moments
-mom <- solarMoment$new(model, "2022-01-01", "2025-01-01")
-mom$filter()
-mom$data
-solarOption_model(model, mom$data)
-
-}
 \keyword{solarMoments}
+\section{Public fields}{
+\if{html}{\out{<div class="r6-fields">}}
+\describe{
+\item{\code{weights}}{Tibble containing intermediate forecast weights and moment components.}
+
+\item{\code{X0}}{Numeric vector used as the initial ARMA state.}
+
+\item{\code{H0}}{Numeric vector used as the initial GARCH state.}
+
+\item{\code{t_now}}{Date used as the conditioning date.}
+
+\item{\code{t_hor}}{Date used as the forecast horizon.}
+
+\item{\code{place}}{Character value identifying the reference place.}
+
+\item{\code{step}}{Integer number of forecast steps.}
+}
+\if{html}{\out{</div>}}
+}
+\section{Active bindings}{
+\if{html}{\out{<div class="r6-active-bindings">}}
+\describe{
+\item{\code{data}}{Tibble containing the stored moment summary for the horizon date.}
+
+\item{\code{ARMA}}{List of stored ARMA components used in moment calculations.}
+
+\item{\code{GARCH}}{List of stored GARCH components used in moment calculations.}
+
+\item{\code{R_min_max}}{List containing stored minimum and maximum radiation bounds.}
+
+\item{\code{M_Y}}{Numeric vector built from \code{M_Y1} and \code{M_Y0} in the stored data summary.}
+
+\item{\code{S_Y}}{Numeric vector built from \code{S_Y1} and \code{S_Y0} in the stored data summary.}
+
+\item{\code{probs}}{Numeric vector currently built from the stored \code{p1} value.}
+}
+\if{html}{\out{</div>}}
+}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
@@ -39,64 +73,122 @@ solarOption_model(model, mom$data)
 \if{html}{\out{<a id="method-solarMoment-new"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMoment-new}{}}}
 \subsection{Method \code{new()}}{
+Initialize a \code{solarMoment} object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$new(model, t_now, t_hor)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{model}}{A fitted \code{solarModel} object.}
+
+\item{\code{t_now}}{Date or character value coercible to \code{Date}. Conditioning date.}
+
+\item{\code{t_hor}}{Date or character value coercible to \code{Date}. Forecast horizon date.}
+}
+\if{html}{\out{</div>}}
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMoment-filter"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMoment-filter}{}}}
 \subsection{Method \code{filter()}}{
+Run the moment filtering steps.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter(theta = 0, B = NULL, t_cond = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{theta}}{Numeric value passed to \code{filter_NM()}.}
+
+\item{\code{B}}{Optional vector or value passed to \code{filter_NM()}.}
+
+\item{\code{t_cond}}{Optional date vector passed to \code{filter_NM()}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the object in place.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMoment-filter_ARMA"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMoment-filter_ARMA}{}}}
 \subsection{Method \code{filter_ARMA()}}{
+Update ARMA forecast weights.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter_ARMA()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates the \code{weights} field in place.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMoment-filter_NM"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMoment-filter_NM}{}}}
 \subsection{Method \code{filter_NM()}}{
+Update mixture moment components.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter_NM(theta = 0, B = NULL, t_cond = NULL)}\if{html}{\out{</div>}}
 }
 
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{theta}}{Numeric value used to shift mixture component means.}
+
+\item{\code{B}}{Optional vector or value used with \code{t_cond} to condition mixture weights.}
+
+\item{\code{t_cond}}{Optional date vector identifying conditioning dates.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the \code{weights} field in place.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMoment-filter_GARCH"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMoment-filter_GARCH}{}}}
 \subsection{Method \code{filter_GARCH()}}{
+Update GARCH moment components.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter_GARCH()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates the \code{weights} field in place.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMoment-filter_weights"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMoment-filter_weights}{}}}
 \subsection{Method \code{filter_weights()}}{
+Combine forecast weights into stored moment summaries.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$filter_weights()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates the \code{weights} field and active \code{data} summary in place.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMoment-print"></a>}}
 \if{latex}{\out{\hypertarget{method-solarMoment-print}{}}}
 \subsection{Method \code{print()}}{
+Print a summary of the conditional moment object.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarMoment$print()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Invisibly returns \code{NULL}.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarMoment-clone"></a>}}

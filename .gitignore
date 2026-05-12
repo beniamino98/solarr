@@ -2,4 +2,8 @@
 .Rhistory
 .RData
 .Ruserdata
-/tests
+.DS_Store
+Rplots.pdf
+*.tmp
+*.temp
+*~

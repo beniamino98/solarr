@@ -1,42 +1,36 @@
-#' Skewed Normal random variable
+#' Skew-normal distribution
 #'
-#' Skewed Normal density, distribution, quantile and random generator.
+#' Density, distribution function, quantile function, and random generation for
+#' the skew-normal distribution.
 #'
-#' @param x,q vector of quantiles.
-#' @param p vector of probabilities.
-#' @param n number of observations. If `length(n) > 1`, the length is taken to be the number required.
-#' @param location location parameter.
-#' @param scale scale parameter.
-#' @param shape skewness parameter.
-#' @param log.p logical; if `TRUE`, probabilities p are given as `log(p)`.
-#' @param log logical; if `TRUE`, probabilities are returned as `log(p)`.
-#' @param lower.tail logical; if TRUE (default), probabilities are `P[X < x]` otherwise, `P[X > x]`.
+#' @param x Numeric vector of quantiles.
+#' @param q Numeric vector of quantiles.
+#' @param p Numeric vector of probabilities.
+#' @param n Number of observations.
+#' @param location Numeric location parameter.
+#' @param scale Numeric scale parameter.
+#' @param shape Numeric shape parameter controlling skewness.
+#' @param log.p Logical. If `TRUE`, probabilities are supplied or returned on
+#'   the log scale.
+#' @param log Logical. If `TRUE`, `dsnorm()` returns log-densities.
+#' @param lower.tail Logical. If `TRUE`, probabilities are \eqn{P[X \le x]};
+#'   otherwise, \eqn{P[X > x]}.
+#'
+#' @return
+#' - `dsnorm()` returns a numeric vector of density values.
+#' - `psnorm()` returns a numeric vector of probabilities.
+#' - `qsnorm()` returns a numeric vector of quantiles.
+#' - `rsnorm()` returns a numeric vector of random draws.
 #'
 # @references Skewed Normal Distribution [\href{https://en.wikipedia.org/wiki/Skew_normal_distribution}{W}].
 #'
 #' @examples
-#' # Grid of points
-#' x <- seq(-5, 5, 0.01)
+#' dsnorm(c(-1, 0, 1), shape = 2)
+#' psnorm(c(-1, 0, 1), shape = 2)
+#' qsnorm(c(0.25, 0.75), shape = 2)
 #'
-#' # Density function
-#' # right tailed
-#' plot(x, dsnorm(x, shape = 1.9), type = "l")
-#' # left tailed
-#' plot(x, dsnorm(x, shape = -1.9), type = "l")
-#'
-#' # Distribution function
-#' plot(x, psnorm(x, shape = 4.9), type = "l")
-#' plot(x, psnorm(x, shape = -4.9), type = "l")
-#'
-#' # Quantile function
-#' dsnorm(0.1, shape = 4.9)
-#' dsnorm(0.1, shape = -4.9)
-#' psnorm(qsnorm(0.9, shape = 3), shape = 3)
-#'
-#' # Random generator
 #' set.seed(1)
-#' plot(rsnorm(100, shape = 5), type = "l")
-#'
+#' rsnorm(3, shape = 2)
 #' @name dsnorm
 #' @rdname dsnorm
 #' @aliases dsnorm

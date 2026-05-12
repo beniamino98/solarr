@@ -5,7 +5,7 @@
 \alias{pkumaraswamy}
 \alias{qkumaraswamy}
 \alias{rkumaraswamy}
-\title{Kumaraswamy random variable}
+\title{Kumaraswamy distribution}
 \usage{
 dkumaraswamy(x, a = 1, b = 1, log = FALSE)
 
@@ -16,45 +16,47 @@ qkumaraswamy(p, a = 1, b = 1, log.p = FALSE, lower.tail = TRUE)
 rkumaraswamy(n, a = 1, b = 1)
 }
 \arguments{
-\item{x, q}{vector of quantiles.}
+\item{x}{Numeric vector of quantiles.}
 
-\item{a}{parameter \code{a > 0}.}
+\item{a}{Numeric shape parameter. Must be positive.}
 
-\item{b}{parameter \code{b > 0}.}
+\item{b}{Numeric shape parameter. Must be positive.}
 
-\item{log}{logical; if \code{TRUE}, probabilities are returned as \code{log(p)}.}
+\item{log}{Logical. If \code{TRUE}, \code{dkumaraswamy()} returns log-densities.}
 
-\item{log.p}{logical; if \code{TRUE}, probabilities p are given as \code{log(p)}.}
+\item{q}{Numeric vector of quantiles.}
 
-\item{lower.tail}{logical; if \code{TRUE}, the default, the computed probabilities are \code{P[X < x]}. Otherwise, \code{P[X > x]}.}
+\item{log.p}{Logical. If \code{TRUE}, probabilities are supplied or returned on
+the log scale.}
 
-\item{p}{vector of probabilities.}
+\item{lower.tail}{Logical. If \code{TRUE}, probabilities are \eqn{P[X \le x]};
+otherwise, \eqn{P[X > x]}.}
 
-\item{n}{number of observations. If \code{length(n) > 1}, the length is taken to be the number required.}
+\item{p}{Numeric vector of probabilities.}
+
+\item{n}{Number of observations.}
+}
+\value{
+\itemize{
+\item \code{dkumaraswamy()} returns a numeric vector of density values.
+\item \code{pkumaraswamy()} returns a numeric vector of probabilities.
+\item \code{qkumaraswamy()} returns a numeric vector of quantiles.
+\item \code{rkumaraswamy()} returns a numeric vector of random draws.
+}
 }
 \description{
-Kumaraswamy density, distribution, quantile and random generator.
+Density, distribution function, quantile function, and random generation for
+the Kumaraswamy distribution.
 }
 \details{
 Version 1.0.0.
 }
 \examples{
-# Grid
-x <- seq(0, 1, 0.01)
+dkumaraswamy(c(0.25, 0.5), a = 2, b = 1.5)
+pkumaraswamy(c(0.25, 0.5), a = 2, b = 1.5)
+qkumaraswamy(c(0.25, 0.75), a = 2, b = 1.5)
 
-# Density function
-plot(x, dkumaraswamy(x, 0.2, 0.3), type = "l")
-plot(x, dkumaraswamy(x, 2, 1.1), type = "l")
-
-# Distribution function
-plot(x, pkumaraswamy(x, 2, 1.1), type = "l")
-
-# Quantile function
-qkumaraswamy(0.2, 0.4, 1.4)
-qkumaraswamy(pkumaraswamy(0.4, 2, 1.1),2, 1.1)
-
-# Random generator
-rkumaraswamy(20, 0.4, 1.4)
-
+set.seed(1)
+rkumaraswamy(3, a = 2, b = 1.5)
 }
 \keyword{distributions}
