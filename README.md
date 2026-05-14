@@ -20,7 +20,10 @@ install.packages("devtools")
 devtools::install_github("beniamino98/solarr")
 ```
 
+An online documentation is available [here](https://solarr-package.netlify.app/).
+
 ## Features
+
 - Implementation of stochastic models for solar radiation.
 - Option pricing tools specifically designed for solar data.
 - Functions for seasonal adjustments and clear sky model estimations.
@@ -28,35 +31,23 @@ devtools::install_github("beniamino98/solarr")
 
 ## Dependencies
 The **solarr** package depends on the following R packages:
-- `R (>= 3.5.0)`
+- `R (>= 4.4.0)`
 - `ggplot2`
-- `np`
 - `dplyr (>= 1.1.3)`
 - `mclust`
 
 Additionally, it imports the following packages:
-- `assertive (>= 0.3-6)`
-- `stringr (>= 1.5.0)`
-- `rugarch (>= 1.4.1)`
-- `purrr (>= 1.0.2)`
-- `tidyr (>= 1.2.0)`
-- `lubridate (>= 1.8.0)`
-- `nortest`
+
 - `broom`
 - `formula.tools`
-
-
-## Examples
-Here's a simple example of how to use the **solarr** package:
-
-```R
-# Example of control for seasonal clear sky model
-# Fit the model 
-model <- seasonalClearsky$new()
-model$fit(x, date, lat, clearsky)
-# Predict 
-predictions <- model$predict(n)
-```
+- `lifecycle`
+- `lubridate (>= 1.8.0)`
+- `mixtools`
+- `numDeriv`
+- `purrr (>= 1.0.2)`
+- `rugarch (>= 1.4.1)`
+- `stringr (>= 1.5.0)`
+- `tidyr (>= 1.2.0)`
 
 ## License
 

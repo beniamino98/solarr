@@ -12,15 +12,15 @@ Depends:
     mclust
 Imports: 
     broom,
-    mixtools,
-    stringr,
-    rugarch,
-    purrr,
-    tidyr,    
-    lubridate,
     formula.tools,
+    lifecycle,
+    lubridate,
+    mixtools,
     numDeriv,
-    lifecycle
+    rugarch,
+    stringr,
+    purrr,
+    tidyr
 Suggests: 
     knitr,
     rmarkdown,
