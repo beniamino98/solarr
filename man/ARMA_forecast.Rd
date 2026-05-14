@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_forecast}
 \alias{ARMA_forecast}
-\title{Fast ARMA state-space h-step forecast and weights (C/BLAS)}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_forecast(h, X0, A, b, intercept = 0)
 }
@@ -18,6 +18,7 @@ ARMA_forecast(h, X0, A, b, intercept = 0)
 \item{intercept}{Numeric scalar, intercept parameter.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Fast ARMA state-space h-step forecast and weights (C/BLAS)
 }
 \note{
@@ -29,4 +30,15 @@ X0 <- c(0.2, 0.1)
 A <- ARMA_companion_matrix(0.2, 0.1)
 b <- ARMA_vector_b(1,1)
 ARMA_forecast(h, X0, A, b, intercept = 0)
+
 }
+\seealso{
+Other ARMA-moments: 
+\code{\link{ARMA_covariance}()},
+\code{\link{ARMA_expectation}()},
+\code{\link{ARMA_filter}()},
+\code{\link{ARMA_next_step}()},
+\code{\link{ARMA_variance}()}
+}
+\concept{ARMA-moments}
+\keyword{ARMA}

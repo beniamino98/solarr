@@ -2,25 +2,31 @@
 % Please edit documentation in R/solarModel_spec-R6.R
 \name{solarModel_spec}
 \alias{solarModel_spec}
-\title{Control function for a \code{solarModel} object}
+\title{Specification object for a \code{solarModel}}
+\value{
+An R6 object of class \code{solarModel_spec}.
+}
 \description{
-Control function for a \code{solarModel} object that contains all the setups used for the estimation.
+R6 class that stores the component specifications and control settings used
+to initialize and fit a \code{solarModel} object.
 }
 \note{
 Version 1.0.3
 }
 \examples{
-control <- solarModel_spec$new()
+spec <- solarModel_spec$new()
+spec$specification("Bologna", max_date = "2005-01-10")
+spec$model_name
 }
 \keyword{solarModel}
 \section{Public fields}{
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
-\item{\code{outliers}}{list with outliers.}
+\item{\code{outliers}}{List containing detected outlier information.}
 
 \item{\code{place}}{Character, optional name of the location considered.}
 
-\item{\code{coords}}{A named list with the name and the coordinates of the location considered. Contains:
+\item{\code{coords}}{A named list with coordinates for the selected location. Contains:
 \describe{
 \item{lat}{Numeric, reference latitude in degrees.}
 \item{lon}{Numeric, reference longitude in degrees.}
@@ -45,11 +51,11 @@ control <- solarModel_spec$new()
 
 \item{\code{model_name}}{Character, standard model's name.}
 
-\item{\code{dates}}{A named list, with three sub-lists: \code{data} containing the information on the complete dataset,
-\code{train} containing the information on the train dataset and \code{test} containing the information on the test dataset.
+\item{\code{dates}}{A named list with three sub-lists: \code{data} for the complete dataset,
+\code{train} for the training dataset, and \code{test} for the test dataset.
 Each sub-list is structured as follows:
 \describe{
-\item{from}{Character date, minmum date in the dataset.}
+\item{from}{Character date, minimum date in the dataset.}
 \item{to}{Character date, maximum date in the dataset.}
 \item{nobs}{Integer scalar, number of observations contained in the dataset between \code{from} and \code{to}.}
 \item{perc}{Numeric scalar, percentage of data in the dataset with respect to the complete data.}
@@ -59,7 +65,7 @@ Each sub-list is structured as follows:
 
 \item{\code{transform}}{A \code{\link{solarTransform}} object with the transformation applied to the data.}
 
-\item{\code{seasonal_model_Ct}}{A \code{\link{clearskySeasona}} object with the clear-sky model applied to the data.}
+\item{\code{seasonal_model_Ct}}{A \code{\link{seasonalClearsky}} object with the clear-sky model applied to the data.}
 
 \item{\code{seasonal.mean}}{A \code{\link{seasonalModel}} object with the seasonal model applied to the data.}
 
@@ -73,17 +79,17 @@ Each sub-list is structured as follows:
 
 \item{\code{coefficients}}{Get the model parameters as a named list.}
 
-\item{\code{std.errors}}{Get the model parameters as a named list.}
+\item{\code{std.errors}}{Get model parameter standard errors as a named list.}
 
-\item{\code{hessian}}{Get the model hessian}
+\item{\code{hessian}}{Get the model hessian.}
 
-\item{\code{jacobian}}{Get the model jacobian}
+\item{\code{jacobian}}{Get the model jacobian.}
 
 \item{\code{clearsky_threshold}}{Numeric, parameter > 1, used to scale up CAMS clearsky.}
 
 \item{\code{stochastic_clearsky}}{Logical, when \code{TRUE} the clear sky is considered stochastic.}
 
-\item{\code{quiet}}{Logical. When \code{TRUE} the function will not display any message. The dafault if \code{TRUE}.}
+\item{\code{quiet}}{Logical. If \code{TRUE}, suppress messages where supported.}
 }
 \if{html}{\out{</div>}}
 }
@@ -114,12 +120,15 @@ Initialize a \code{solarModel_spec} object.
 \if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$new()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Initializes component specifications and control settings.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel_spec-set_params"></a>}}
 \if{latex}{\out{\hypertarget{method-solarModel_spec-set_params}{}}}
 \subsection{Method \code{set_params()}}{
-Generic controls
+Set general controls.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$set_params(
   stochastic_clearsky = FALSE,
@@ -133,11 +142,14 @@ Generic controls
 \describe{
 \item{\code{stochastic_clearsky}}{Logical, when \code{TRUE} the clear sky will be considered stochastic.}
 
-\item{\code{clearsky_threshold}}{Numeric, parameter > 1, used to scale up CAMS clearsky to avoid that clear sky radiaion and global horizontal radiation are equal.}
+\item{\code{clearsky_threshold}}{Numeric. Parameter greater than 1 used to scale up CAMS clear-sky radiation.}
 
-\item{\code{quiet}}{Logical. When \code{TRUE} the function will not display any message. The dafault if \code{TRUE}.}
+\item{\code{quiet}}{Logical. If \code{TRUE}, suppress messages where supported.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates general control settings.
 }
 }
 \if{html}{\out{<hr>}}
@@ -164,12 +176,15 @@ Control parameters for the \code{solarTransform}. See \code{\link{solarTransform
 
 \item{\code{link}}{Character, link function.}
 
-\item{\code{delta}}{transform params}
+\item{\code{delta}}{Numeric. Small adjustment used around fitted transformation bounds.}
 
 \item{\code{threshold}}{Numeric. Threshold used to estimate the transformation parameters \deqn{\alpha} and \deqn{\beta}.
 The default is \code{0.01}. See \code{\link{solarTransform}} for more details.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the stored \code{solarTransform} object and its controls.
 }
 }
 \if{html}{\out{<hr>}}
@@ -192,6 +207,9 @@ List with specification's parameters of the clear sky model.
 \item{\code{control}}{Named list, control parameters. See the function \code{\link{control_seasonalClearsky}} for more details.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the stored \code{seasonalClearsky} model object.
 }
 }
 \if{html}{\out{<hr>}}
@@ -220,10 +238,13 @@ List with specification's parameters of the seasonal mean \eqn{\bar{Y}_t} for \e
 
 \item{\code{include.intercept}}{Logical. When \code{TRUE} the intercept \deqn{a_0} will be included in the seasonal model, otherwise will be excluded. The default is \code{TRUE}.}
 
-\item{\code{monthly.mean}}{Logical. When \code{TRUE} a vector of 12 monthly means will be computed on the deseasonalized series \deqn{\tilde{Y}_t = Y_t - \bar{Y}_t}
-and it is subtracted to ensure that the time series is centered around zero for all the months. The dafault if \code{TRUE}.}
+\item{\code{monthly.mean}}{Logical. When \code{TRUE}, monthly means are computed on the deseasonalized series \deqn{\tilde{Y}_t = Y_t - \bar{Y}_t}
+and subtracted from the series.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the stored seasonal mean model.
 }
 }
 \if{html}{\out{<hr>}}
@@ -250,6 +271,9 @@ List with specification's parameters of the ARMA model for deseasonalized series
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+Updates the stored ARMA mean model.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel_spec-set_seasonal.variance"></a>}}
@@ -275,14 +299,16 @@ List with specification's parameters of the seasonal variance \eqn{\bar{\sigma}_
 
 \item{\code{include.trend}}{Logical. When \code{TRUE} an yearly trend \deqn{t} will be included in the seasonal model, otherwise will be excluded. The default is \code{FALSE}.}
 
-\item{\code{correction}}{Logical. When \code{TRUE} the parameters of seasonal variance are corrected to ensure
-that the standardize the residuals have exactly a unitary variance. The dafault if \code{TRUE}.}
+\item{\code{correction}}{Logical. When \code{TRUE}, seasonal variance parameters are corrected to target unit variance for standardized residuals.}
 
 \item{\code{monthly.mean}}{Logical. When \code{TRUE} a vector of 12 monthly std. deviations will be computed
 on the standardized residuals  \deqn{\tilde{\varepsilon}_t} and used to standardize the time series
-such that it has unitary variance for all the months. The default if \code{TRUE}.}
+by month.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the stored seasonal variance model.
 }
 }
 \if{html}{\out{<hr>}}
@@ -302,6 +328,9 @@ List with specification's parameters of the GARCH variance \eqn{\sigma_t} for de
 \item{\code{garchOrder}}{Integer. An integer specifying the order of the GARCH component. The default is \code{1}.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the stored GARCH variance model.
 }
 }
 \if{html}{\out{<hr>}}
@@ -326,9 +355,9 @@ List with specification's parameters of the Gaussian mixture model for GARCH res
 \describe{
 \item{\code{abstol}}{Numeric. Absolute level for convergence of the EM-algorithm. The default is \code{1e-20}.}
 
-\item{\code{match.expectation}}{Logical, when \code{TRUE} the mixture parameters ensures that the expected value is matched.}
+\item{\code{match.expectation}}{Logical. If \code{TRUE}, mixture parameters are fitted with an expectation-matching constraint.}
 
-\item{\code{match.variance}}{Logical, when \code{TRUE} the mixture parameters ensures that the variance is matched.}
+\item{\code{match.variance}}{Logical. If \code{TRUE}, mixture parameters are fitted with a variance-matching constraint.}
 
 \item{\code{match.empiric}}{Logical, when \code{TRUE} and \code{match.expectation = TRUE} or  \code{match.variance = TRUE} the mixture parameters
 will be estimated ensuring that mean and variance matches the empirical parameters. Otherwise if \code{FALSE} and
@@ -341,6 +370,9 @@ will be estimated ensuring that mean and variance matches the empirical paramete
 \item{\code{maxrestarts}}{Integer. Maximum number of restarts when EM-algorithm does not converge. The default is \code{500}.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates the stored monthly Gaussian mixture model.
 }
 }
 \if{html}{\out{<hr>}}
@@ -374,12 +406,15 @@ Specification function for a \code{solarModel}
 \item{\code{from}}{Character. Date in the format \code{YYYY-MM-DD}. Starting date to use for training data.
 If \code{missing} will be used the minimum data available after filtering for \code{min_date}.}
 
-\item{\code{to}}{character. Date in the format \code{YYYY-MM-DD}. Ending date to use for training data.
+\item{\code{to}}{Character. Date in the format \code{YYYY-MM-DD}. Ending date to use for training data.
 If \code{missing} will be used the maximum data available after filtering for \code{max_date}.}
 
-\item{\code{data}}{data for the selected location.}
+\item{\code{data}}{Optional data frame for the selected location.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates stored data, location metadata, date ranges, and target variable.
 }
 }
 \if{html}{\out{<hr>}}
@@ -398,6 +433,9 @@ Update the parameters inside object
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+Updates component model parameters when \code{params} is supplied.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel_spec-print"></a>}}
@@ -408,6 +446,9 @@ Print method for \code{solarModel_spec} class.
 \if{html}{\out{<div class="r">}}\preformatted{solarModel_spec$print()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Prints a summary of the specification.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel_spec-clone"></a>}}

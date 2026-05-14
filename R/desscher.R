@@ -7,6 +7,7 @@
 #' @param lower,upper Numeric, lower and upper bounds for integration, i.e. the bounds of the pdf.
 #'
 #' @return A function of x.
+#' 
 #' @examples
 #' # Grid of points
 #' grid <- seq(-3, 3, 0.1)
@@ -28,12 +29,14 @@
 #'
 #' \deqn{\mathcal{E}_{\theta}\{f_X(x)\} = \frac{e^{\theta x} f_X(x)}{\int_{-\infty}^{\infty} e^{\theta x} f_X(x) dx}}
 #'
-#' @rdname desscher
 #' @name desscher
+#' @rdname desscher
 #' @aliases pesscher
 #' @aliases desscher
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
 #' @export
 desscher <- function(pdf, theta = 0, lower = -Inf, upper = Inf){
   # Esscher Numerator

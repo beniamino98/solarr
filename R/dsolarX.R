@@ -36,13 +36,17 @@
 #'
 #' set.seed(1)
 #' rsolarX(3, alpha, beta, pnorm)
+#' 
+#' @name dsolarX
 #' @rdname dsolarX
 #' @aliases dsolarX
 #' @aliases psolarX
 #' @aliases qsolarX
 #' @aliases rsolarX
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
 #' @export
 dsolarX  <- function(x, alpha, beta, pdf_Y, log = FALSE){
   z_x <- (x - alpha)/beta

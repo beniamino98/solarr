@@ -23,11 +23,15 @@
 #'   geom_line(aes(grid, cdf_2), color = "green")+
 #'   geom_line(aes(grid, cdf_3), color = "red")
 #'
+#' @name desscherMixture
 #' @rdname desscherMixture
 #' @aliases desscherMixture
 #' @aliases pesscherMixture
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
+#' 
 #' @export
 desscherMixture <- function(mean = c(0,0), sd = c(1,1), alpha = c(0.5, 0.5), theta = 0){
   # Distorted parameters

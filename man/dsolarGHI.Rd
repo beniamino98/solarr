@@ -78,7 +78,8 @@ distribution function \code{cdf_Y}. With the inverse Gumbel link, the transforme
 solar radiation variable is
 \deqn{R_t(y) = C(t) (1-\alpha-\beta \exp(-\exp(y)))}
 with support \eqn{[C(t)(1-\alpha-\beta), C(t)(1-\alpha)]}.
-
+}
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -92,4 +93,19 @@ qsolarGHI(c(0.1, 0.9), Ct, alpha, beta, pnorm)
 set.seed(1)
 rsolarGHI(3, Ct, alpha, beta, pnorm)
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

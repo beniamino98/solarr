@@ -26,7 +26,8 @@ Given a function of \code{x}, i.e. \eqn{f_X(x)}, compute its Esscher transform a
 Given a pdf \eqn{f_X(x)} the function computes its Esscher transform, i.e.
 
 \deqn{\mathcal{E}_{\theta}\{f_X(x)\} = \frac{e^{\theta x} f_X(x)}{\int_{-\infty}^{\infty} e^{\theta x} f_X(x) dx}}
-
+}
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -47,4 +48,19 @@ esscher_cdf <- pesscher(pdf, theta = -0.1)
 plot(esscher_cdf(grid))
 
 }
+\seealso{
+Other distributions: 
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

@@ -21,7 +21,7 @@ pesscherMixture(mean = c(0, 0), sd = c(1, 1), alpha = c(0.5, 0.5), theta = 0)
 \description{
 Esscher-distorted density and distribution of a Gaussian Mixture
 }
-\details{
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -45,4 +45,19 @@ ggplot()+
   geom_line(aes(grid, cdf_3), color = "red")
 
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

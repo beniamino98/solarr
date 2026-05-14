@@ -1,23 +1,31 @@
-#' Density, distribution and quantile function
+#' Construct density, distribution, and quantile functions
+#'  
+#' @description
+#' `r lifecycle::badge("experimental")`
+#' Return functions with density-like, distribution-like, or quantile-like
+#' interfaces from a supplied density or distribution function.
 #'
-#' Return a function of `x` given the specification of a function of `x`.
+#' @param .f Function. Density function used by `PDF()` or integrated by
+#'   `CDF()`.
+#' @param cdf Function. Cumulative distribution function used by `Quantile()`.
+#' @param lower Numeric. Lower integration bound used by `CDF()`.
+#' @param interval Numeric vector of length two. Search interval used by
+#'   `Quantile()` when solving for roots.
+#' @param ... Additional arguments passed to `.f`.
 #'
-#' @param .f density function
-#' @param cdf cumulative distribution function.
-#' @param lower lower bound for integration (CDF).
-#' @param interval lower and upper bounds for unit root (Quantile).
-#' @param ... other parameters to be passed to `.f`.
+#' @return
+#' - `PDF()` returns a function with arguments `x` and `log`.
+#' - `CDF()` returns a function with arguments `x`, `lower.tail`, and `log.p`.
+#' - `Quantile()` returns a function with arguments `p`, `log.p`, and
+#'   `lower.tail`.
 #'
 #' @examples
-#' # Density
 #' pdf <- PDF(dnorm, mean = 0.3, sd = 1.3)
 #' pdf(3)
-#' dnorm(3, mean = 0.3, sd = 1.3)
-#' # Distribution
+#'
 #' cdf <- CDF(dnorm, mean = 0.3, sd = 1.3)
 #' cdf(3)
-#' pnorm(3, mean = 0.3, sd = 1.3)
-#' # Numeric quantile function
+#'
 #' pnorm(Quantile(pnorm)(0.9))
 #' @name PDF
 #' @rdname PDF
@@ -86,7 +94,6 @@ Quantile <- function(cdf, interval = c(-100, 100)){
     return(x)
   }
 }
-
 
 
 

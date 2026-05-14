@@ -48,7 +48,7 @@ otherwise, \eqn{P[X > x]}.}
 Density, distribution function, quantile function, and random generation for
 the Kumaraswamy distribution.
 }
-\details{
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -59,4 +59,19 @@ qkumaraswamy(c(0.25, 0.75), a = 2, b = 1.5)
 set.seed(1)
 rkumaraswamy(3, a = 2, b = 1.5)
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

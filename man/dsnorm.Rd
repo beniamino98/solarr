@@ -50,7 +50,7 @@ otherwise, \eqn{P[X > x]}.}
 Density, distribution function, quantile function, and random generation for
 the skew-normal distribution.
 }
-\details{
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -61,4 +61,19 @@ qsnorm(c(0.25, 0.75), shape = 2)
 set.seed(1)
 rsnorm(3, shape = 2)
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

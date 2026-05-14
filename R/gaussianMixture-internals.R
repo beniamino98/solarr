@@ -3,12 +3,18 @@
 #' Compute the first four moments, central moments, mean, variance, skewness and kurtosis
 #' for a Gaussian Mixture with K components.
 #'
+#' @param means Numeric vector of component means.
+#' @param sd Numeric vector of component standard deviations.
+#' @param alpha Numeric vector of component weights.
+#'
+#' @return A tibble with non-central moments, central moments, mean, variance,
+#'   skewness, and excess kurtosis.
+#'
 #' @examples
-#' means = c(-0.9, 0.5)
-#' sd = c(0.4,1)
-#' alpha = c(0.5, 0.5)
+#' means <- c(-0.9, 0.5)
+#' sd <- c(0.4, 1)
+#' alpha <- c(0.5, 0.5)
 #' GM_moments(means, sd, alpha)
-#' GM_moments(c(-0.8, 1.8), c(0.4,1), c(0.5, 0.5))
 #'
 #' @details
 #' The non-central moments are denoted as `m1`, `m2`, `m3`, `m4`. The central moments as `mu2`, `mu3`, `mu4`.
@@ -77,6 +83,11 @@ GM_moments <- function(means, sd, alpha){
 #' @param m3 Numeric, third target moment.
 #' @param p Numeric, probability.
 #'
+#' @return A list with component means, standard deviations, and probabilities.
+#'
+#' @examples
+#' GM_moments_match(d = 1, m1 = 0, m2 = 1, m3 = 0, p = 0.5)
+#'
 #' @keywords gaussianMixture
 #' @note Version 1.0.0
 #' @export
@@ -105,11 +116,17 @@ GM_moments_match <- function(d, m1 = 0, m2 = 1, m3 = 0, p = 0.5){
 
 #' Compute the log-likelihood of a Gaussian Mixture
 #'
-#' @param means description
-#' @param sd description
-#' @param alpha description
+#' @param means Numeric vector of component means.
+#' @param sd Numeric vector of component standard deviations.
+#' @param alpha Numeric vector of component weights.
+#' @param x Numeric vector of observations.
+#'
+#' @return Numeric log-likelihood value. If `x` is omitted, returns `0`.
+#'
 #' @examples
-#' GM_loglik(c(-0.8, 0.8), c(0.4,1), c(0.5, 0.5), rnorm(100))
+#' set.seed(1)
+#' x <- rmixnorm(5, c(0, 1), c(0.3, 0.5), c(0.4, 0.6))$X
+#' GM_loglik(c(0, 1), c(0.3, 0.5), c(0.4, 0.6), x)
 #'
 #' @keywords gaussianMixture
 #' @note Version 1.0.0
@@ -131,12 +148,19 @@ GM_loglik <- function(means, sd, alpha, x){
 #' @param x Numeric, vector on which the model will be fitted.
 #' @param method Character, method use to fit the GM model, can be `mclust` or `mixtools`.
 #' @param components Integer, number of components for the mixture.
+#' @param maxit Integer. Maximum number of EM iterations.
+#' @param maxrestarts Integer. Maximum number of EM restarts.
+#'
+#' @return A list with fitted component means, standard deviations, and
+#'   probabilities.
 #'
 #' @examples
-#' x <- rmixnorm(1000, c(0, 0), c(0.3, 2), c(0.4, 0.6))
-#' # Fitted parameters without contraints
-#' params <- GM_fit(x$X)
-#' GM_moments(params$means, params$sd, params$p)
+#' if (interactive()) {
+#'   set.seed(1)
+#'   x <- rmixnorm(20, c(0, 1), c(0.3, 0.5), c(0.4, 0.6))$X
+#'   params <- GM_fit(x)
+#'   GM_moments(params$means, params$sd, params$p)
+#' }
 #'
 #' @keywords gaussianMixture
 #' @note Version 1.0.0
@@ -185,28 +209,25 @@ GM_fit <- function(x, method = c("mclust", "mixtools"), components = 2, maxit = 
 #' Fit a Gaussian Mixture with two components under moments constraints.
 #'
 #' @param x Numeric, vector on which the model will be fitted.
-#' @param start_params Numeric vector of parameters
-#' @param mu_target Numeric, scalar. Target mean of the mixture. If missing will be not applied any contraint.
-#' @param var_target Numeric, scalar. Target variance of the mixture. If missing will be not applied any contraint.
+#' @param start_params Numeric vector of starting parameters.
+#' @param mu_target Numeric scalar. Target mean of the mixture. If `NA`, no
+#'   mean constraint is applied.
+#' @param var_target Numeric scalar. Target variance of the mixture. If `NA`,
+#'   no variance constraint is applied.
+#' @param maxit Integer. Maximum number of optimizer evaluations.
+#' @param abstol Numeric. Relative tolerance passed to the optimizer.
+#'
+#' @return A list with fitted component means, standard deviations, and
+#'   probabilities.
 #'
 #' @examples
-#' x <- rmixnorm(1000, c(0, 0), c(0.3, 2), c(0.4, 0.6))
-#' # Fitted parameters without contraints
-#' params <- GM_fit(x$X)
-#' GM_moments(params$means, params$sd, params$p)
-#'
-#' # Fit the parameters with moments contraints
-#' start_params <- unlist(purrr::flatten(params)[-6])
-#' # Match a certain mean
-#' match_params <- GM_fit_moments_match(x$X, start_params, mu_target = -0.09)
-#' GM_moments(match_params$means, match_params$sd, match_params$p)
-#' # Match a certain variance
-#' match_params <- GM_fit_moments_match(x$X, start_params, var_target = 2.4)
-#' GM_moments(match_params$means, match_params$sd, match_params$p)
-#'
-#' # Match a certain mean and variance
-#' match_params <- GM_fit_moments_match(x$X, start_params, mu_target = -0.09, var_target = 2.4)
-#' GM_moments(match_params$means, match_params$sd, match_params$p)
+#' if (interactive()) {
+#'   set.seed(1)
+#'   x <- rmixnorm(20, c(0, 1), c(0.3, 0.5), c(0.4, 0.6))$X
+#'   start_params <- c(0, 1, 0.3, 0.5, 0.4)
+#'   match_params <- GM_fit_moments_match(x, start_params, mu_target = 0.6)
+#'   GM_moments(match_params$means, match_params$sd, match_params$p)
+#' }
 #'
 #' @keywords gaussianMixture
 #' @note Version 1.0.0

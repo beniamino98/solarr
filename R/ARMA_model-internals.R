@@ -1,16 +1,24 @@
+#' Matrix form of an ARMA model 
+#' 
+#' @description
+#' `r lifecycle::badge("stable")` 
 #' Construct the vector b of an ARMA model
 #'
 #' @param arOrder integer(1), order of AR model.
 #' @param maOrder integer(1), order of MA model.
+#' 
 #' @examples
-#' # ARMA(2,2)
+#' # Vector for ARMA(2,2)
 #' ARMA_vector_b(2,2)
-#' # AR(2)
+#' # Vector for AR(2)
 #' ARMA_vector_b(2,0)
-#' # MA(2)
+#' # Vector for MA(2)
 #' ARMA_vector_b(0,2)
+#' 
 #' @keywords ARMA
+#' @family ARMA-params
 #' @note Version 1.0.2
+#' 
 #' @rdname ARMA_vector_b
 #' @name ARMA_vector_b
 #' @export
@@ -34,11 +42,16 @@ ARMA_vector_b <- function(arOrder, maOrder){
   return(b)
 }
 
+#' Matrix form of an ARMA model 
+#' 
+#' @description
+#' `r lifecycle::badge("stable")` 
 #' Construct the companion matrix of an ARMA model
 #'
 #' @param phi numeric vector of length p, AR parameters.
 #' @param theta numeric vector of length q, MA parameters.
 #' @return numeric matrix of size p+q x p+q.
+#' 
 #' @examples
 #' # AR(1) / MA(1) ~ No companion
 #' ARMA_companion_matrix(c(0.4))
@@ -51,7 +64,9 @@ ARMA_vector_b <- function(arOrder, maOrder){
 #' ARMA_companion_matrix(c(0.4, 0.2), c(0.3, 0))
 #' ARMA_companion_matrix(c(0.1, 0.02, 0.01), c(0.3, 0.1, 0.05))
 #' @keywords ARMA
+#' @family ARMA-params
 #' @note Version 1.0.2
+#' 
 #' @rdname ARMA_companion_matrix
 #' @name ARMA_companion_matrix
 #' @export
@@ -116,6 +131,10 @@ ARMA_companion_matrix <- function(phi, theta){
   return(A)
 }
 
+#' Matrix form of an ARMA model 
+#' 
+#' @description
+#' `r lifecycle::badge("stable")` 
 #' Compute the conditional mean of an ARMA model
 #'
 #' @param h integer(1), number of steps ahead.
@@ -123,14 +142,18 @@ ARMA_companion_matrix <- function(phi, theta){
 #' @param A numeric matrix of size p+q x p+q. See the function \code{\link{ARMA_companion_matrix}} for more details.
 #' @param b mumeric vector of length p+q. See the function \code{\link{ARMA_vector_b}} for more details.
 #' @param intercept Numeric scalar, intercept parameter.
+#' 
 #' @examples
 #' A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
 #' b <- ARMA_vector_b(2,2)
 #' intercept <- 0.2
 #' X0 <- c(0.9, 0.2, -0.1, 0.3)
 #' ARMA_expectation(h = 3, X0, A, b, intercept)
+#' 
 #' @keywords ARMA
+#' @family ARMA-moments
 #' @note Version 1.0.2
+#' 
 #' @rdname ARMA_expectation
 #' @name ARMA_expectation
 #' @export
@@ -150,16 +173,24 @@ ARMA_expectation <- function(h, X0, A, b, intercept = 0){
   pow_sum
 }
 
-#' Compute the long-term variance of an ARMA model
-#'
+#' Matrix form of an ARMA model 
+#' 
+#' @description
+#' `r lifecycle::badge("stable")` 
+#' Compute the variance of an ARMA model
+#' 
 #' @inheritParams ARMA_expectation
 #' @param sigma2 integer(1), std. deviation of the residuals.
+#' 
 #' @examples
 #' A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
 #' b <- ARMA_vector_b(2,2)
 #' ARMA_variance(h = 3, A, b, sigma2 = 1)
+#' 
 #' @keywords ARMA
+#' @family ARMA-moments
 #' @note Version 1.0.2
+#' 
 #' @rdname ARMA_variance
 #' @name ARMA_variance
 #' @export
@@ -180,16 +211,25 @@ ARMA_variance <- function(h = 1, A, b, sigma2 = 1){
   pow_sum
 }
 
+
+#' Matrix form of an ARMA model 
+#' 
+#' @description
+#' `r lifecycle::badge("stable")` 
 #' Compute the ARMA conditional variance / covariance
 #'
 #' @inheritParams ARMA_variance
 #' @param k integer(1), number of steps ahead for the second lag.
+#' 
 #' @examples
 #' A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
 #' b <- ARMA_vector_b(2,2)
 #' ARMA_covariance(3, 1, A, b, sigma2 = 1)
+#' 
 #' @keywords ARMA
+#' @family ARMA-moments
 #' @note Version 1.0.2
+#' 
 #' @rdname ARMA_covariance
 #' @name ARMA_covariance
 #' @export
@@ -206,10 +246,15 @@ ARMA_covariance <- function(h, k, A, b, sigma2 = 1){
   sigma2 * cv_x
 }
 
-#' Next-step value of an ARMA process
+#' Matrix form of an ARMA model 
 #'
+#' @description
+#' `r lifecycle::badge("stable")` 
+#' Next-step value of an ARMA process
+#' 
 #' @inheritParams ARMA_expectation
 #' @param eps optional numeric vector of length h. Next step new residuals.
+#' 
 #' @examples
 #' # Companion matrix and vector b
 #' A <- ARMA_companion_matrix(c(0.4), c())
@@ -235,7 +280,9 @@ ARMA_covariance <- function(h, k, A, b, sigma2 = 1){
 #' ARMA_next_step(10, X0, A, b, intercept = 0.2, eps = eps)
 #'
 #' @keywords ARMA
+#' @family ARMA-moments
 #' @note Version 1.0.2
+#' 
 #' @rdname ARMA_next_step
 #' @name ARMA_next_step
 #' @export
@@ -259,13 +306,21 @@ ARMA_next_step <- function(h = 1, X0, A, b, intercept = 0, eps = 0){
 }
 
 
+#' Matrix form of an ARMA model 
+#'
+#' @description
+#' `r lifecycle::badge("stable")` 
 #' Filter the time-series and compute fitted values and residuals.
 #'
 #' @param x numeric vector, time series to filter.
 #' @inheritParams ARMA_expectation
+#' 
+#' @keywords ARMA
+#' @family ARMA-moments
+#' @note Version 1.0.2
+#' 
 #' @rdname ARMA_filter
 #' @name ARMA_filter
-#' @note Version 1.0.2
 #' @export
 ARMA_filter <- function(x, A, b, intercept = 0) {
   # AR order
@@ -289,16 +344,25 @@ ARMA_filter <- function(x, A, b, intercept = 0) {
   return(x_hat)
 }
 
+#' Matrix form of an ARMA model 
+#'
+#' @description
+#' `r lifecycle::badge("stable")` 
 #' Fast ARMA state-space h-step forecast and weights (C/BLAS)
 #'
 #' @inheritParams ARMA_expectation
+#' 
 #' @examples
 #' h <- 1000
 #' X0 <- c(0.2, 0.1)
 #' A <- ARMA_companion_matrix(0.2, 0.1)
 #' b <- ARMA_vector_b(1,1)
 #' ARMA_forecast(h, X0, A, b, intercept = 0)
+#' 
 #' @note Version 1.0.2
+#' @keywords ARMA
+#' @family ARMA-moments
+#' 
 #' @rdname ARMA_forecast
 #' @name ARMA_forecast
 #' @export
@@ -321,12 +385,12 @@ ARMA_forecast <- function(h, X0, A, b, intercept = 0) {
 #'
 #' @param phi numeric vector of length p, AR parameters.
 #' @param sigma2 integer(1), std. deviation of the residuals.
+#' 
 #' @examples
 #' AR_variance(c(0.5, 0.2))
 #' AR_variance(c(0.2, 0.3, 0.2), 2)
-#' @keywords ARMA
+#' 
 #' @note Version 1.0.2
-#' @export
 #' @noRd
 AR_variance <- function(phi, sigma2 = 1){
   # Detect AR-order
@@ -360,9 +424,21 @@ AR_variance <- function(phi, sigma2 = 1){
   return(var)
 }
 
-#' From constraint to uncontraint parameters
+#' Uncontraint parameters for AR
+#' 
+#' @description
+#' `r lifecycle::badge("stable")`
+#' Map AR parameters into uncontraint parameters
+#'  
+#' @param phi numeric vector of length p, AR parameters.
+#' 
 #' @note Version 1.0.2
-#' @noRd
+#' @keywords ARMA
+#' @family ARMA-params
+#' 
+#' @rdname AR_params_to_zeta
+#' @name AR_params_to_zeta
+#' @export
 AR_params_to_zeta <- function(phi){
   p <- length(phi)
   if (p == 0) return(numeric(0))
@@ -387,18 +463,27 @@ AR_params_to_zeta <- function(phi){
   return(coefs_star)
 }
 
-#' From constraint to uncontraint parameters
-#'
+#' ARMA reparametrization
+#' 
+#' @description
+#' `r lifecycle::badge("stable")`
+#' Map constraint ARMA parameters into uncontraint parameters
+#' 
 #' @param zeta_phi Numeric vector of length p, AR parameters.
 #' @param zeta_theta Numeric vector of length q, MA parameters.
+#' 
 #' @examples
 #' phi <- c(0.3, 0.4, 0.1)
 #' theta <- c(0.1, 0.8)
 #' zeta <- ARMA_params_to_zeta(phi, theta)
 #'
 #' @note Version 1.0.2
+#' @keywords ARMA
+#' @family ARMA-params
+#' 
+#' @rdname ARMA_params_to_zeta
+#' @name ARMA_params_to_zeta
 #' @export
-#' @noRd
 ARMA_params_to_zeta <- function(phi, theta){
   zeta_phi <- c()
   # Ensure not missing
@@ -420,10 +505,21 @@ ARMA_params_to_zeta <- function(phi, theta){
   )
 }
 
-#' From unconstraint to contraint parameters
-#'
+#' AR reparametrization
+#' 
+#' @description
+#' `r lifecycle::badge("stable")`
+#' Map unconstraint AR parameters into contraint parameters
+#' 
+#' @param zeta Numeric vector of length p, unconstraint parameters.
+#' 
+#' @keywords ARMA
+#' @family ARMA-params
 #' @note Version 1.0.2
-#' @noRd
+#'
+#' @rdname AR_params_to_phi
+#' @name AR_params_to_phi
+#' @export
 AR_params_to_phi <- function(zeta){
   p <- length(zeta)
   kappa <- tanh(zeta)
@@ -486,8 +582,12 @@ AR_params_to_phi <- function(zeta){
        J_phi_zeta  = J_phi_zeta)
 }
 
-#' From constraint to uncontraint parameters
-#'
+#' ARMA reparametrization
+#' 
+#' @description
+#' `r lifecycle::badge("stable")`
+#' Map unconstraint ARMA parameters into contraint parameters
+#' 
 #' @param zeta_phi Numeric vector of length p, unconstraint AR parameters.
 #' @param zeta_theta Numeric vector of length q, unconstraint MA parameters.
 #'
@@ -495,7 +595,12 @@ AR_params_to_phi <- function(zeta){
 #' zeta_phi <- c(0.7043836, 0.4652377, 0.1003353)
 #' zeta_theta <- c(0.5493061, 1.0986123)
 #' ARMA_params_to_phi(zeta_phi, zeta_theta)
+#' @keywords ARMA
+#' @family ARMA-params
 #' @note Version 1.0.2
+#' 
+#' @rdname ARMA_params_to_phi
+#' @name ARMA_params_to_phi
 #' @export
 #' @noRd
 ARMA_params_to_phi <- function(zeta_phi, zeta_theta){

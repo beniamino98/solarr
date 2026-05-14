@@ -14,17 +14,22 @@ solarModel_grid(
 )
 }
 \arguments{
-\item{spec}{Specification}
+\item{spec}{A \code{solarModel_spec} object.}
 
-\item{arOrder}{Numeric, maximum AR order.}
+\item{arOrder}{Numeric. Maximum AR order.}
 
-\item{maOrder}{Numeric, maximum MA order.}
+\item{maOrder}{Numeric. Maximum MA order.}
 
-\item{archOrder}{Numeric, maximum ARCH order.}
+\item{archOrder}{Numeric. Maximum ARCH order.}
 
-\item{garchOrder}{Numeric, maximum GARCH order.}
+\item{garchOrder}{Numeric. Maximum GARCH order.}
 
-\item{place}{Reference location}
+\item{QMLE}{Logical. If \code{TRUE}, each fitted model is refitted with
+\code{solarModel_QMLE()}.}
+}
+\value{
+A tibble containing model names, selected orders, cloned
+specifications, and fitted \code{solarModel} objects.
 }
 \description{
 Fit a grid of solarModels
@@ -33,10 +38,12 @@ Fit a grid of solarModels
 Version 1.0.0.
 }
 \examples{
-spec <- solarModel_spec$new()
-spec$specification("Bologna")
-models <- solarModel_grid(spec, 1,1,1,1)
-models
+if (interactive()) {
+  spec <- solarModel_spec$new()
+  spec$specification("Bologna")
+  models <- solarModel_grid(spec, 1, 1, 1, 1)
+  models
+}
 
 }
 \keyword{solarModel}

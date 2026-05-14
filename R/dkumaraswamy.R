@@ -36,8 +36,11 @@
 #' @aliases pkumaraswamy
 #' @aliases qkumaraswamy
 #' @aliases rkumaraswamy
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
+#' 
 #' @export
 dkumaraswamy <- function(x, a = 1, b = 1, log = FALSE){
   # Density function

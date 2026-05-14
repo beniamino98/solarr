@@ -36,8 +36,10 @@
 #' @aliases pgumbel
 #' @aliases qgumbel
 #' @aliases rgumbel
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
 #' @export
 dgumbel <- function(x, location = 0, scale = 1, log = FALSE){
   # Standardized values

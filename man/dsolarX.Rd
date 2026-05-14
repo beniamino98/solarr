@@ -54,7 +54,8 @@ Consider a latent random variable \eqn{Y} with density \code{pdf_Y} and
 distribution function \code{cdf_Y}. The solar risk driver is modeled as
 \deqn{X(Y) = \alpha+\beta \exp(-\exp(Y))}
 with support \eqn{[\alpha, \alpha+\beta]}.
-
+}
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -66,5 +67,21 @@ qsolarX(c(0.1, 0.9), alpha, beta, pnorm)
 
 set.seed(1)
 rsolarX(3, alpha, beta, pnorm)
+
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

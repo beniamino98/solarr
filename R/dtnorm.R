@@ -35,8 +35,10 @@
 #' @aliases ptnorm
 #' @aliases qtnorm
 #' @aliases rtnorm
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
 #' @export
 dtnorm <- function(x, mean = 0, sd = 1, a = -3, b = 3, log = FALSE){
   x[x < a | x > b] <- NA

@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_vector_b}
 \alias{ARMA_vector_b}
-\title{Construct the vector b of an ARMA model}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_vector_b(arOrder, maOrder)
 }
@@ -12,17 +12,27 @@ ARMA_vector_b(arOrder, maOrder)
 \item{maOrder}{integer(1), order of MA model.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Construct the vector b of an ARMA model
 }
 \note{
 Version 1.0.2
 }
 \examples{
-# ARMA(2,2)
+# Vector for ARMA(2,2)
 ARMA_vector_b(2,2)
-# AR(2)
+# Vector for AR(2)
 ARMA_vector_b(2,0)
-# MA(2)
+# Vector for MA(2)
 ARMA_vector_b(0,2)
+
 }
+\seealso{
+Other ARMA-params: 
+\code{\link{ARMA_companion_matrix}()},
+\code{\link{ARMA_params_to_zeta}()},
+\code{\link{AR_params_to_phi}()},
+\code{\link{AR_params_to_zeta}()}
+}
+\concept{ARMA-params}
 \keyword{ARMA}

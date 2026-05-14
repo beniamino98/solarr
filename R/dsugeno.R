@@ -19,10 +19,13 @@
 #'
 #' @rdname dsugeno
 #' @name dsugeno
+#' 
 #' @aliases dsugeno
 #' @aliases psugeno
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
 #' @export
 dsugeno <- function(pdf, cdf, lambda = 0){
   function(x) {

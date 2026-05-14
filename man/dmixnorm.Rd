@@ -62,10 +62,11 @@ indicators, and the combined random draw.
 }
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Density, distribution function, quantile function, and random generation for
 a univariate Gaussian mixture.
 }
-\details{
+\note{
 Version 1.0.1.
 }
 \examples{
@@ -80,4 +81,19 @@ set.seed(1)
 rmixnorm(3, mean, sd, alpha)
 
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

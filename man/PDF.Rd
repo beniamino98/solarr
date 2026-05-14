@@ -4,7 +4,7 @@
 \alias{PDF}
 \alias{CDF}
 \alias{Quantile}
-\title{Density, distribution and quantile function}
+\title{Construct density, distribution, and quantile functions}
 \usage{
 PDF(.f, ...)
 
@@ -13,28 +13,37 @@ CDF(.f, lower = -Inf, ...)
 Quantile(cdf, interval = c(-100, 100))
 }
 \arguments{
-\item{.f}{density function}
+\item{.f}{Function. Density function used by \code{PDF()} or integrated by
+\code{CDF()}.}
 
-\item{...}{other parameters to be passed to \code{.f}.}
+\item{...}{Additional arguments passed to \code{.f}.}
 
-\item{lower}{lower bound for integration (CDF).}
+\item{lower}{Numeric. Lower integration bound used by \code{CDF()}.}
 
-\item{cdf}{cumulative distribution function.}
+\item{cdf}{Function. Cumulative distribution function used by \code{Quantile()}.}
 
-\item{interval}{lower and upper bounds for unit root (Quantile).}
+\item{interval}{Numeric vector of length two. Search interval used by
+\code{Quantile()} when solving for roots.}
+}
+\value{
+\itemize{
+\item \code{PDF()} returns a function with arguments \code{x} and \code{log}.
+\item \code{CDF()} returns a function with arguments \code{x}, \code{lower.tail}, and \code{log.p}.
+\item \code{Quantile()} returns a function with arguments \code{p}, \code{log.p}, and
+\code{lower.tail}.
+}
 }
 \description{
-Return a function of \code{x} given the specification of a function of \code{x}.
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#experimental}{\figure{lifecycle-experimental.svg}{options: alt='[Experimental]'}}}{\strong{[Experimental]}}
+Return functions with density-like, distribution-like, or quantile-like
+interfaces from a supplied density or distribution function.
 }
 \examples{
-# Density
 pdf <- PDF(dnorm, mean = 0.3, sd = 1.3)
 pdf(3)
-dnorm(3, mean = 0.3, sd = 1.3)
-# Distribution
+
 cdf <- CDF(dnorm, mean = 0.3, sd = 1.3)
 cdf(3)
-pnorm(3, mean = 0.3, sd = 1.3)
-# Numeric quantile function
+
 pnorm(Quantile(pnorm)(0.9))
 }

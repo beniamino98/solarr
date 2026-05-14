@@ -50,7 +50,7 @@ otherwise, \eqn{P[X > x]}.}
 Density, distribution function, quantile function, and random generation for
 a normal distribution truncated to an interval.
 }
-\details{
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -61,4 +61,19 @@ qtnorm(c(0.25, 0.75), mean = 0, sd = 1, a = -2, b = 2)
 set.seed(1)
 rtnorm(3, mean = 0, sd = 1, a = -2, b = 2)
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()}
+}
+\concept{distributions}
 \keyword{distributions}

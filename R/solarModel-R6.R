@@ -1,53 +1,26 @@
 #' Solar Model in R6 Class
 #'
 #' @description
-#' The `solarModel` class is an implementation of a comprehensive solar model that includes fitting seasonal models,
-#' detecting outliers, performing transformations, and applying time-series models such as AR and GARCH. This model
-#' is specifically designed to predict solar radiation data, and it uses seasonal and Gaussian Mixture models to
-#' capture the underlying data behavior.
+#' The `solarModel` class combines seasonal components, bounded
+#' transformations, ARMA-GARCH dynamics, and monthly Gaussian mixture
+#' residual models for solar radiation data.
 #'
 #' @details
-#' The `solarModel` class allows for the step-by-step fitting and transformation of solar radiation data, from clear sky
-#' models to GARCH models for residual analysis. It utilizes various private and public methods to fit the seasonal
-#' clearsky model, compute risk drivers, detect outliers, and apply time-series models.
+#' The class stores a `solarModel_spec` object and fitted data summaries. Most
+#' public methods update the object state in place and are intended for the
+#' package fitting workflow.
+#'
+#' @return An R6 object of class `solarModel`.
 #'
 #' @examples
-#'
-#' # Model specification
 #' spec <- solarModel_spec$new()
-#' spec$set_mean.model(arOrder = 1, maOrder = 1)
-#' spec$specification("Bologna")
-#' spec
-#' # Model fit
-#' Bologna <- solarModel$new(spec)
-#' Bologna$fit()
-#'
-#' Bologna <- solarModel_QMLE(Bologna)
-#' solarOption_model(Bologna, Bologna$moments$conditional[1:365,])
-#'
-#' # save(spec, file = "data/Bologna.RData")
-#'
-#' # Extract and update the parameters
-#' model <- Bologna$clone(TRUE)
-#' params <- model$coefficients
-#' model$update(params)
-#' model$filter()
-#'
-#' # Fit a model with the realized clear sky
-#' spec$control$stochastic_clearsky <- TRUE
-#' # Initialize a new model
+#' spec$specification("Bologna", max_date = "2005-01-10")
 #' model <- solarModel$new(spec)
-#' # Model fit
-#' model$fit()
 #'
-#' # Fit a model for the clearsky
-#' spec_Ct <- spec
-#' spec_Ct$control$stochastic_clearsky <- FALSE
-#' spec_Ct$target <- "clearsky"
-#' # Initialize a new model
-#' model <- solarModel$new(spec)
-#' # Model fit
-#' model$fit()
+#' if (interactive()) {
+#'   model$fit()
+#'   model$loglik
+#' }
 #'
 #' @rdname solarModel
 #' @name solarModel
@@ -63,7 +36,8 @@ solarModel <- R6::R6Class("solarModel",
                             interpolated = FALSE,
                             #' @description
                             #' Initialize a `solarModel`
-                            #' @param spec an object with class `solarModelSpec`. See the function \code{\link{solarModel_spec}} for details.
+                            #' @param spec An object of class `solarModel_spec`. See \code{\link{solarModel_spec}}.
+                            #' @return Initializes object state during construction.
                             initialize = function(spec){
                               # Seasonal data by month and day for an year with 366 days
                               dates <- seq.Date(as.Date("2020-01-01"), as.Date("2020-12-31"), by = "1 day")
@@ -86,6 +60,7 @@ solarModel <- R6::R6Class("solarModel",
                             # ***************************************************************************** #
                             #' @description
                             #' Initialize and fit a \code{\link{solarModel}} object given the specification contained in `$control`.
+                            #' @return Updates the object state. The return value is not intended for use.
                             fit = function(){
                               # 1) Clearsky
                               self$fit_seasonal_model_Ct()
@@ -113,6 +88,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Initialize and fit a \code{\link{seasonalClearsky}} model given the specification contained in `$control`.
+                            #' @return Updates the clear-sky model and fitted data stored in the object.
                             fit_seasonal_model_Ct = function(){
                               # Arguments
                               data <- dplyr::filter(private$..data, isTrain & weights != 0)
@@ -139,6 +115,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Compute the risk drivers and impute the observation that are greater or equal to the clear sky level.
+                            #' @return Updates fitted data and outlier information stored in the object.
                             compute_risk_drivers = function(){
                               # Arguments
                               target <- self$spec$target
@@ -171,7 +148,8 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Fit the parameters of the \code{\link{solarTransform}} object.
-                            #' @param detect_outliers Logical, when true outliers are detected
+                            #' @param detect_outliers Logical. If `TRUE`, transformation-bound outliers are detected.
+                            #' @return Updates transformation parameters and transformed data stored in the object.
                             fit_transform = function(detect_outliers = TRUE){
                               # Arguments
                               control <- self$spec$transform$control
@@ -214,6 +192,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Fit a \code{\link{seasonalModel}} the transformed variable (`Yt`) and compute deseasonalized series (`Yt_tilde`).
+                            #' @return Updates fitted seasonal mean quantities stored in the object.
                             fit_seasonal_mean = function(){
                               # Arguments
                               target <- self$spec$target
@@ -239,6 +218,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Correct the deseasonalized series (`Yt_tilde`) by subtracting its monthly mean (`Yt_tilde_uncond`).
+                            #' @return Updates monthly mean corrections when enabled.
                             fit_monthly_mean = function(){
                               # Unconditional mean for Yt_tilde
                               if (self$spec$seasonal.mean$control$monthly.mean) {
@@ -264,6 +244,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Fit an ARMA model (`Yt_tilde`) and compute the residuals (`eps`).
+                            #' @return Updates ARMA fitted values and residuals stored in the object.
                             fit_mean_model = function(){
                               # Arguments
                               data <- private$..data
@@ -284,6 +265,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Fit a \code{\link{seasonalModel}} on AR squared residuals (`eps`) and compute deseasonalized residuals `eps_tilde`.
+                            #' @return Updates seasonal variance quantities stored in the object.
                             fit_seasonal_variance = function(){
                               # Dataset
                               data <- private$..data
@@ -312,6 +294,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Correct the standardized series (`eps_tilde`) by subtracting its monthly mean (`sigma_uncond`).
+                            #' @return Updates monthly variance corrections when enabled.
                             fit_monthly_variance = function(){
                               # Condition
                               condition <- self$spec$seasonal.variance$control$monthly.mean
@@ -335,6 +318,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Correct the parameters of the seasonal variance to ensure a unitary variance
+                            #' @return Updates seasonal variance parameters when correction is enabled.
                             correct_seasonal_variance = function(){
                               # Condition
                               condition <- self$spec$seasonal.variance$control$monthly.mean
@@ -361,6 +345,7 @@ solarModel <- R6::R6Class("solarModel",
                             #' @description
                             #' Fit a `GARCH` model on the deseasonalized residuals (`eps_tilde`).
                             #' Compute the standardized (`u`) and monthly deseasonalized residuals (`u_tilde`).
+                            #' @return Updates GARCH variance and standardized residuals stored in the object.
                             fit_variance_model = function(){
                               # Arguments
                               control <- self$spec
@@ -389,6 +374,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Initialize and fit a `solarMixture` object.
+                            #' @return Updates the monthly Gaussian mixture model stored in the object specification.
                             fit_mixture_model = function(){
                               # Arguments
                               control <- self$spec$mixture.model$control
@@ -427,6 +413,7 @@ solarModel <- R6::R6Class("solarModel",
                             #' @description
                             #' Update the parameters inside object
                             #' @param params List of parameters. See the slot `$coefficients` for a template.
+                            #' @return Updates model parameters and resets the stored log-likelihood.
                             update = function(params){
                               # Update the parameters
                               private$..spec$update(params)
@@ -435,12 +422,14 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Update the moments inside object
+                            #' @return Updates the stored conditional moments.
                             update_moments = function(){
                               # Update conditional moments
                               private$..moments$conditional <- solarMoments_conditional(self$data, theta = 0)
                             },
                             #' @description
                             #' Update the log-likelihood inside object
+                            #' @return Updates observation-level and total log-likelihood values.
                             update_logLik = function(){
                               # Compute the log-likelihoods
                               log.likelihoods <- self$logLik()
@@ -452,6 +441,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Update the clear sky and risk drivers
+                            #' @return Updates clear-sky values, risk drivers, and transformed data.
                             update_risk_drivers = function(){
                               # Update clear sky
                               private$..data[["Ct"]] <- self$spec$seasonal_model_Ct$predict(newdata = self$data)
@@ -462,8 +452,8 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Update the classification of the Bernoulli random variable.
-                            #' @param filter Logical, when `TRUE` before the classification will be runned the command
-                            #' `filter` to update the mixture classification.
+                            #' @param filter Logical. If `TRUE`, the mixture model is filtered before classification.
+                            #' @return Updates mixture classification columns stored in fitted data.
                             update_classification = function(filter = FALSE){
                               # Update mixture classification
                               if (filter) {
@@ -497,9 +487,8 @@ solarModel <- R6::R6Class("solarModel",
                             # ***************************************************************************** #
                             #' @description
                             #' Filter the time series when new parameters are supplied in the method `$update(params)`.
-                            #' @param fit Logical, when `FALSE`, if in the model's specification, the monthly mean and variances will be re estimated and the seasonal variance corrected
-                            #' such that the total variance of the deseasonalized residuals is zero.
-                            #' @return Update the slots `$data`, `$seasonal_data`, `$monthly_data`
+                            #' @param fit Logical. If `TRUE`, monthly mean and variance corrections are recomputed.
+                            #' @return Updates the stored data summaries. The return value is not intended for use.
                             filter = function(fit = FALSE){
                               # Arguments
                               target <- self$spec$target
@@ -550,8 +539,9 @@ solarModel <- R6::R6Class("solarModel",
                             #' @description
                             #' Compute the log-likelihood of the model and update the slot `$loglik`.
                             #' @param moments Dataset containing the moments to use for computation.
-                            #' @param target Character. Target variable to use "Yt" or "GHI".
-                            #' @param quasi Logical, when `TRUE` is computed the pseudo-likelihood with Gaussian link.
+                            #' @param target Character. Target variable to use, either `"Yt"` or `"GHI"`.
+                            #' @param quasi Logical. If `TRUE`, compute the Gaussian quasi log-likelihood.
+                            #' @return A numeric vector of observation-level log-likelihood values.
                             logLik = function(moments, target = "Yt", quasi = FALSE){
                               # Default argument
                               if (missing(moments)) {
@@ -603,6 +593,7 @@ solarModel <- R6::R6Class("solarModel",
                             },
                             #' @description
                             #' Print method for `solarModel` class.
+                            #' @return Prints a summary of the object.
                             print = function(){
                               # Complete data specifications
                               data <- self$spec$dates$data
@@ -650,17 +641,17 @@ solarModel <- R6::R6Class("solarModel",
                           #                                             Active slots
                           # ====================================================================================================== #
                           active = list(
-                            #' @field data A data frame with the fitted data, and the seasonal and monthly parameters.
+                            #' @field data A data frame with fitted data, seasonal quantities, and monthly parameters.
                             data = function(){
                               # Seasonal data
                               seasonal_data <- dplyr::select(self$seasonal_data, -n)
                               dplyr::left_join(private$..data, seasonal_data, by = c("Month", "Day"))
                             },
-                            #' @field seasonal_data A data frame containing seasonal and monthly parameters.
+                            #' @field seasonal_data A data frame containing seasonal and monthly summaries.
                             seasonal_data = function(){
                               dplyr::left_join(private$..seasonal_data, self$monthly_data, by = "Month")
                             },
-                            #' @field monthly_data A data frame that contains monthly parameters.
+                            #' @field monthly_data A data frame containing monthly parameters.
                             monthly_data = function(){
                               if (!purrr::is_empty(self$spec$mixture.model)) {
                                 dplyr::left_join(private$..monthly_data, self$spec$mixture.model$coefficients, by = "Month")
@@ -672,7 +663,7 @@ solarModel <- R6::R6Class("solarModel",
                             loglik = function(){
                               private$..loglik
                             },
-                            #' @field spec A list with the specification that govern the behavior of the model's fitting process.
+                            #' @field spec A `solarModel_spec` object that controls the model fitting process.
                             spec = function(){
                               private$..spec
                             },
@@ -694,4 +685,3 @@ solarModel <- R6::R6Class("solarModel",
                             }
                           )
                         )
-

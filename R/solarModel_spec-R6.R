@@ -1,10 +1,15 @@
-#' Control function for a `solarModel` object
+#' Specification object for a `solarModel`
 #'
 #' @description
-#' Control function for a `solarModel` object that contains all the setups used for the estimation.
+#' R6 class that stores the component specifications and control settings used
+#' to initialize and fit a `solarModel` object.
+#'
+#' @return An R6 object of class `solarModel_spec`.
 #'
 #' @examples
-#' control <- solarModel_spec$new()
+#' spec <- solarModel_spec$new()
+#' spec$specification("Bologna", max_date = "2005-01-10")
+#' spec$model_name
 #' @rdname solarModel_spec
 #' @name solarModel_spec
 #' @keywords solarModel
@@ -12,11 +17,11 @@
 #' @export
 solarModel_spec <- R6::R6Class("solarModel_spec",
                                public = list(
-                                 #' @field outliers list with outliers.
+                                 #' @field outliers List containing detected outlier information.
                                  outliers = NULL,
                                  #' @field place Character, optional name of the location considered.
                                  place = "",
-                                 #' @field coords A named list with the name and the coordinates of the location considered. Contains:
+                                 #' @field coords A named list with coordinates for the selected location. Contains:
                                  #' \describe{
                                  #'  \item{lat}{Numeric, reference latitude in degrees.}
                                  #'  \item{lon}{Numeric, reference longitude in degrees.}
@@ -25,6 +30,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  coords = dplyr::tibble(lat = NA, lon = NA, alt = NA),
                                  #' @description
                                  #' Initialize a `solarModel_spec` object.
+                                 #' @return Initializes component specifications and control settings.
                                  initialize = function(){
                                    self$set_params()
                                    self$set_transform()
@@ -36,10 +42,11 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                    self$set_mixture.model()
                                  },
                                  #' @description
-                                 #' Generic controls
+                                 #' Set general controls.
                                  #' @param stochastic_clearsky Logical, when `TRUE` the clear sky will be considered stochastic.
-                                 #' @param clearsky_threshold Numeric, parameter > 1, used to scale up CAMS clearsky to avoid that clear sky radiaion and global horizontal radiation are equal.
-                                 #' @param quiet Logical. When `TRUE` the function will not display any message. The dafault if `TRUE`.
+                                 #' @param clearsky_threshold Numeric. Parameter greater than 1 used to scale up CAMS clear-sky radiation.
+                                 #' @param quiet Logical. If `TRUE`, suppress messages where supported.
+                                 #' @return Updates general control settings.
                                  set_params = function(stochastic_clearsky = FALSE, clearsky_threshold = 1.01, quiet = FALSE){
                                    private$..stochastic_clearsky <- stochastic_clearsky
                                    private$..clearsky_threshold <- clearsky_threshold
@@ -49,10 +56,11 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' Control parameters for the `solarTransform`. See \code{\link{solarTransform}} for more details.
                                  #' @param min_pos Integer, position of the minimum. For example when `2` the minimum is the second lowest value.
                                  #' @param max_pos Integer, position of the maximum. For example when `3` the maximum is the third greatest value.
-                                 #' @param delta transform params
+                                 #' @param delta Numeric. Small adjustment used around fitted transformation bounds.
                                  #' @param link Character, link function.
                                  #' @param threshold Numeric. Threshold used to estimate the transformation parameters \deqn{\alpha} and \deqn{\beta}.
                                  #' The default is `0.01`. See \code{\link{solarTransform}} for more details.
+                                 #' @return Updates the stored `solarTransform` object and its controls.
                                  set_transform = function(min_pos = 1, max_pos = 1, link = "invgumbel", delta = 0.05, threshold = 0.01){
                                    # Initialize transform object
                                    private$..transform <- solarTransform$new(alpha = 0, beta = 1, link = link)
@@ -66,6 +74,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' List with specification's parameters of the clear sky model.
                                  #' @param spec Named list, model's specification. See the function \code{\link{seasonalClearsky_spec}} for more details.
                                  #' @param control Named list, control parameters. See the function \code{\link{control_seasonalClearsky}} for more details.
+                                 #' @return Updates the stored `seasonalClearsky` model object.
                                  set_clearsky = function(spec = seasonalClearsky_spec(), control = control_seasonalClearsky()){
                                    private$..seasonal_model_Ct <- seasonalClearsky$new(spec = spec, control = control)
                                  },
@@ -75,8 +84,9 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' @param period Integer, seasonal periodicity, the default is `365`.
                                  #' @param include.trend Logical. When `TRUE` an yearly trend \deqn{t} will be included in the seasonal model, otherwise will be excluded. The default is `FALSE`.
                                  #' @param include.intercept Logical. When `TRUE` the intercept \deqn{a_0} will be included in the seasonal model, otherwise will be excluded. The default is `TRUE`.
-                                 #' @param monthly.mean Logical. When `TRUE` a vector of 12 monthly means will be computed on the deseasonalized series \deqn{\tilde{Y}_t = Y_t - \bar{Y}_t}
-                                 #'  and it is subtracted to ensure that the time series is centered around zero for all the months. The dafault if `TRUE`.
+                                 #' @param monthly.mean Logical. When `TRUE`, monthly means are computed on the deseasonalized series \deqn{\tilde{Y}_t = Y_t - \bar{Y}_t}
+                                 #'  and subtracted from the series.
+                                 #' @return Updates the stored seasonal mean model.
                                  set_seasonal.mean = function(order = 1, period = 365, include.trend = FALSE, include.intercept = TRUE, monthly.mean = FALSE){
                                    # 1) Initialization of the seasonal model
                                    base_formula <- ifelse(include.intercept, "Yt ~ 1", "Yt ~ -1")
@@ -105,6 +115,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' @param arOrder Integer. An integer specifying the order of the AR component. The default is `1`.
                                  #' @param maOrder Integer. An integer specifying the order of the MA component. The default is `0`.
                                  #' @param include.intercept Logical. When `TRUE` the intercept \deqn{\phi_0} will be included in the seasonal model, otherwise will be excluded. The default is `FALSE`.
+                                 #' @return Updates the stored ARMA mean model.
                                  set_mean.model = function(arOrder = 1, maOrder = 0, include.intercept = FALSE){
                                    private$..mean.model = ARMA_modelR6$new(arOrder = arOrder, maOrder = maOrder, include.intercept = include.intercept)
                                  },
@@ -113,11 +124,11 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' @param order Integer. Specify the order of the seasonality of the seasonal variance. The default is `1`.
                                  #' @param period Integer, seasonal periodicity, the default is `365`.
                                  #' @param include.trend Logical. When `TRUE` an yearly trend \deqn{t} will be included in the seasonal model, otherwise will be excluded. The default is `FALSE`.
-                                 #' @param correction Logical. When `TRUE` the parameters of seasonal variance are corrected to ensure
-                                 #'  that the standardize the residuals have exactly a unitary variance. The dafault if `TRUE`.
+                                 #' @param correction Logical. When `TRUE`, seasonal variance parameters are corrected to target unit variance for standardized residuals.
                                  #' @param monthly.mean Logical. When `TRUE` a vector of 12 monthly std. deviations will be computed
                                  #'  on the standardized residuals  \deqn{\tilde{\varepsilon}_t} and used to standardize the time series
-                                 #'  such that it has unitary variance for all the months. The default if `TRUE`.
+                                 #'  by month.
+                                 #' @return Updates the stored seasonal variance model.
                                  set_seasonal.variance = function(order = 1, period = 365, include.trend = FALSE, correction = FALSE, monthly.mean = FALSE){
                                    # 1) Initialization of the seasonal model
                                    formula <- ifelse(include.trend, "eps2 ~ 1 + n", "eps2 ~ 1")
@@ -144,6 +155,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' List with specification's parameters of the GARCH variance \eqn{\sigma_t} for deseasonalized residuals \eqn{\tilde{e}_t = e_t/\bar{\sigma}_t}.
                                  #' @param archOrder Integer. An integer specifying the order of the ARCH component. The default is `1`.
                                  #' @param garchOrder Integer. An integer specifying the order of the GARCH component. The default is `1`.
+                                 #' @return Updates the stored GARCH variance model.
                                  set_variance.model = function(archOrder = 1, garchOrder = 1){
                                    # 2) Store extra control parameters
                                    if (archOrder == 0 & garchOrder == 0){
@@ -163,14 +175,15 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' @description
                                  #' List with specification's parameters of the Gaussian mixture model for GARCH residuals \eqn{u_t = \tilde{e}_t/\sigma_t}.
                                  #' @param abstol Numeric. Absolute level for convergence of the EM-algorithm. The default is `1e-20`.
-                                 #' @param match.expectation Logical, when `TRUE` the mixture parameters ensures that the expected value is matched.
-                                 #' @param match.variance Logical, when `TRUE` the mixture parameters ensures that the variance is matched.
+                                 #' @param match.expectation Logical. If `TRUE`, mixture parameters are fitted with an expectation-matching constraint.
+                                 #' @param match.variance Logical. If `TRUE`, mixture parameters are fitted with a variance-matching constraint.
                                  #' @param match.empiric Logical, when `TRUE` and `match.expectation = TRUE` or  `match.variance = TRUE` the mixture parameters
                                  #' will be estimated ensuring that mean and variance matches the empirical parameters. Otherwise if `FALSE` and
                                  #'  `match.expectation = TRUE` or `match.variance = TRUE` the target expectation will be zero and the target variance 1.
                                  #' @param method Character, package used to fit the parameters. Can be `mclust` or `mixtools`.
                                  #' @param maxit Integer. Maximum number of iterations for EM-algorithm. The default is `5000`.
                                  #' @param maxrestarts Integer. Maximum number of restarts when EM-algorithm does not converge. The default is `500`.
+                                 #' @return Updates the stored monthly Gaussian mixture model.
                                  set_mixture.model = function(abstol = 1e-20, match.expectation = FALSE, match.variance = FALSE,
                                                               match.empiric = FALSE, method = "mclust", maxit = 5000, maxrestarts = 500){
                                    # 1) Initialize a solarMixture
@@ -192,9 +205,10 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' @param max_date Character. Date in the format `YYYY-MM-DD`. Maximum date for the complete data. If `missing` will be used the maximum data available.
                                  #' @param from Character. Date in the format `YYYY-MM-DD`. Starting date to use for training data.
                                  #' If `missing` will be used the minimum data available after filtering for `min_date`.
-                                 #' @param to character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.
+                                 #' @param to Character. Date in the format `YYYY-MM-DD`. Ending date to use for training data.
                                  #' If `missing` will be used the maximum data available after filtering for `max_date`.
-                                 #' @param data data for the selected location.
+                                 #' @param data Optional data frame for the selected location.
+                                 #' @return Updates stored data, location metadata, date ranges, and target variable.
                                  specification = function(place, target = "GHI", min_date, max_date, from, to, data){
                                    # Match the target variable to model
                                    target <- match.arg(target, choices = c("GHI", "clearsky"))
@@ -269,6 +283,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  #' @description
                                  #' Update the parameters inside object
                                  #' @param params List of parameters. See the slot `$coefficients` for a template.
+                                 #' @return Updates component model parameters when `params` is supplied.
                                  update = function(params){
                                    if (!missing(params)) {
                                      if (!is.null(dim(params))) {
@@ -297,6 +312,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  },
                                  #' @description
                                  #' Print method for `solarModel_spec` class.
+                                 #' @return Prints a summary of the specification.
                                  print = function(){
                                    # Seasonal mean order
                                    sm_order <- self$seasonal.mean$order
@@ -395,11 +411,11 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                    paste0(self$transform$link, "-ARMA(", self$mean.model$arOrder, ", ", self$mean.model$maOrder, ")-",
                                           "GARCH(", self$variance.model$archOrder, ", ", self$variance.model$garchOrder, ")")
                                  },
-                                 #' @field dates A named list, with three sub-lists: `data` containing the information on the complete dataset,
-                                 #' `train` containing the information on the train dataset and `test` containing the information on the test dataset.
+                                 #' @field dates A named list with three sub-lists: `data` for the complete dataset,
+                                 #' `train` for the training dataset, and `test` for the test dataset.
                                  #' Each sub-list is structured as follows:
                                  #' \describe{
-                                 #'  \item{from}{Character date, minmum date in the dataset.}
+                                 #'  \item{from}{Character date, minimum date in the dataset.}
                                  #'  \item{to}{Character date, maximum date in the dataset.}
                                  #'  \item{nobs}{Integer scalar, number of observations contained in the dataset between `from` and `to`.}
                                  #'  \item{perc}{Numeric scalar, percentage of data in the dataset with respect to the complete data.}
@@ -415,7 +431,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  transform = function(){
                                    private$..transform
                                  },
-                                 #' @field seasonal_model_Ct A \code{\link{clearskySeasona}} object with the clear-sky model applied to the data.
+                                 #' @field seasonal_model_Ct A \code{\link{seasonalClearsky}} object with the clear-sky model applied to the data.
                                  seasonal_model_Ct = function(){
                                    private$..seasonal_model_Ct
                                  },
@@ -476,7 +492,7 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
 
                                    return(params)
                                  },
-                                 #' @field std.errors Get the model parameters as a named list.
+                                 #' @field std.errors Get model parameter standard errors as a named list.
                                  std.errors = function(){
                                    # 1. Clear sky seasonal model
                                    coefs_names <- c()
@@ -513,11 +529,11 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
 
                                    return(params)
                                  },
-                                 #' @field hessian Get the model hessian
+                                 #' @field hessian Get the model hessian.
                                  hessian = function(){
                                    private$..hessian
                                  },
-                                 #' @field jacobian Get the model jacobian
+                                 #' @field jacobian Get the model jacobian.
                                  jacobian = function(){
                                    private$..jacobian
                                  },
@@ -529,9 +545,8 @@ solarModel_spec <- R6::R6Class("solarModel_spec",
                                  stochastic_clearsky = function(){
                                    private$..stochastic_clearsky
                                  },
-                                 #' @field quiet Logical. When `TRUE` the function will not display any message. The dafault if `TRUE`.
+                                 #' @field quiet Logical. If `TRUE`, suppress messages where supported.
                                  quiet = function(){
                                    private$..quiet
                                  }
                                ))
-

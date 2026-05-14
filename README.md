@@ -51,7 +51,6 @@ Here's a simple example of how to use the **solarr** package:
 
 ```R
 # Example of control for seasonal clear sky model
-control <- control_seasonalClearsky(method = "II")
 # Fit the model 
 model <- seasonalClearsky$new()
 model$fit(x, date, lat, clearsky)

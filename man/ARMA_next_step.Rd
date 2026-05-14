@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_next_step}
 \alias{ARMA_next_step}
-\title{Next-step value of an ARMA process}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_next_step(h = 1, X0, A, b, intercept = 0, eps = 0)
 }
@@ -20,6 +20,7 @@ ARMA_next_step(h = 1, X0, A, b, intercept = 0, eps = 0)
 \item{eps}{optional numeric vector of length h. Next step new residuals.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Next-step value of an ARMA process
 }
 \note{
@@ -50,4 +51,13 @@ eps <- rnorm(10)
 ARMA_next_step(10, X0, A, b, intercept = 0.2, eps = eps)
 
 }
+\seealso{
+Other ARMA-moments: 
+\code{\link{ARMA_covariance}()},
+\code{\link{ARMA_expectation}()},
+\code{\link{ARMA_filter}()},
+\code{\link{ARMA_forecast}()},
+\code{\link{ARMA_variance}()}
+}
+\concept{ARMA-moments}
 \keyword{ARMA}

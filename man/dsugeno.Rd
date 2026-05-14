@@ -25,7 +25,7 @@ psugeno(cdf, lambda = 0)
 \description{
 Compute the Sugeno-distorted distribution for a given distribution or density.
 }
-\details{
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -36,4 +36,19 @@ psugeno(cdf, lambda = -0.2)(x)
 dsugeno(pdf, cdf, lambda = -0.2)(x)
 
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

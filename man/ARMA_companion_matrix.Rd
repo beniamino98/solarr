@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_companion_matrix}
 \alias{ARMA_companion_matrix}
-\title{Construct the companion matrix of an ARMA model}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_companion_matrix(phi, theta)
 }
@@ -15,6 +15,7 @@ ARMA_companion_matrix(phi, theta)
 numeric matrix of size p+q x p+q.
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Construct the companion matrix of an ARMA model
 }
 \note{
@@ -32,4 +33,12 @@ ARMA_companion_matrix(theta = c(0.4, 0.3, 0.1))
 ARMA_companion_matrix(c(0.4, 0.2), c(0.3, 0))
 ARMA_companion_matrix(c(0.1, 0.02, 0.01), c(0.3, 0.1, 0.05))
 }
+\seealso{
+Other ARMA-params: 
+\code{\link{ARMA_params_to_zeta}()},
+\code{\link{ARMA_vector_b}()},
+\code{\link{AR_params_to_phi}()},
+\code{\link{AR_params_to_zeta}()}
+}
+\concept{ARMA-params}
 \keyword{ARMA}

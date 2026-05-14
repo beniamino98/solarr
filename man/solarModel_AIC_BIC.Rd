@@ -7,7 +7,16 @@
 solarModel_AIC_BIC(model, target = "GHI", type = "full")
 }
 \arguments{
-\item{model}{solarmodel}
+\item{model}{A fitted \code{solarModel} object.}
+
+\item{target}{Character. Target variable passed to the model log-likelihood.}
+
+\item{type}{Character. Data split used for the criteria. One of \code{"full"},
+\code{"train"}, or \code{"test"}.}
+}
+\value{
+A tibble with model metadata, log-likelihood, parameter count,
+sample size, AIC, and BIC.
 }
 \description{
 Compute the AIC and BIC of a solarModel object

@@ -1,16 +1,23 @@
 #' Fit a grid of solarModels
 #'
-#' @param spec Specification
-#' @param place Reference location
-#' @param arOrder Numeric, maximum AR order.
-#' @param maOrder Numeric, maximum MA order.
-#' @param archOrder Numeric, maximum ARCH order.
-#' @param garchOrder Numeric, maximum GARCH order.
+#' @param spec A `solarModel_spec` object.
+#' @param arOrder Numeric. Maximum AR order.
+#' @param maOrder Numeric. Maximum MA order.
+#' @param archOrder Numeric. Maximum ARCH order.
+#' @param garchOrder Numeric. Maximum GARCH order.
+#' @param QMLE Logical. If `TRUE`, each fitted model is refitted with
+#'   `solarModel_QMLE()`.
+#'
+#' @return A tibble containing model names, selected orders, cloned
+#'   specifications, and fitted `solarModel` objects.
+#'
 #' @examples
-#' spec <- solarModel_spec$new()
-#' spec$specification("Bologna")
-#' models <- solarModel_grid(spec, 1,1,1,1)
-#' models
+#' if (interactive()) {
+#'   spec <- solarModel_spec$new()
+#'   spec$specification("Bologna")
+#'   models <- solarModel_grid(spec, 1, 1, 1, 1)
+#'   models
+#' }
 #'
 #' @rdname solarModel_grid
 #' @name solarModel_grid
@@ -89,7 +96,13 @@ solarModel_grid <- function(spec, arOrder = 2, maOrder = 2, archOrder = 1, garch
 
 #' Compute the AIC and BIC of a solarModel object
 #'
-#' @param model solarmodel
+#' @param model A fitted `solarModel` object.
+#' @param target Character. Target variable passed to the model log-likelihood.
+#' @param type Character. Data split used for the criteria. One of `"full"`,
+#'   `"train"`, or `"test"`.
+#'
+#' @return A tibble with model metadata, log-likelihood, parameter count,
+#'   sample size, AIC, and BIC.
 #'
 #' @rdname solarModel_AIC_BIC
 #' @name solarModel_AIC_BIC
@@ -137,4 +150,3 @@ solarModel_AIC_BIC <- function(model, target = "GHI", type = "full"){
     BIC = BIC
   )
 }
-

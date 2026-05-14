@@ -30,12 +30,15 @@
 #' rinvgumbel(3, location = 0, scale = 1)
 #' @name dinvgumbel
 #' @rdname dinvgumbel
+#' 
 #' @aliases dinvgumbel
 #' @aliases pinvgumbel
 #' @aliases qinvgumbel
 #' @aliases rinvgumbel
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
 #' @export
 dinvgumbel <- function(x, location = 0, scale = 1, log = FALSE){
   # Standardized values

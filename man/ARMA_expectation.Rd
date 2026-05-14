@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_expectation}
 \alias{ARMA_expectation}
-\title{Compute the conditional mean of an ARMA model}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_expectation(h, X0, A, b, intercept = 0)
 }
@@ -18,6 +18,7 @@ ARMA_expectation(h, X0, A, b, intercept = 0)
 \item{intercept}{Numeric scalar, intercept parameter.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Compute the conditional mean of an ARMA model
 }
 \note{
@@ -29,5 +30,15 @@ b <- ARMA_vector_b(2,2)
 intercept <- 0.2
 X0 <- c(0.9, 0.2, -0.1, 0.3)
 ARMA_expectation(h = 3, X0, A, b, intercept)
+
 }
+\seealso{
+Other ARMA-moments: 
+\code{\link{ARMA_covariance}()},
+\code{\link{ARMA_filter}()},
+\code{\link{ARMA_forecast}()},
+\code{\link{ARMA_next_step}()},
+\code{\link{ARMA_variance}()}
+}
+\concept{ARMA-moments}
 \keyword{ARMA}

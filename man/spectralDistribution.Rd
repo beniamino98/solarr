@@ -7,11 +7,21 @@
 spectralDistribution(x, measure = "nanometer")
 }
 \arguments{
-\item{measure}{character, measure of the irradiated energy. If \code{nanometer} the final energy will be in W/m2 x nanometer,
-otherwise if \code{micrometer} the final energy will be in W/m2 x micrometer.}
+\item{x}{Numeric vector. Wavelength values. Values are interpreted in
+nanometers when \code{measure = "nanometer"} and in micrometers when
+\code{measure = "micrometer"}.}
 
-\item{lambda}{numeric, wave length in micrometers.}
+\item{measure}{Character. Unit used for the wavelength scale and returned
+spectral density. One of \code{"nanometer"} or \code{"micrometer"}.}
+}
+\value{
+A numeric vector of spectral density values.
 }
 \description{
 Compute the spectral distribution for a black body
+}
+\examples{
+spectralDistribution(c(500, 600))
+spectralDistribution(c(0.5, 0.6), measure = "micrometer")
+
 }

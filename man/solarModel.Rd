@@ -3,57 +3,31 @@
 \name{solarModel}
 \alias{solarModel}
 \title{Solar Model in R6 Class}
+\value{
+An R6 object of class \code{solarModel}.
+}
 \description{
-The \code{solarModel} class is an implementation of a comprehensive solar model that includes fitting seasonal models,
-detecting outliers, performing transformations, and applying time-series models such as AR and GARCH. This model
-is specifically designed to predict solar radiation data, and it uses seasonal and Gaussian Mixture models to
-capture the underlying data behavior.
+The \code{solarModel} class combines seasonal components, bounded
+transformations, ARMA-GARCH dynamics, and monthly Gaussian mixture
+residual models for solar radiation data.
 }
 \details{
-The \code{solarModel} class allows for the step-by-step fitting and transformation of solar radiation data, from clear sky
-models to GARCH models for residual analysis. It utilizes various private and public methods to fit the seasonal
-clearsky model, compute risk drivers, detect outliers, and apply time-series models.
+The class stores a \code{solarModel_spec} object and fitted data summaries. Most
+public methods update the object state in place and are intended for the
+package fitting workflow.
 }
 \note{
 Version 1.0.4
 }
 \examples{
-
-# Model specification
 spec <- solarModel_spec$new()
-spec$set_mean.model(arOrder = 1, maOrder = 1)
-spec$specification("Bologna")
-spec
-# Model fit
-Bologna <- solarModel$new(spec)
-Bologna$fit()
-
-Bologna <- solarModel_QMLE(Bologna)
-solarOption_model(Bologna, Bologna$moments$conditional[1:365,])
-
-# save(spec, file = "data/Bologna.RData")
-
-# Extract and update the parameters
-model <- Bologna$clone(TRUE)
-params <- model$coefficients
-model$update(params)
-model$filter()
-
-# Fit a model with the realized clear sky
-spec$control$stochastic_clearsky <- TRUE
-# Initialize a new model
+spec$specification("Bologna", max_date = "2005-01-10")
 model <- solarModel$new(spec)
-# Model fit
-model$fit()
 
-# Fit a model for the clearsky
-spec_Ct <- spec
-spec_Ct$control$stochastic_clearsky <- FALSE
-spec_Ct$target <- "clearsky"
-# Initialize a new model
-model <- solarModel$new(spec)
-# Model fit
-model$fit()
+if (interactive()) {
+  model$fit()
+  model$loglik
+}
 
 }
 \keyword{solarModel}
@@ -67,15 +41,15 @@ model$fit()
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
-\item{\code{data}}{A data frame with the fitted data, and the seasonal and monthly parameters.}
+\item{\code{data}}{A data frame with fitted data, seasonal quantities, and monthly parameters.}
 
-\item{\code{seasonal_data}}{A data frame containing seasonal and monthly parameters.}
+\item{\code{seasonal_data}}{A data frame containing seasonal and monthly summaries.}
 
-\item{\code{monthly_data}}{A data frame that contains monthly parameters.}
+\item{\code{monthly_data}}{A data frame containing monthly parameters.}
 
 \item{\code{loglik}}{The log-likelihood computed on train data.}
 
-\item{\code{spec}}{A list with the specification that govern the behavior of the model's fitting process.}
+\item{\code{spec}}{A \code{solarModel_spec} object that controls the model fitting process.}
 
 \item{\code{moments}}{Get a list containing the conditional moments.}
 
@@ -122,9 +96,12 @@ Initialize a \code{solarModel}
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{spec}}{an object with class \code{solarModelSpec}. See the function \code{\link{solarModel_spec}} for details.}
+\item{\code{spec}}{An object of class \code{solarModel_spec}. See \code{\link{solarModel_spec}}.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Initializes object state during construction.
 }
 }
 \if{html}{\out{<hr>}}
@@ -136,6 +113,9 @@ Initialize and fit a \code{\link{solarModel}} object given the specification con
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates the object state. The return value is not intended for use.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_seasonal_model_Ct"></a>}}
@@ -146,6 +126,9 @@ Initialize and fit a \code{\link{seasonalClearsky}} model given the specificatio
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_seasonal_model_Ct()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates the clear-sky model and fitted data stored in the object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-compute_risk_drivers"></a>}}
@@ -156,6 +139,9 @@ Compute the risk drivers and impute the observation that are greater or equal to
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$compute_risk_drivers()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates fitted data and outlier information stored in the object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_transform"></a>}}
@@ -169,9 +155,12 @@ Fit the parameters of the \code{\link{solarTransform}} object.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{detect_outliers}}{Logical, when true outliers are detected}
+\item{\code{detect_outliers}}{Logical. If \code{TRUE}, transformation-bound outliers are detected.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates transformation parameters and transformed data stored in the object.
 }
 }
 \if{html}{\out{<hr>}}
@@ -183,6 +172,9 @@ Fit a \code{\link{seasonalModel}} the transformed variable (\code{Yt}) and compu
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_seasonal_mean()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates fitted seasonal mean quantities stored in the object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_monthly_mean"></a>}}
@@ -193,6 +185,9 @@ Correct the deseasonalized series (\code{Yt_tilde}) by subtracting its monthly m
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_monthly_mean()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates monthly mean corrections when enabled.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_mean_model"></a>}}
@@ -203,6 +198,9 @@ Fit an ARMA model (\code{Yt_tilde}) and compute the residuals (\code{eps}).
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_mean_model()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates ARMA fitted values and residuals stored in the object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_seasonal_variance"></a>}}
@@ -213,6 +211,9 @@ Fit a \code{\link{seasonalModel}} on AR squared residuals (\code{eps}) and compu
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_seasonal_variance()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates seasonal variance quantities stored in the object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_monthly_variance"></a>}}
@@ -223,6 +224,9 @@ Correct the standardized series (\code{eps_tilde}) by subtracting its monthly me
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_monthly_variance()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates monthly variance corrections when enabled.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-correct_seasonal_variance"></a>}}
@@ -233,6 +237,9 @@ Correct the parameters of the seasonal variance to ensure a unitary variance
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$correct_seasonal_variance()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates seasonal variance parameters when correction is enabled.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_variance_model"></a>}}
@@ -244,6 +251,9 @@ Compute the standardized (\code{u}) and monthly deseasonalized residuals (\code{
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_variance_model()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates GARCH variance and standardized residuals stored in the object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-fit_mixture_model"></a>}}
@@ -254,6 +264,9 @@ Initialize and fit a \code{solarMixture} object.
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$fit_mixture_model()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates the monthly Gaussian mixture model stored in the object specification.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-update"></a>}}
@@ -271,6 +284,9 @@ Update the parameters inside object
 }
 \if{html}{\out{</div>}}
 }
+\subsection{Returns}{
+Updates model parameters and resets the stored log-likelihood.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-update_moments"></a>}}
@@ -281,6 +297,9 @@ Update the moments inside object
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$update_moments()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates the stored conditional moments.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-update_logLik"></a>}}
@@ -291,6 +310,9 @@ Update the log-likelihood inside object
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$update_logLik()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates observation-level and total log-likelihood values.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-update_risk_drivers"></a>}}
@@ -301,6 +323,9 @@ Update the clear sky and risk drivers
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$update_risk_drivers()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Updates clear-sky values, risk drivers, and transformed data.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-update_classification"></a>}}
@@ -314,10 +339,12 @@ Update the classification of the Bernoulli random variable.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{filter}}{Logical, when \code{TRUE} before the classification will be runned the command
-\code{filter} to update the mixture classification.}
+\item{\code{filter}}{Logical. If \code{TRUE}, the mixture model is filtered before classification.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+Updates mixture classification columns stored in fitted data.
 }
 }
 \if{html}{\out{<hr>}}
@@ -332,13 +359,12 @@ Filter the time series when new parameters are supplied in the method \verb{$upd
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{fit}}{Logical, when \code{FALSE}, if in the model's specification, the monthly mean and variances will be re estimated and the seasonal variance corrected
-such that the total variance of the deseasonalized residuals is zero.}
+\item{\code{fit}}{Logical. If \code{TRUE}, monthly mean and variance corrections are recomputed.}
 }
 \if{html}{\out{</div>}}
 }
 \subsection{Returns}{
-Update the slots \verb{$data}, \verb{$seasonal_data}, \verb{$monthly_data}
+Updates the stored data summaries. The return value is not intended for use.
 }
 }
 \if{html}{\out{<hr>}}
@@ -355,11 +381,14 @@ Compute the log-likelihood of the model and update the slot \verb{$loglik}.
 \describe{
 \item{\code{moments}}{Dataset containing the moments to use for computation.}
 
-\item{\code{target}}{Character. Target variable to use "Yt" or "GHI".}
+\item{\code{target}}{Character. Target variable to use, either \code{"Yt"} or \code{"GHI"}.}
 
-\item{\code{quasi}}{Logical, when \code{TRUE} is computed the pseudo-likelihood with Gaussian link.}
+\item{\code{quasi}}{Logical. If \code{TRUE}, compute the Gaussian quasi log-likelihood.}
 }
 \if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+A numeric vector of observation-level log-likelihood values.
 }
 }
 \if{html}{\out{<hr>}}
@@ -371,6 +400,9 @@ Print method for \code{solarModel} class.
 \if{html}{\out{<div class="r">}}\preformatted{solarModel$print()}\if{html}{\out{</div>}}
 }
 
+\subsection{Returns}{
+Prints a summary of the object.
+}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-solarModel-clone"></a>}}

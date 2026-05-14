@@ -1,8 +1,10 @@
 #' Gaussian mixture distribution
-#'
+#' 
+#' @description
+#' `r lifecycle::badge("stable")` 
 #' Density, distribution function, quantile function, and random generation for
 #' a univariate Gaussian mixture.
-#'
+#' 
 #' @param x Numeric vector of quantiles.
 #' @param q Numeric vector of quantiles.
 #' @param p Numeric vector of probabilities.
@@ -43,7 +45,8 @@
 #' @aliases qmixnorm
 #' @aliases rmixnorm
 #' @keywords distributions
-#' @details Version 1.0.1.
+#' @family distributions
+#' @note Version 1.0.1.
 #' @export
 dmixnorm <- function(x, mean = rep(0, 2), sd = rep(1, 2), alpha = rep(1/2, 2), log = FALSE){
   # Number of observations

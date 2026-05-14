@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_covariance}
 \alias{ARMA_covariance}
-\title{Compute the ARMA conditional variance / covariance}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_covariance(h, k, A, b, sigma2 = 1)
 }
@@ -18,6 +18,7 @@ ARMA_covariance(h, k, A, b, sigma2 = 1)
 \item{sigma2}{integer(1), std. deviation of the residuals.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Compute the ARMA conditional variance / covariance
 }
 \note{
@@ -27,5 +28,15 @@ Version 1.0.2
 A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
 b <- ARMA_vector_b(2,2)
 ARMA_covariance(3, 1, A, b, sigma2 = 1)
+
 }
+\seealso{
+Other ARMA-moments: 
+\code{\link{ARMA_expectation}()},
+\code{\link{ARMA_filter}()},
+\code{\link{ARMA_forecast}()},
+\code{\link{ARMA_next_step}()},
+\code{\link{ARMA_variance}()}
+}
+\concept{ARMA-moments}
 \keyword{ARMA}

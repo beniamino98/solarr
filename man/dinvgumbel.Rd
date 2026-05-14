@@ -48,7 +48,7 @@ otherwise, \eqn{P[X > x]}.}
 Density, distribution function, quantile function, and random generation for
 the inverted Gumbel distribution.
 }
-\details{
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -59,4 +59,19 @@ qinvgumbel(c(0.25, 0.75), location = 0, scale = 1)
 set.seed(1)
 rinvgumbel(3, location = 0, scale = 1)
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarK}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

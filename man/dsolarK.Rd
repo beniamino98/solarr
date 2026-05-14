@@ -54,7 +54,8 @@ Consider a latent random variable \eqn{Y} with density \code{pdf_Y} and
 distribution function \code{cdf_Y}. The clearness index is modeled as
 \deqn{K(Y) = 1-\alpha-\beta \exp(-\exp(Y))}
 with support \eqn{[1-\alpha-\beta, 1-\alpha]}.
-
+}
+\note{
 Version 1.0.0.
 }
 \examples{
@@ -67,4 +68,19 @@ qsolarK(c(0.1, 0.9), alpha, beta, pnorm)
 set.seed(1)
 rsolarK(3, alpha, beta, pnorm)
 }
+\seealso{
+Other distributions: 
+\code{\link{desscher}()},
+\code{\link{desscherMixture}()},
+\code{\link{dgumbel}()},
+\code{\link{dinvgumbel}()},
+\code{\link{dkumaraswamy}()},
+\code{\link{dmixnorm}()},
+\code{\link{dsnorm}()},
+\code{\link{dsolarGHI}()},
+\code{\link{dsolarX}()},
+\code{\link{dsugeno}()},
+\code{\link{dtnorm}()}
+}
+\concept{distributions}
 \keyword{distributions}

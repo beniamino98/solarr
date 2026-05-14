@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_variance}
 \alias{ARMA_variance}
-\title{Compute the long-term variance of an ARMA model}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_variance(h = 1, A, b, sigma2 = 1)
 }
@@ -16,7 +16,8 @@ ARMA_variance(h = 1, A, b, sigma2 = 1)
 \item{sigma2}{integer(1), std. deviation of the residuals.}
 }
 \description{
-Compute the long-term variance of an ARMA model
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
+Compute the variance of an ARMA model
 }
 \note{
 Version 1.0.2
@@ -25,5 +26,15 @@ Version 1.0.2
 A <- ARMA_companion_matrix(c(0.4, 0.1), c(0.1, 0.05))
 b <- ARMA_vector_b(2,2)
 ARMA_variance(h = 3, A, b, sigma2 = 1)
+
 }
+\seealso{
+Other ARMA-moments: 
+\code{\link{ARMA_covariance}()},
+\code{\link{ARMA_expectation}()},
+\code{\link{ARMA_filter}()},
+\code{\link{ARMA_forecast}()},
+\code{\link{ARMA_next_step}()}
+}
+\concept{ARMA-moments}
 \keyword{ARMA}

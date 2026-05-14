@@ -1,8 +1,16 @@
 #' Compute the spectral distribution for a black body
 #'
-#' @param lambda numeric, wave length in micrometers.
-#' @param measure character, measure of the irradiated energy. If `nanometer` the final energy will be in W/m2 x nanometer,
-#' otherwise if `micrometer` the final energy will be in W/m2 x micrometer.
+#' @param x Numeric vector. Wavelength values. Values are interpreted in
+#'   nanometers when `measure = "nanometer"` and in micrometers when
+#'   `measure = "micrometer"`.
+#' @param measure Character. Unit used for the wavelength scale and returned
+#'   spectral density. One of `"nanometer"` or `"micrometer"`.
+#'
+#' @return A numeric vector of spectral density values.
+#'
+#' @examples
+#' spectralDistribution(c(500, 600))
+#' spectralDistribution(c(0.5, 0.6), measure = "micrometer")
 #'
 #' @rdname spectralDistribution
 #' @name spectralDistribution

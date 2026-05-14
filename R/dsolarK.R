@@ -41,8 +41,10 @@
 #' @aliases psolarK
 #' @aliases qsolarK
 #' @aliases rsolarK
+#' 
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @family distributions
+#' @note Version 1.0.0.
 #' @export
 dsolarK  <- function(x,  alpha, beta, pdf_Y, log = FALSE){
   z_x <- (1 - x - alpha)/beta

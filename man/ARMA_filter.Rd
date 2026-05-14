@@ -2,7 +2,7 @@
 % Please edit documentation in R/ARMA_model-internals.R
 \name{ARMA_filter}
 \alias{ARMA_filter}
-\title{Filter the time-series and compute fitted values and residuals.}
+\title{Matrix form of an ARMA model}
 \usage{
 ARMA_filter(x, A, b, intercept = 0)
 }
@@ -16,8 +16,19 @@ ARMA_filter(x, A, b, intercept = 0)
 \item{intercept}{Numeric scalar, intercept parameter.}
 }
 \description{
+\ifelse{html}{\href{https://lifecycle.r-lib.org/articles/stages.html#stable}{\figure{lifecycle-stable.svg}{options: alt='[Stable]'}}}{\strong{[Stable]}}
 Filter the time-series and compute fitted values and residuals.
 }
 \note{
 Version 1.0.2
 }
+\seealso{
+Other ARMA-moments: 
+\code{\link{ARMA_covariance}()},
+\code{\link{ARMA_expectation}()},
+\code{\link{ARMA_forecast}()},
+\code{\link{ARMA_next_step}()},
+\code{\link{ARMA_variance}()}
+}
+\concept{ARMA-moments}
+\keyword{ARMA}

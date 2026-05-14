@@ -37,8 +37,10 @@
 #' @aliases psnorm
 #' @aliases qsnorm
 #' @aliases rsnorm
+#' 
+#' @family distributions
 #' @keywords distributions
-#' @details Version 1.0.0.
+#' @note Version 1.0.0.
 #' @export
 dsnorm <- function(x, location = 0, scale = 1, shape = 0, log = FALSE){
   # Standardized values
