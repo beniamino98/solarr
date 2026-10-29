@@ -9,3 +9,10 @@ Rplots.pdf
 *~
 /.code-graph/
 /public_export/
+
+# Compile native code on the installation platform.
+/src/*.o
+/src/*.so
+/src/*.dll
+/src/*.dylib
+/src/*.a
