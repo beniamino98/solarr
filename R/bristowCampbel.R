@@ -9,7 +9,7 @@ bristowCampbel <- R6::R6Class("bristowCampbel",
                                   # Complete dataset
                                   data = dplyr::tibble(date = date, Month = lubridate::month(date), GHI = GHI, deltaTemp = deltaTemp)
                                   # Add extraterrestrial radiation
-                                  data$H0 = seasonalSolarFunctions$new()$H0(data$date, lat)
+                                  data$H0 = seasonalSolarFunctions$new()$Hon(data$date, lat)
                                   # Compute the monthly mean for deltaTemp
                                   seasonal_data = dplyr::group_by(data, Month) %>%
                                     dplyr::summarise(deltaT_avg = mean(deltaTemp, na.rm = TRUE))
@@ -56,7 +56,7 @@ bristowCampbel <- R6::R6Class("bristowCampbel",
                                     H0 <- self$data$H0
                                   } else {
                                     # Add extraterrestrial radiation
-                                    H0 = seasonalSolarFunctions$new()$H0(date, self$lat)
+                                    H0 = seasonalSolarFunctions$new()$Hon(date, self$lat)
                                   }
 
                                   A = self$parameters$A

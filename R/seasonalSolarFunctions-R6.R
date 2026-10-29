@@ -53,12 +53,17 @@
 #'
 #' @name seasonalSolarFunctions
 #' @rdname seasonalSolarFunctions
-#' @note Version 1.0.2
+#' @note Version 1.0.3
 #' @export
 seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                 public = list(
                                   #' @field legal_hour Logical, when `TRUE` the clock time will be corrected for the legal hour.
                                   legal_hour = TRUE,
+                                  #' @field horizons Named altitudes of the sun's centre, in degrees, at which
+                                  #' sunrise, sunset and the twilights are declared. See the `convention`
+                                  #' argument of \code{$sunset_hour_angle()}.
+                                  horizons = c(geometric = 0, refraction = -34/60, upper_limb = -50/60,
+                                               civil = -6, nautical = -12, astronomical = -18),
                                   #' @description
                                   #' Initialize a `seasonalSolarFunctions` object
                                   #' @param method character, method type for computations. Can be `cooper` or `spencer`.
@@ -142,14 +147,12 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   solar_time = function(x, lon, lon_st = 15, tz = "Europe/Rome"){
                                     # Convert in a datetime
                                     date_h <- as.POSIXlt(x, tz = tz)
-                                    # Adjust the date for legal hour
-                                    if (FALSE) {
-                                      start_legal_hour <- as.Date(paste0(lubridate::year(date_h[1]), "-03-10"))
-                                      end_legal_hour <- as.Date(paste0(lubridate::year(date_h[1]), "-10-30"))
-                                      #   - from 27 Mar - 30 Oct (TRUE)
-                                      #   - from 30 Oct - 27 Mar (FALSE)
-                                      is_legal_hour <- (as.Date(date_h) >= start_legal_hour) & (as.Date(date_h) <= end_legal_hour)
-                                      date_h <- dplyr::if_else(is_legal_hour, date_h - lubridate::dhours(1), date_h)
+                                    # Adjust the date for legal hour. `isdst` is set by the time
+                                    # zone database, so it is exact for any zone and any year
+                                    if (self$legal_hour) {
+                                      is_legal_hour <- date_h$isdst > 0
+                                      is_legal_hour[is.na(is_legal_hour)] <- FALSE
+                                      date_h <- date_h - lubridate::dhours(as.numeric(is_legal_hour))
                                     }
                                     # Solar hour for the selected day-time
                                     date_h + lubridate::dminutes(4*(lon-lon_st)) + self$E(date_h)
@@ -221,18 +224,22 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   #' @return The solar azimut angle in degrees
                                   azimut_angle = function(LST, lat, alt, beta = 0, gamma = 0){
                                     # Latitude in radiant
-                                    phi = self$radiant(lat)
+                                    phi <- self$radiant(lat)
                                     # Declination in radiant
-                                    delta = self$radiant(self$declination(LST))
+                                    delta <- self$radiant(self$declination(LST))
                                     # Solar hour angle
-                                    omega = self$radiant(self$hour_angle(LST))
+                                    omega <- self$radiant(self$hour_angle(LST))
                                     # The angle of incidence is the zenith angle of the sun
-                                    theta_z = self$radiant(self$incidence_angle(LST, lat, alt, beta = 0, gamma = 0))
+                                    cos_theta_z <- self$incidence_angle(LST, lat, alt, beta = 0, gamma = 0)
+                                    cos_theta_z <- pmin(pmax(cos_theta_z, -1), 1)
+                                    # The angle of incidence is the zenith angle of the sun
+                                    # theta_z = self$radiant(self$incidence_angle(LST, lat, alt, beta = 0, gamma = 0))
+                                    theta_z <- acos(cos_theta_z)
                                     # Azimut angle
-                                    numer <- (cos(theta_z)*sin(phi) - sin(delta))
-                                    denom <- sin(theta_z)*cos(phi)
+                                    numer <- cos(theta_z) * sin(phi) - sin(delta)
+                                    denom <- sin(theta_z) * cos(phi)
                                     ratio <- pmin(pmax(numer / denom, -1), 1)
-                                    gamma_s <- sign(omega)*abs(acos(angle))
+                                    gamma_s <- sign(omega)*abs(acos(ratio))
                                     self$degree(gamma_s)
                                   },
                                   #' @description
@@ -314,7 +321,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     # Declination in radiant
                                     delta <- self$radiant(self$declination(n))
                                     # Sunset hour angle in degrees
-                                    omega_s <- self$radiant(self$sunset_hour_angle(n, lat, alt))
+                                    omega_s <- self$radiant(self$sunset_hour_angle(n, lat, alt, deriv = FALSE, convention = "geometric"))
                                     # Scale factor
                                     A <- (24*3600)/(base::pi*3600000)
                                     # Extraterrestrial radiation in daily joules/m^2 per day
@@ -327,7 +334,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                       # Derivative of the declination in radiants
                                       d_delta <- self$radiant(self$declination(n, deriv = TRUE))
                                       # Derivative of sunset hour angle in radiants
-                                      d_omega_s <- self$radiant(self$sunset_hour_angle(n, lat, alt, deriv = TRUE))
+                                      d_omega_s <- self$radiant(self$sunset_hour_angle(n, lat, alt, deriv = TRUE, convention = "geometric"))
                                       # Derivative of B_n with respect to declination
                                       d_B_n_d_delta <- -sin(delta) * cos(phi) * sin(omega_s) + omega_s * cos(delta) * sin(phi)
                                       # Derivative of B_n with respect to sunset hour angle
@@ -343,56 +350,59 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     return(Hon)
                                   },
                                   #' @description
-                                  #' Compute solar angle at sunset in degrees
-                                  #' @param n number of the day of the year
+                                  #' Compute the sunset hour angle for a day of the year.
+                                  #' @param n number of the day of the year.
                                   #' @param lat Numeric, latitude of interest in degrees.
-                                  #' @param alt Numeric, altitude in meters.
-                                  #' @param deriv Logical, when `TRUE` will return the first derivative with respect to time.
+                                  #' @param alt Numeric, altitude in meters. When supplied, the horizon dips
+                                  #'  below the horizontal by \code{$elevation(alt)} and the day lengthens.
+                                  #' @param deriv Logical, when `TRUE` returns the first derivative with respect to time.
+                                  #' @param convention Character, altitude of the sun's centre at the event:
+                                  #' \describe{
+                                  #'  \item{`"geometric"`}{centre on the astronomical horizon, 0 degrees. The default,
+                                  #'   and the only one consistent with the extraterrestrial radiation integral;}
+                                  #'  \item{`"refraction"`}{standard atmospheric refraction, -34 arcmin;}
+                                  #'  \item{`"upper_limb"`}{refraction plus the solar semi-diameter, -50 arcmin.
+                                  #'   This is the sunrise and sunset almanacs publish;}
+                                  #'  \item{`"civil"`, `"nautical"`, `"astronomical"`}{the twilights, at -6, -12
+                                  #'   and -18 degrees.}
+                                  #'}
                                   #' @details The function implement Eq. 1.6.10 from Duffie (4th edition), i.e.
                                   #' \deqn{\omega_s = \cos^{-1}(-\tan(\delta(n))\tan(\phi))}
                                   #' When altitude is not missing it will implement a generalized version with altitude, i.e.
                                   #' \deqn{\omega_s = \cos^{-1}\left(\frac{\sin H - \sin\delta \sin\phi}{\cos\phi \cos \delta}\right)}
                                   #' @return The sunset hour angle in degrees.
-                                  sunset_hour_angle = function(n, lat, alt, deriv = FALSE){
+                                  sunset_hour_angle = function(n, lat, alt, deriv = FALSE,
+                                                               convention = c("geometric", "refraction", "upper_limb",
+                                                                              "civil", "nautical", "astronomical")){
                                     # Latitude from degrees to radiant
                                     phi <- self$radiant(lat)
                                     # Declination from degrees to radiant
                                     declination <- self$radiant(self$declination(n))
-                                    # Version without altitude
-                                    if (missing(alt)) {
-                                      # Compute argument of acos
-                                      arg <- -tan(declination) * tan(phi)
-                                      # Return the angle
-                                      if (!deriv) {
-                                        # Safety clipping
-                                        arg <- pmin(pmax(arg, -1), 1)
-                                        # Sunset hour angle in degrees
-                                        omega_s <- self$degree(acos(arg))
-                                      } else {
-                                        # Derivative of the declination
-                                        d_declination <- self$declination(n, deriv = TRUE)
-                                        # Derivative of the argument
-                                        d_arg <- - tan(phi) / cos(declination)^2
-                                        # Final derivative
-                                        omega_s <- -(1 / sqrt(1 - arg^2)) * d_arg * d_declination
-                                      }
-                                      return(omega_s)
+                                    # Altitude of the sun's CENTRE at the event, from the convention.
+                                    # A bare number is taken as that altitude in degrees.
+                                    if (is.numeric(convention)) {
+                                      h0 <- convention[1]
+                                    } else {
+                                      h0 <- self$horizons[[match.arg(convention)]]
                                     }
-                                    # Altitude from meters to radiant
-                                    alt <- self$radiant(self$elevation(alt))
-                                    # Compute argument of acos
-                                    arg <- (sin(alt) - sin(declination)*sin(phi))/(cos(phi)*cos(declination))
-                                    # Return the angle
+                                    h <- self$radiant(h0)
+                                    # An observer above sea level sees the horizon dip away, so the
+                                    # threshold drops by the dip angle.
+                                    if (!missing(alt)) {
+                                      h <- h - self$radiant(self$elevation(alt))
+                                    }
+                                    # Compute argument of acos. With h = 0 this is -tan(delta)tan(phi).
+                                    arg <- (sin(h) - sin(declination)*sin(phi))/(cos(phi)*cos(declination))
                                     if (!deriv) {
                                       # Safety clipping
                                       arg <- pmin(pmax(arg, -1), 1)
                                       # Sunset hour angle in degrees
                                       omega_s <- self$degree(acos(arg))
                                     } else {
-                                      # Return the first derivative
+                                      # Derivative of the declination
                                       d_declination <- self$declination(n, deriv = TRUE)
-                                      # Derivative of the argument
-                                      d_arg <- (sin(alt) * sin(declination) - sin(phi)) / (cos(phi) * cos(declination)^2)
+                                      # Derivative of the argument with respect to the declination
+                                      d_arg <- (sin(h)*sin(declination) - sin(phi))/(cos(phi)*cos(declination)^2)
                                       # Final derivative
                                       omega_s <- -(1 / sqrt(1 - arg^2)) * d_arg * d_declination
                                     }
@@ -403,11 +413,22 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   #' @param n number of the day of the year.
                                   #' @param lat Numeric, latitude of interest in degrees.
                                   #' @param alt Numeric, altitude in meters.
+                                  #' @param convention Character, altitude of the sun's centre at the event:
+                                  #' \describe{
+                                  #'  \item{`"geometric"`}{centre on the astronomical horizon, 0 degrees. The default,
+                                  #'   and the only one consistent with the extraterrestrial radiation integral;}
+                                  #'  \item{`"refraction"`}{standard atmospheric refraction, -34 arcmin;}
+                                  #'  \item{`"upper_limb"`}{refraction plus the solar semi-diameter, -50 arcmin.
+                                  #'   This is the sunrise and sunset almanacs publish;}
+                                  #'  \item{`"civil"`, `"nautical"`, `"astronomical"`}{the twilights, at -6, -12
+                                  #'   and -18 degrees.}
+                                  #'}
                                   #' @details The function implement Eq. 1.6.11 from Duffie (4th edition), i.e.
                                   #' \deqn{\frac{2}{15} \omega_s}
-                                  sun_hours = function(n, lat, alt){
+                                  sun_hours = function(n, lat, alt, convention = c("geometric", "refraction", "upper_limb",
+                                                                                   "civil", "nautical", "astronomical")){
                                     # Number of sun hours
-                                    sun_hours <- self$sunset_hour_angle(n, lat, alt)*(2/15)
+                                    sun_hours <- self$sunset_hour_angle(n, lat, alt, deriv = FALSE, convention = convention)*(2/15)
                                     return(lubridate::dhours(sun_hours))
                                   },
                                   #' @description
@@ -436,7 +457,20 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                   #' @param gamma Numeric, angle orientation of the panel.
                                   #' @param by Character, time step. Default is `1 min`.
                                   #' @param tz Character, reference time zone.
-                                  solar_angles = function(x, lat, lon, alt, lon_st = 15, beta = 0, gamma = 0, by = "1 min", tz = "Europe/Rome"){
+                                  #' @param convention Character, altitude of the sun's centre at the event:
+                                  #' \describe{
+                                  #'  \item{`"geometric"`}{centre on the astronomical horizon, 0 degrees. The default,
+                                  #'   and the only one consistent with the extraterrestrial radiation integral;}
+                                  #'  \item{`"refraction"`}{standard atmospheric refraction, -34 arcmin;}
+                                  #'  \item{`"upper_limb"`}{refraction plus the solar semi-diameter, -50 arcmin.
+                                  #'   This is the sunrise and sunset almanacs publish;}
+                                  #'  \item{`"civil"`, `"nautical"`, `"astronomical"`}{the twilights, at -6, -12
+                                  #'   and -18 degrees.}
+                                  #'}
+                                  solar_angles = function(x, lat, lon, alt, lon_st = 15, beta = 0, gamma = 0,
+                                                          by = "1 min", tz = "Europe/Rome",
+                                                          convention = c("geometric", "refraction", "upper_limb",
+                                                                         "civil", "nautical", "astronomical")){
                                     day_date <- as.Date(x[1])
                                     start_date <- as.POSIXct(paste0(day_date, " 00:00:00"), tz = tz)
                                     end_date <- as.POSIXct(paste0(day_date+1, " 00:00:00"), tz = tz)
@@ -446,11 +480,11 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     # Solar declination
                                     declination <- self$declination(day_date)
                                     # Solar angle at sunset
-                                    omega_max <-  self$sunset_hour_angle(day_date, lat, alt)
+                                    omega_max <-  self$sunset_hour_angle(day_date, lat, alt, deriv = FALSE, convention = convention)
                                     # Solar angle at sunrise
                                     omega_min <- -omega_max
                                     # Number of sun hours
-                                    sun_hours <- self$sun_hours(day_date, lat, alt)
+                                    sun_hours <- self$sun_hours(day_date, lat, alt, convention = convention)
                                     # Time adjustment in seconds
                                     E <- self$E(day_date)
                                     # Solar time
@@ -461,7 +495,7 @@ seasonalSolarFunctions <- R6::R6Class("seasonalSolarFunctions",
                                     theta <- self$incidence_angle(LST, lat, alt, beta, gamma)
                                     dplyr::tibble(date = day_date,
                                                   clocktime = day_date_seq,
-                                                  solartime = solartime,
+                                                  solartime = LST,
                                                   lat = lat,
                                                   lon = lon,
                                                   omega = omega,

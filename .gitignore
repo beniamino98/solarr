@@ -7,3 +7,5 @@ Rplots.pdf
 *.tmp
 *.temp
 *~
+/.code-graph/
+/public_export/

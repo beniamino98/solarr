@@ -23,7 +23,7 @@ The methods follow the notation and equations in Duffie & Beckman
 specified.
 }
 \note{
-Version 1.0.2
+Version 1.0.3
 }
 \examples{
 dates <- seq.Date(as.Date("2022-01-01"), as.Date("2022-12-31"), 1)
@@ -64,6 +64,10 @@ sf$azimut_angle("2022-01-01 14:00", 30, 17, lon_st = 15)
 \if{html}{\out{<div class="r6-fields">}}
 \describe{
 \item{\code{legal_hour}}{Logical, when \code{TRUE} the clock time will be corrected for the legal hour.}
+
+\item{\code{horizons}}{Named altitudes of the sun's centre, in degrees, at which
+sunrise, sunset and the twilights are declared. See the \code{convention}
+argument of \code{$sunset_hour_angle()}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -487,21 +491,40 @@ Extraterrestrial radiation on an horizontal surface in kilowatt hour for meters 
 \if{html}{\out{<a id="method-seasonalSolarFunctions-sunset_hour_angle"></a>}}
 \if{latex}{\out{\hypertarget{method-seasonalSolarFunctions-sunset_hour_angle}{}}}
 \subsection{Method \code{sunset_hour_angle()}}{
-Compute solar angle at sunset in degrees
+Compute the sunset hour angle for a day of the year.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$sunset_hour_angle(n, lat, alt, deriv = FALSE)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$sunset_hour_angle(
+  n,
+  lat,
+  alt,
+  deriv = FALSE,
+  convention = c("geometric", "refraction", "upper_limb", "civil", "nautical",
+    "astronomical")
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{n}}{number of the day of the year}
+\item{\code{n}}{number of the day of the year.}
 
 \item{\code{lat}}{Numeric, latitude of interest in degrees.}
 
-\item{\code{alt}}{Numeric, altitude in meters.}
+\item{\code{alt}}{Numeric, altitude in meters. When supplied, the horizon dips
+below the horizontal by \code{$elevation(alt)} and the day lengthens.}
 
-\item{\code{deriv}}{Logical, when \code{TRUE} will return the first derivative with respect to time.}
+\item{\code{deriv}}{Logical, when \code{TRUE} returns the first derivative with respect to time.}
+
+\item{\code{convention}}{Character, altitude of the sun's centre at the event:
+\describe{
+\item{\code{"geometric"}}{centre on the astronomical horizon, 0 degrees. The default,
+and the only one consistent with the extraterrestrial radiation integral;}
+\item{\code{"refraction"}}{standard atmospheric refraction, -34 arcmin;}
+\item{\code{"upper_limb"}}{refraction plus the solar semi-diameter, -50 arcmin.
+This is the sunrise and sunset almanacs publish;}
+\item{\code{"civil"}, \code{"nautical"}, \code{"astronomical"}}{the twilights, at -6, -12
+and -18 degrees.}
+}}
 }
 \if{html}{\out{</div>}}
 }
@@ -522,7 +545,13 @@ The sunset hour angle in degrees.
 \subsection{Method \code{sun_hours()}}{
 Compute number of sun hours for a day n.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$sun_hours(n, lat, alt)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{seasonalSolarFunctions$sun_hours(
+  n,
+  lat,
+  alt,
+  convention = c("geometric", "refraction", "upper_limb", "civil", "nautical",
+    "astronomical")
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -533,6 +562,17 @@ Compute number of sun hours for a day n.
 \item{\code{lat}}{Numeric, latitude of interest in degrees.}
 
 \item{\code{alt}}{Numeric, altitude in meters.}
+
+\item{\code{convention}}{Character, altitude of the sun's centre at the event:
+\describe{
+\item{\code{"geometric"}}{centre on the astronomical horizon, 0 degrees. The default,
+and the only one consistent with the extraterrestrial radiation integral;}
+\item{\code{"refraction"}}{standard atmospheric refraction, -34 arcmin;}
+\item{\code{"upper_limb"}}{refraction plus the solar semi-diameter, -50 arcmin.
+This is the sunrise and sunset almanacs publish;}
+\item{\code{"civil"}, \code{"nautical"}, \code{"astronomical"}}{the twilights, at -6, -12
+and -18 degrees.}
+}}
 }
 \if{html}{\out{</div>}}
 }
@@ -581,7 +621,9 @@ Compute the solar angle for a latitude in different dates.
   beta = 0,
   gamma = 0,
   by = "1 min",
-  tz = "Europe/Rome"
+  tz = "Europe/Rome",
+  convention = c("geometric", "refraction", "upper_limb", "civil", "nautical",
+    "astronomical")
 )}\if{html}{\out{</div>}}
 }
 
@@ -605,6 +647,17 @@ Compute the solar angle for a latitude in different dates.
 \item{\code{by}}{Character, time step. Default is \verb{1 min}.}
 
 \item{\code{tz}}{Character, reference time zone.}
+
+\item{\code{convention}}{Character, altitude of the sun's centre at the event:
+\describe{
+\item{\code{"geometric"}}{centre on the astronomical horizon, 0 degrees. The default,
+and the only one consistent with the extraterrestrial radiation integral;}
+\item{\code{"refraction"}}{standard atmospheric refraction, -34 arcmin;}
+\item{\code{"upper_limb"}}{refraction plus the solar semi-diameter, -50 arcmin.
+This is the sunrise and sunset almanacs publish;}
+\item{\code{"civil"}, \code{"nautical"}, \code{"astronomical"}}{the twilights, at -6, -12
+and -18 degrees.}
+}}
 }
 \if{html}{\out{</div>}}
 }

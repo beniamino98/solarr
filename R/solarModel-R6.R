@@ -329,7 +329,7 @@ solarModel <- R6::R6Class("solarModel",
                                 # Train data
                                 train_data <- dplyr::filter(data, isTrain & weights != 0)
                                 # Store correction factor
-                                correction <- var(data_train$eps / (data_train$sigma_bar * data_train$sigma_uncond))
+                                correction <- var(train_data$eps / (train_data$sigma_bar * train_data$sigma_uncond))
                                 # Correct parameters to ensure unitary variance
                                 std.errors <- self$spec$seasonal.variance$std.errors
                                 # Update correction
@@ -338,7 +338,7 @@ solarModel <- R6::R6Class("solarModel",
                                 private$..spec$seasonal.variance$update_std.errors(std.errors * correction)
                                 # **************************************************** #
                                 # Update private components
-                                private$..data[["sigma_bar"]] <- sqrt(self$spec$seasonal_variance$predict(newdata = data))
+                                private$..data[["sigma_bar"]] <- sqrt(self$spec$seasonal.variance$predict(newdata = data))
                                 private$..data[["eps_tilde"]] <- data$eps / (private$..data[["sigma_bar"]] * data$sigma_uncond)
                               }
                             },
